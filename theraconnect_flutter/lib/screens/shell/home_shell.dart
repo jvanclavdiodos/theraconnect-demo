@@ -1,0 +1,65 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../providers/notification_provider.dart';
+
+class HomeShell extends ConsumerWidget {
+  final StatefulNavigationShell navigationShell;
+
+  const HomeShell({super.key, required this.navigationShell});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(unreadNotificationCountProvider);
+
+    return Scaffold(
+      body: navigationShell,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: navigationShell.currentIndex,
+        onDestinationSelected: (index) {
+          navigationShell.goBranch(
+            index,
+            initialLocation: index == navigationShell.currentIndex,
+          );
+        },
+        destinations: [
+          const NavigationDestination(
+            icon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home_filled),
+            label: 'Home',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.calendar_today),
+            selectedIcon: Icon(Icons.calendar_today),
+            label: 'Schedule',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.assignment),
+            selectedIcon: Icon(Icons.assignment),
+            label: 'Assignments',
+          ),
+          const NavigationDestination(
+            icon: Icon(Icons.chat),
+            selectedIcon: Icon(Icons.chat),
+            label: 'Chatbot',
+          ),
+          NavigationDestination(
+            icon: unread > 0
+                ? Badge(
+                    label: Text('$unread'),
+                    child: const Icon(Icons.person),
+                  )
+                : const Icon(Icons.person),
+            selectedIcon: unread > 0
+                ? Badge(
+                    label: Text('$unread'),
+                    child: const Icon(Icons.person),
+                  )
+                : const Icon(Icons.person),
+            label: 'Profile',
+          ),
+        ],
+      ),
+    );
+  }
+}

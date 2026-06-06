@@ -1,0 +1,176 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/chatbot_message.dart';
+import '../../providers/chatbot_provider.dart';
+
+class ChatbotScreen extends ConsumerStatefulWidget {
+  const ChatbotScreen({super.key});
+
+  @override
+  ConsumerState<ChatbotScreen> createState() => _ChatbotScreenState();
+}
+
+class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
+  final _messageController = TextEditingController();
+  final _scrollController = ScrollController();
+  bool _sending = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_scrollListener);
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollListener() {
+    _scrollToBottom();
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
+  void _sendMessage() {
+    if (_sending) return;
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+
+    setState(() => _sending = true);
+    _messageController.clear();
+    ref.read(chatbotProvider.notifier).sendMessage(text);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final messages = ref.watch(chatbotProvider);
+
+    ref.listen(chatbotProvider, (_, next) {
+      if (next is AsyncData) {
+        setState(() => _sending = false);
+        WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+      } else if (next is AsyncError) {
+        setState(() => _sending = false);
+      }
+    });
+
+    final messageList = messages.valueOrNull ?? [];
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Chatbot'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            tooltip: 'Clear chat',
+            onPressed: () => ref.read(chatbotProvider.notifier).clearMessages(),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          Expanded(
+            child: messageList.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat,
+                            size: 64,
+                            color: Theme.of(context).colorScheme.primary.withOpacity(0.4)),
+                        const SizedBox(height: 16),
+                        Text('Ask me anything about the clinic',
+                            style: Theme.of(context).textTheme.bodyLarge),
+                        const SizedBox(height: 8),
+                        Text('Hours, location, appointments, and more',
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                )),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: messageList.length,
+                    itemBuilder: (context, index) {
+                      final msg = messageList[index];
+                      return Align(
+                        alignment: msg.isUser ? Alignment.centerRight : Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: msg.isUser
+                                ? Theme.of(context).colorScheme.primaryContainer
+                                : Theme.of(context).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          constraints: BoxConstraints(
+                            maxWidth: MediaQuery.of(context).size.width * 0.75,
+                          ),
+                          child: Text(msg.text),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 4,
+                  offset: const Offset(0, -1),
+                ),
+              ],
+            ),
+            child: SafeArea(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: const InputDecoration(
+                        hintText: 'Type a message...',
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      ),
+                      textInputAction: TextInputAction.send,
+                      enabled: !_sending,
+                      onSubmitted: (_) => _sendMessage(),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: _sending ? null : _sendMessage,
+                    child: _sending
+                        ? const SizedBox(
+                            height: 18,
+                            width: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.send),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

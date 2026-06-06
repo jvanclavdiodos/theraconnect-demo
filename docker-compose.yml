@@ -1,0 +1,116 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: theraconnect-app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - .:/var/www
+      - /var/www/vendor
+    ports:
+      - '8080:8080'
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      APP_ENV: local
+      APP_DEBUG: 'true'
+      APP_KEY: ${APP_KEY:-}
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: theraconnect
+      DB_USERNAME: root
+      DB_PASSWORD: password
+      QUEUE_CONNECTION: database
+      SESSION_DRIVER: database
+      SANCTUM_STATEFUL_DOMAINS: localhost:8080
+      FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
+      FCM_CREDENTIALS: ${FCM_CREDENTIALS:-}
+    networks:
+      - theraconnect
+
+  mysql:
+    image: mysql:8.0
+    container_name: theraconnect-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: theraconnect
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - theraconnect
+
+  queue-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: theraconnect-queue
+    restart: unless-stopped
+    working_dir: /var/www
+    command: php artisan queue:work --tries=3 --sleep=1
+    volumes:
+      - .:/var/www
+      - /var/www/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: theraconnect
+      DB_USERNAME: root
+      DB_PASSWORD: password
+      QUEUE_CONNECTION: database
+    networks:
+      - theraconnect
+
+  scheduler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: theraconnect-scheduler
+    restart: unless-stopped
+    working_dir: /var/www
+    command: >
+      sh -c "
+        echo '* * * * * cd /var/www && php artisan schedule:run >> /dev/null 2>&1' > /etc/crontabs/root
+        && crond -f -L /dev/stdout
+      "
+    volumes:
+      - .:/var/www
+      - /var/www/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      APP_ENV: local
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: theraconnect
+      DB_USERNAME: root
+      DB_PASSWORD: password
+    networks:
+      - theraconnect
+
+volumes:
+  mysql_data:
+
+networks:
+  theraconnect:
+    driver: bridge

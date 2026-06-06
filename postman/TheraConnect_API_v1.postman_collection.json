@@ -1,0 +1,384 @@
+{
+  "info": {
+    "name": "TheraConnect API v1",
+    "description": "TheraConnect patient mobile API. All authenticated endpoints require Bearer token obtained via /login or /register.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/health", "host": ["{{baseUrl}}"], "path": ["health"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('token', json.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Accept", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"Jane Doe\",\"email\":\"jane@test.com\",\"password\":\"password123\",\"password_confirmation\":\"password123\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/register", "host": ["{{baseUrl}}"], "path": ["register"]}
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('token', json.data.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Accept", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"patient@theraconnect.test\",\"password\":\"password\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/login", "host": ["{{baseUrl}}"], "path": ["login"]}
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/logout", "host": ["{{baseUrl}}"], "path": ["logout"]}
+          }
+        },
+        {
+          "name": "Get Me",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/me", "host": ["{{baseUrl}}"], "path": ["me"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile",
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"]}
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Accept", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"contact_no\":\"555-1234\",\"address\":\"123 Main St\",\"date_of_birth\":\"1995-01-15\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Appointments",
+      "item": [
+        {
+          "name": "Get Schedules",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/schedules?date=2026-06-10", "host": ["{{baseUrl}}"], "path": ["schedules"], "query": [{"key": "date", "value": "2026-06-10"}]}
+          }
+        },
+        {
+          "name": "List Appointments",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/appointments", "host": ["{{baseUrl}}"], "path": ["appointments"]}
+          }
+        },
+        {
+          "name": "Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Accept", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"requested_at\":\"2026-06-10 09:00:00\",\"mode\":\"in_person\",\"reason\":\"Initial consultation\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/appointments", "host": ["{{baseUrl}}"], "path": ["appointments"]}
+          }
+        },
+        {
+          "name": "Get Appointment",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/appointments/1", "host": ["{{baseUrl}}"], "path": ["appointments", "1"]}
+          }
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/appointments/1", "host": ["{{baseUrl}}"], "path": ["appointments", "1"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Assignments",
+      "item": [
+        {
+          "name": "List Assignments",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/assignments", "host": ["{{baseUrl}}"], "path": ["assignments"]}
+          }
+        },
+        {
+          "name": "Get Assignment",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/assignments/1", "host": ["{{baseUrl}}"], "path": ["assignments", "1"]}
+          }
+        },
+        {
+          "name": "Submit Assignment",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {"key": "content", "value": "I completed the breathing exercises. Felt calmer.", "type": "text"}
+              ]
+            },
+            "url": {"raw": "{{baseUrl}}/assignments/1/submit", "host": ["{{baseUrl}}"], "path": ["assignments", "1", "submit"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/notifications", "host": ["{{baseUrl}}"], "path": ["notifications"]}
+          }
+        },
+        {
+          "name": "Mark Read",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Accept", "value": "application/json"}],
+            "url": {"raw": "{{baseUrl}}/notifications/1/read", "host": ["{{baseUrl}}"], "path": ["notifications", "1", "read"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Device Token",
+      "item": [
+        {
+          "name": "Register Token",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Accept", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"token\":\"fcm-token-example\",\"platform\":\"android\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/device-token", "host": ["{{baseUrl}}"], "path": ["device-token"]}
+          }
+        },
+        {
+          "name": "Remove Token",
+          "request": {
+            "method": "DELETE",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Accept", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"token\":\"fcm-token-example\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/device-token", "host": ["{{baseUrl}}"], "path": ["device-token"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Chatbot",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}, {"key": "Accept", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"message\":\"What are your clinic hours?\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/chatbot/message", "host": ["{{baseUrl}}"], "path": ["chatbot", "message"]}
+          }
+        }
+      ]
+    },
+    {
+      "name": "End-to-End Flow",
+      "item": [
+        {
+          "name": "1. Register Patient",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.data && json.data.token) {",
+                  "    pm.collectionVariables.set('token', json.data.token);",
+                  "    console.log('Token set from registration');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"name\":\"E2E Test User\",\"email\":\"e2e@test.com\",\"password\":\"password123\",\"password_confirmation\":\"password123\",\"contact_no\":\"555-4321\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/register", "host": ["{{baseUrl}}"], "path": ["register"]}
+          }
+        },
+        {
+          "name": "2. Check Schedules",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/schedules?date=2026-06-10", "host": ["{{baseUrl}}"], "path": ["schedules"], "query": [{"key": "date", "value": "2026-06-10"}]}
+          }
+        },
+        {
+          "name": "3. Book Appointment",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"requested_at\":\"2026-06-10 10:00:00\",\"mode\":\"in_person\",\"reason\":\"E2E test booking\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/appointments", "host": ["{{baseUrl}}"], "path": ["appointments"]}
+          }
+        },
+        {
+          "name": "4. View My Appointments",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/appointments", "host": ["{{baseUrl}}"], "path": ["appointments"]}
+          }
+        },
+        {
+          "name": "5. Get Profile",
+          "request": {
+            "method": "GET",
+            "url": {"raw": "{{baseUrl}}/me", "host": ["{{baseUrl}}"], "path": ["me"]}
+          }
+        },
+        {
+          "name": "6. Update Profile",
+          "request": {
+            "method": "PUT",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"address\":\"123 Integration Test Lane\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/profile", "host": ["{{baseUrl}}"], "path": ["profile"]}
+          }
+        },
+        {
+          "name": "7. Chatbot Message",
+          "request": {
+            "method": "POST",
+            "header": [{"key": "Content-Type", "value": "application/json"}],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"message\":\"How do I book an appointment?\"}"
+            },
+            "url": {"raw": "{{baseUrl}}/chatbot/message", "host": ["{{baseUrl}}"], "path": ["chatbot", "message"]}
+          }
+        },
+        {
+          "name": "8. Logout",
+          "request": {
+            "method": "POST",
+            "url": {"raw": "{{baseUrl}}/logout", "host": ["{{baseUrl}}"], "path": ["logout"]}
+          }
+        }
+      ]
+    }
+  ]
+}
