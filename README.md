@@ -312,3 +312,5 @@ $base = "http://localhost:8080/api/v1"
 | S6 | Delete confirmations | Alpine.js `confirm()` dialogs |
 | S7 | Role middleware is authoritative | Server-side, not Blade-only |
 
+#   t h e r a c o n n e c t  
+ 
