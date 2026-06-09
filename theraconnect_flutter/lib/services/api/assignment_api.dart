@@ -60,3 +60,4 @@ class AssignmentApi {
       throw handleDioError(e);
     }
   }
+}

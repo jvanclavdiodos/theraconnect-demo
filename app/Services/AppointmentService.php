@@ -41,6 +41,32 @@ class AppointmentService
         return $slots;
     }
 
+    /**
+     * Is the given clinician free at the requested datetime?
+     *
+     * Mirrors the conflict logic in getScheduleSlots(): an active appointment
+     * (not cancelled/rejected/completed) for this clinician whose scheduled_at
+     * matches, or — when not yet scheduled — whose requested_at matches.
+     */
+    public function isSlotAvailable(int $clinicianId, string $requestedAt, ?int $ignoreAppointmentId = null): bool
+    {
+        $at = Carbon::parse($requestedAt)->format('Y-m-d H:i:s');
+
+        $conflict = Appointment::where('clinician_id', $clinicianId)
+            ->when($ignoreAppointmentId, fn ($q) => $q->where('id', '!=', $ignoreAppointmentId))
+            ->where(function ($q) use ($at) {
+                $q->where('scheduled_at', $at)
+                  ->orWhere(function ($q2) use ($at) {
+                      $q2->whereNull('scheduled_at')
+                         ->where('requested_at', $at);
+                  });
+            })
+            ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
+            ->exists();
+
+        return ! $conflict;
+    }
+
     public function create(array $data): Appointment
     {
         return Appointment::create([

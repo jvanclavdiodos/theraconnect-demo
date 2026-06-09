@@ -76,4 +76,4 @@ class AuthApi {
       throw handleDioError(e);
     }
   }
-
+}

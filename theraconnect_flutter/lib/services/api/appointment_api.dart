@@ -88,3 +88,4 @@ class AppointmentApi {
       throw handleDioError(e);
     }
   }
+}

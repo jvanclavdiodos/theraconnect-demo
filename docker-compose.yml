@@ -8,6 +8,7 @@ services:
     container_name: theraconnect-app
     restart: unless-stopped
     working_dir: /var/www
+    command: sh -c "php artisan storage:link --force && php artisan migrate --force && (php artisan db:seed --force || true) && php artisan serve --host=0.0.0.0 --port=8080"
     volumes:
       - .:/var/www
       - /var/www/vendor
@@ -27,7 +28,8 @@ services:
       DB_USERNAME: root
       DB_PASSWORD: password
       QUEUE_CONNECTION: database
-      SESSION_DRIVER: database
+      SESSION_DRIVER: file
+      PHP_CLI_SERVER_WORKERS: 1
       SANCTUM_STATEFUL_DOMAINS: localhost:8080
       FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
       FCM_CREDENTIALS: ${FCM_CREDENTIALS:-}
@@ -42,7 +44,7 @@ services:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: theraconnect
     ports:
-      - '3306:3306'
+      - '3307:3306'
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -86,11 +88,7 @@ services:
     container_name: theraconnect-scheduler
     restart: unless-stopped
     working_dir: /var/www
-    command: >
-      sh -c "
-        echo '* * * * * cd /var/www && php artisan schedule:run >> /dev/null 2>&1' > /etc/crontabs/root
-        && crond -f -L /dev/stdout
-      "
+    command: sh -c "echo '* * * * * cd /var/www && php artisan schedule:run >> /dev/null 2>&1' > /etc/crontabs/root && crond -f -L /dev/stdout"
     volumes:
       - .:/var/www
       - /var/www/vendor

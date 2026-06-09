@@ -14,10 +14,9 @@ class GenerateAssignmentReminders implements ShouldQueue
 
     public function handle(NotificationService $service): void
     {
-        $tomorrow = now()->addDay();
-
-        $assignments = Assignment::whereDate('due_date', '<=', $tomorrow)
-            ->whereDate('due_date', '>', now())
+        // Assignments due within the next 24 hours (datetime window, not date-granular).
+        $assignments = Assignment::where('due_date', '>', now())
+            ->where('due_date', '<=', now()->addDay())
             ->whereDoesntHave('submissions', function ($q) {
                 $q->where('status', 'reviewed');
             })

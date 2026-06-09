@@ -21,11 +21,21 @@
     <a href="{{ route('assignments.index') }}" class="btn btn-outline-secondary btn-sm">Back to Assignments</a>
 </div>
 
-@if ($assignment->description)
+@if ($assignment->description || $assignment->hasAttachment())
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <strong>Description:</strong>
-            <p class="mb-0 mt-1">{{ $assignment->description }}</p>
+            @if ($assignment->description)
+                <strong>Description:</strong>
+                <p class="mb-0 mt-1">{{ $assignment->description }}</p>
+            @endif
+            @if ($assignment->hasAttachment())
+                <div class="@if ($assignment->description) mt-3 @endif">
+                    <strong>Worksheet:</strong>
+                    <a href="{{ route('assignments.worksheet', $assignment) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-primary ms-2">
+                        <i class="bi bi-download"></i> {{ $assignment->attachment_name ?? 'Download' }}
+                    </a>
+                </div>
+            @endif
         </div>
     </div>
 @endif
@@ -51,7 +61,7 @@
                         <td>{{ $submission->content ? Str::limit($submission->content, 80) : '—' }}</td>
                         <td>
                             @if ($submission->file_path)
-                                <a href="{{ asset('storage/' . $submission->file_path) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary">
+                                <a href="{{ route('submissions.file', $submission) }}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-download"></i> Download
                                 </a>
                             @else

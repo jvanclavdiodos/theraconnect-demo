@@ -67,6 +67,13 @@ class WebAppointmentController extends Controller
             'scheduled_at' => ['required', 'date', 'after:now'],
         ]);
 
+        if ($appointment->clinician_id
+            && ! $this->appointmentService->isSlotAvailable($appointment->clinician_id, $validated['scheduled_at'], $appointment->id)) {
+            return back()->withErrors([
+                'scheduled_at' => 'That time slot is already booked for this clinician.',
+            ]);
+        }
+
         $appointment = $this->appointmentService->reschedule($appointment, $validated['scheduled_at']);
 
         $notification = $this->notificationService->appointmentRescheduled(

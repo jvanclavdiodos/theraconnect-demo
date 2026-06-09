@@ -7,6 +7,8 @@ use App\Http\Resources\AssignmentResource;
 use App\Models\Assignment;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AssignmentController extends Controller
 {
@@ -42,5 +44,22 @@ class AssignmentController extends Controller
         return response()->json([
             'data' => new AssignmentResource($assignment),
         ]);
+    }
+
+    public function downloadWorksheet(int $id): StreamedResponse
+    {
+        $assignment = Assignment::findOrFail($id);
+
+        Gate::authorize('view', $assignment);
+
+        abort_unless(
+            $assignment->attachment_path && Storage::disk('local')->exists($assignment->attachment_path),
+            404
+        );
+
+        return Storage::disk('local')->download(
+            $assignment->attachment_path,
+            $assignment->attachment_name
+        );
     }
 }

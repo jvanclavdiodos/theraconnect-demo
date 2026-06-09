@@ -67,3 +67,4 @@ class NotificationApi {
       throw handleDioError(e);
     }
   }
+}

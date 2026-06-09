@@ -57,7 +57,9 @@ Route::prefix('v1')->group(function () {
             // Assignments
             Route::get('/assignments', [\App\Http\Controllers\Api\V1\AssignmentController::class, 'index']);
             Route::get('/assignments/{id}', [\App\Http\Controllers\Api\V1\AssignmentController::class, 'show']);
+            Route::get('/assignments/{id}/worksheet', [\App\Http\Controllers\Api\V1\AssignmentController::class, 'downloadWorksheet']);
             Route::post('/assignments/{id}/submit', [\App\Http\Controllers\Api\V1\SubmissionController::class, 'store']);
+            Route::get('/submissions/{id}/file', [\App\Http\Controllers\Api\V1\SubmissionController::class, 'downloadFile']);
         });
 
         // Chatbot (separate throttle: 30/min/user)

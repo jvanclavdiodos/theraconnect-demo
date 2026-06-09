@@ -32,6 +32,9 @@
                     <tr>
                         <td>
                             <strong>{{ $assignment->title }}</strong>
+                            @if ($assignment->hasAttachment())
+                                <i class="bi bi-paperclip text-muted" title="Has worksheet attachment"></i>
+                            @endif
                             @if ($assignment->description)
                                 <br><small class="text-muted">{{ Str::limit($assignment->description, 60) }}</small>
                             @endif

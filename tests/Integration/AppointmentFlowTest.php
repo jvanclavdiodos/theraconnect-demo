@@ -143,6 +143,34 @@ class AppointmentFlowTest extends TestCase
             ->assertStatus(409);
     }
 
+    public function test_double_booking_same_slot_is_rejected(): void
+    {
+        $clinician = $this->createClinician();
+        $patientA = $this->createPatient('dbl-a@test.com');
+        $patientB = $this->createPatient('dbl-b@test.com');
+
+        // Patient A books the 09:00 slot
+        $this->withHeaders($this->apiHeaders($this->getApiToken($patientA['user'])))
+            ->postJson('/api/v1/appointments', [
+                'requested_at' => '2026-06-20 09:00:00',
+                'mode' => 'in_person',
+                'clinician_id' => $clinician['clinician']->id,
+            ])
+            ->assertStatus(201);
+
+        // Patient B attempts the same clinician + slot
+        $this->withHeaders($this->apiHeaders($this->getApiToken($patientB['user'])))
+            ->postJson('/api/v1/appointments', [
+                'requested_at' => '2026-06-20 09:00:00',
+                'mode' => 'in_person',
+                'clinician_id' => $clinician['clinician']->id,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('errors.requested_at.0', 'That time slot is already booked.');
+
+        $this->assertEquals(1, \App\Models\Appointment::count());
+    }
+
     public function test_schedule_slots_contain_correct_data(): void
     {
         $clinician = $this->createClinician();

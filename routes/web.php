@@ -42,6 +42,8 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/assignments/create', [WebAssignmentController::class, 'create'])->name('assignments.create');
     Route::post('/assignments', [WebAssignmentController::class, 'store'])->name('assignments.store');
     Route::get('/assignments/{assignment}/submissions', [WebAssignmentController::class, 'submissions'])->name('assignments.submissions');
+    Route::get('/assignments/{assignment}/worksheet', [WebAssignmentController::class, 'downloadWorksheet'])->name('assignments.worksheet');
+    Route::get('/submissions/{submission}/file', [WebAssignmentController::class, 'downloadSubmission'])->name('submissions.file');
     Route::patch('/submissions/{submission}/review', [WebAssignmentController::class, 'review'])->name('submissions.review');
 
     // Chatbot content CRUD

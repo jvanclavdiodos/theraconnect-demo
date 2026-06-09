@@ -20,3 +20,4 @@ class ChatbotApi {
       throw handleDioError(e);
     }
   }
+}

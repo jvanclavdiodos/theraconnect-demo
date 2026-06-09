@@ -16,6 +16,12 @@ class DemoSeeder extends Seeder
 {
     public function run(): void
     {
+        // Idempotent: the Dockerfile runs `db:seed` on every container boot.
+        // If the demo data already exists, do nothing (avoids unique-email errors).
+        if (User::where('email', 'admin@theraconnect.test')->exists()) {
+            return;
+        }
+
         // ── Admin ──────────────────────────────────────────
         $admin = User::create([
             'name' => 'Admin User',

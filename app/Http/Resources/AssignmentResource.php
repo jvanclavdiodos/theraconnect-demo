@@ -18,6 +18,12 @@ class AssignmentResource extends JsonResource
             'patient_id' => $this->patient_id,
             'title' => $this->title,
             'description' => $this->description,
+            'attachment_name' => $this->attachment_name,
+            // Authenticated download route — worksheet is on the private disk and
+            // requires the patient's bearer token (handled by the Dio client).
+            'attachment_url' => $this->attachment_path
+                ? url('/api/v1/assignments/' . $this->id . '/worksheet')
+                : null,
             'due_date' => $this->due_date,
             'submission_status' => $this->when(
                 $this->relationLoaded('submissions') && $this->submissions->isNotEmpty(),

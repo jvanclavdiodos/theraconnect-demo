@@ -118,10 +118,7 @@ class DashboardScreen extends ConsumerWidget {
                     label: 'Chatbot',
                     value: 'Help',
                     color: Theme.of(context).colorScheme.primary,
-                    onTap: () {
-                      final shell = StatefulShellRoute.of(context);
-                      shell.goBranch(3);
-                    },
+                    onTap: () => context.go('/chatbot'),
                   ),
                 ),
               ],

@@ -16,7 +16,7 @@ class GenerateAppointmentReminders implements ShouldQueue
         $tomorrow = now()->addDay()->toDateString();
 
         $appointments = Appointment::whereDate('scheduled_at', $tomorrow)
-            ->where('status', 'approved')
+            ->whereIn('status', ['approved', 'rescheduled'])
             ->with('patient.user')
             ->get();
 

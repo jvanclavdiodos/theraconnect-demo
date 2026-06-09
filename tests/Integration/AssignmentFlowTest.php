@@ -4,6 +4,9 @@ namespace Tests\Integration;
 
 use App\Models\Assignment;
 use App\Models\Submission;
+use App\Services\AssignmentService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AssignmentFlowTest extends TestCase
@@ -117,6 +120,43 @@ class AssignmentFlowTest extends TestCase
         $this->assertDatabaseCount('assignment_submissions', 1);
     }
 
+    public function test_resubmission_after_review_is_blocked(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $token = $this->getApiToken($patient['user']);
+
+        $assignment = Assignment::create([
+            'clinician_id' => $clinician['clinician']->id,
+            'patient_id' => $patient['patient']->id,
+            'title' => 'Test Assignment',
+            'description' => 'Submit your response.',
+        ]);
+
+        // Patient submits, clinician reviews
+        $this->withHeaders($this->apiHeaders($token))
+            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+                'content' => 'First attempt.',
+            ])
+            ->assertStatus(201);
+
+        Submission::where('assignment_id', $assignment->id)
+            ->update(['status' => 'reviewed', 'reviewed_at' => now()]);
+
+        // Re-submission must be rejected and the review preserved
+        $this->withHeaders($this->apiHeaders($token))
+            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+                'content' => 'Trying to change it after review.',
+            ])
+            ->assertStatus(409);
+
+        $this->assertDatabaseHas('assignment_submissions', [
+            'assignment_id' => $assignment->id,
+            'status' => 'reviewed',
+            'content' => 'First attempt.',
+        ]);
+    }
+
     public function test_empty_submission_is_rejected(): void
     {
         $clinician = $this->createClinician();
@@ -135,5 +175,83 @@ class AssignmentFlowTest extends TestCase
                 'content' => '',
             ])
             ->assertStatus(422);
+    }
+
+    public function test_clinician_worksheet_stored_privately_and_exposed_to_owner(): void
+    {
+        Storage::fake('local');
+
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $token = $this->getApiToken($patient['user']);
+
+        // Clinician attaches a worksheet (exercise the service directly — web routes need a session).
+        $assignment = app(AssignmentService::class)->create(
+            [
+                'clinician_id' => $clinician['clinician']->id,
+                'patient_id' => $patient['patient']->id,
+                'title' => 'CBT Thought Record',
+            ],
+            UploadedFile::fake()->create('worksheet.pdf', 200, 'application/pdf'),
+        );
+
+        // File landed on the private disk under assignments/, original name recorded.
+        Storage::disk('local')->assertExists($assignment->attachment_path);
+        $this->assertStringStartsWith('assignments/', $assignment->attachment_path);
+        $this->assertSame('worksheet.pdf', $assignment->attachment_name);
+
+        // Patient sees an authenticated download URL in the API payload.
+        $this->withHeaders($this->apiHeaders($token))
+            ->getJson("/api/v1/assignments/{$assignment->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.attachment_name', 'worksheet.pdf')
+            ->assertJsonPath('data.attachment_url', url("/api/v1/assignments/{$assignment->id}/worksheet"));
+
+        // Owner can download it.
+        $this->withHeaders($this->apiHeaders($token))
+            ->get("/api/v1/assignments/{$assignment->id}/worksheet")
+            ->assertStatus(200)
+            ->assertDownload('worksheet.pdf');
+    }
+
+    public function test_patient_cannot_download_another_patients_worksheet(): void
+    {
+        Storage::fake('local');
+
+        $clinician = $this->createClinician();
+        $owner = $this->createPatient('owner@test.com');
+        $intruder = $this->createPatient('intruder@test.com');
+
+        $assignment = app(AssignmentService::class)->create(
+            [
+                'clinician_id' => $clinician['clinician']->id,
+                'patient_id' => $owner['patient']->id,
+                'title' => 'Private Worksheet',
+            ],
+            UploadedFile::fake()->create('worksheet.pdf', 50, 'application/pdf'),
+        );
+
+        $this->withHeaders($this->apiHeaders($this->getApiToken($intruder['user'])))
+            ->get("/api/v1/assignments/{$assignment->id}/worksheet")
+            ->assertStatus(403);
+    }
+
+    public function test_no_worksheet_returns_null_attachment_url(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $token = $this->getApiToken($patient['user']);
+
+        $assignment = Assignment::create([
+            'clinician_id' => $clinician['clinician']->id,
+            'patient_id' => $patient['patient']->id,
+            'title' => 'No attachment',
+        ]);
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->getJson("/api/v1/assignments/{$assignment->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.attachment_url', null)
+            ->assertJsonPath('data.attachment_name', null);
     }
 }

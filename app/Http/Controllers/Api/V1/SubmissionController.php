@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\SubmissionRequest;
 use App\Http\Resources\SubmissionResource;
 use App\Models\Assignment;
+use App\Models\Submission;
 use App\Services\AssignmentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class SubmissionController extends Controller
 {
@@ -28,6 +31,16 @@ class SubmissionController extends Controller
             return response()->json(['message' => 'Patient profile not found.'], 404);
         }
 
+        $existing = Submission::where('assignment_id', $id)
+            ->where('patient_id', $patient->id)
+            ->first();
+
+        if ($existing && $existing->status === 'reviewed') {
+            return response()->json([
+                'message' => 'This submission has already been reviewed and can no longer be changed.',
+            ], 409);
+        }
+
         $submission = $this->assignmentService->submit(
             $id,
             $patient->id,
@@ -38,5 +51,18 @@ class SubmissionController extends Controller
         return response()->json([
             'data' => new SubmissionResource($submission),
         ], 201);
+    }
+
+    public function downloadFile(int $id): StreamedResponse
+    {
+        $submission = Submission::findOrFail($id);
+
+        $patient = auth()->user()->patient;
+
+        // Ownership: a patient may only download their own submission file.
+        abort_unless($patient && $submission->patient_id === $patient->id, 403);
+        abort_unless($submission->file_path && Storage::disk('local')->exists($submission->file_path), 404);
+
+        return Storage::disk('local')->download($submission->file_path);
     }
 }

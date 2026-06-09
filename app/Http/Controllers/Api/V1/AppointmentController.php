@@ -52,6 +52,16 @@ class AppointmentController extends Controller
     {
         $patient = $this->getPatient();
 
+        if ($request->clinician_id
+            && ! $this->appointmentService->isSlotAvailable($request->clinician_id, $request->requested_at)) {
+            return response()->json([
+                'message' => 'That time slot is no longer available for the selected clinician.',
+                'errors' => [
+                    'requested_at' => ['That time slot is already booked.'],
+                ],
+            ], 422);
+        }
+
         $appointment = $this->appointmentService->create([
             'patient_id' => $patient->id,
             'clinician_id' => $request->clinician_id,

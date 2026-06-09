@@ -16,8 +16,15 @@ class Assignment extends Model
         'patient_id',
         'title',
         'description',
+        'attachment_path',
+        'attachment_name',
         'due_date',
     ];
+
+    public function hasAttachment(): bool
+    {
+        return ! empty($this->attachment_path);
+    }
 
     protected function casts(): array
     {
