@@ -101,6 +101,12 @@ class AuthNotifier
       state =
           (status: AuthState.unauthenticated, user: null, patient: null, error: e.userMessage);
       return e.userMessage;
+    } catch (e) {
+      // Any non-ApiError (parsing, secure storage, platform) must still reset
+      // the loading state, otherwise the sign-in spinner hangs forever.
+      final message = 'Unexpected error: $e';
+      state = (status: AuthState.unauthenticated, user: null, patient: null, error: message);
+      return message;
     }
   }
 
@@ -134,6 +140,12 @@ class AuthNotifier
       state =
           (status: AuthState.unauthenticated, user: null, patient: null, error: e.userMessage);
       return e.userMessage;
+    } catch (e) {
+      // Any non-ApiError (parsing, secure storage, platform) must still reset
+      // the loading state, otherwise the sign-up spinner hangs forever.
+      final message = 'Unexpected error: $e';
+      state = (status: AuthState.unauthenticated, user: null, patient: null, error: message);
+      return message;
     }
   }
 
