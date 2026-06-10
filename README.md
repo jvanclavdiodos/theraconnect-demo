@@ -100,6 +100,27 @@ The seeder creates realistic demo data for walkthroughs:
 
 Import `postman/TheraConnect_API_v1.postman_collection.json` for all 20 API endpoints with an 8-step end-to-end flow.
 
+## Deployment (Railway)
+
+A pilot/demo instance runs on Railway:
+
+- **Live API + dashboard:** https://theraconnect-demo-production.up.railway.app
+- **Health check:** https://theraconnect-demo-production.up.railway.app/api/v1/health
+- **Repo Railway deploys from:** `jvanclavdiodos/theraconnect-demo`
+- The Flutter app's API base URL lives in `theraconnect_flutter/lib/config/api_config.dart` (point it at the live URL, then `flutter build apk --release`).
+
+### How it deploys
+- Railway builds the root `Dockerfile` (configured by `railway.json`).
+- On boot the container runs `storage:link → migrate --force → db:seed` (seeder is idempotent) → `php artisan serve` on `$PORT`.
+- Environment variables are documented in **`.env.railway.example`** — set them in the Railway service's **Variables** tab. The `${{MySQL.*}}` references auto-fill from the Railway MySQL plugin. `bootstrap/app.php` trusts the Railway proxy so HTTPS + secure cookies work.
+
+### Pilot trade-offs (NOT production-hardened)
+- **Uploaded files are ephemeral** — submissions/worksheets reset on each redeploy (no volume/S3 yet).
+- **`QUEUE_CONNECTION=sync`** with no scheduler/cron — in-app notifications still write, but hourly/daily auto-reminders don't fire.
+- **Push (FCM) is disabled** — no Firebase credentials configured.
+- **Demo accounts use password `password`** — rotate before any real use.
+- Uses single-process `php artisan serve`, and migrations run on every boot — fine for one instance only.
+
 ## Testing
 
 ### PHPUnit
@@ -108,14 +129,14 @@ Import `postman/TheraConnect_API_v1.postman_collection.json` for all 20 API endp
 php artisan test
 ```
 
-**Test results (Phase 11): 38 passed, 148 assertions**
+**Test results: 43 passed, 167 assertions**
 
 | Suite | Tests | Status |
 |-------|-------|--------|
 | Unit | 1 | Pass |
 | Feature | 1 | Pass |
 | Integration (AppointmentFlow) | 7 | Pass |
-| Integration (AssignmentFlow) | 5 | Pass |
+| Integration (AssignmentFlow) | 10 | Pass |
 | Integration (AuthFlow) | 8 | Pass |
 | Integration (ChatbotFlow) | 5 | Pass |
 | Integration (EndToEndFlow) | 4 | Pass |
@@ -191,8 +212,10 @@ Import the following endpoints into your API client:
 | `GET` | `/api/v1/appointments/{id}` | Bearer | Single appointment with ownership check |
 | `DELETE` | `/api/v1/appointments/{id}` | Bearer | Cancel appointment (soft delete) |
 | `GET` | `/api/v1/assignments` | Bearer | Patient's assignments with submission status |
-| `GET` | `/api/v1/assignments/{id}` | Bearer | Single assignment with ownership check |
-| `POST` | `/api/v1/assignments/{id}/submit` | Bearer | Multipart `{content?, file?}` |
+| `GET` | `/api/v1/assignments/{id}` | Bearer | Single assignment (incl. `attachment_url`/`attachment_name`), ownership check |
+| `GET` | `/api/v1/assignments/{id}/worksheet` | Bearer | Download clinician's worksheet attachment (private disk, owner only) |
+| `POST` | `/api/v1/assignments/{id}/submit` | Bearer | Multipart `{content?, file?}`; blocked once reviewed |
+| `GET` | `/api/v1/submissions/{id}/file` | Bearer | Download own submission file (private disk, owner only) |
 | `GET` | `/api/v1/notifications` | Bearer | Patient's notifications (paginated) |
 | `POST` | `/api/v1/notifications/{id}/read` | Bearer | Mark notification as read |
 | `POST` | `/api/v1/device-token` | Bearer | Register FCM token `{token, platform}` |

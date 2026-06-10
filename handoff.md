@@ -7,6 +7,34 @@
 
 ---
 
+## Session 2 — Bug Fixes, Worksheet Attachments & Railway Deployment (June 10, 2026)
+
+**Repo:** `jvanclavdiodos/theraconnect-demo` · **Live:** https://theraconnect-demo-production.up.railway.app
+**Tests:** 43 passing, 167 assertions.
+
+### Correctness & security fixes
+- **Double-booking prevented** — `AppointmentService::isSlotAvailable()` now guards API booking and web reschedule (was unchecked).
+- **Admins can create assignments** — web create form has a clinician picker; `WebAssignmentController` resolves the author (clinician = self, admin = chosen). Previously admins were blocked.
+- **Submission files made private** — moved from the public disk to the private `local` disk, served via authenticated download routes (`/api/v1/submissions/{id}/file`, web `submissions.file`). Previously world-readable via `asset('storage/...')`.
+- **Reminders include rescheduled appointments**; assignment-deadline reminder uses a true 24h window.
+- **Re-submitting a reviewed assignment is blocked** (was silently reverting the review).
+
+### Feature — worksheet attachments
+- Clinicians attach a worksheet when creating an assignment (web, multipart, private disk).
+- Patients/staff download via authenticated routes; API exposes `attachment_url` + `attachment_name` on the assignment resource.
+- Migration: `2026_06_09_000000_add_attachment_to_assignments_table.php`.
+
+### Deployment (Railway, pilot)
+- Added `railway.json`, `.env.railway.example`; `bootstrap/app.php` trusts the proxy (`trustProxies(at: '*')`); `DemoSeeder` made idempotent (safe on per-boot `db:seed`).
+- Chosen trade-offs: ephemeral storage, `QUEUE_CONNECTION=sync`, no cron, FCM deferred. See README "Deployment (Railway)".
+
+### Flutter
+- API base URL pointed at the live Railway URL (`lib/config/api_config.dart`).
+- **Fixed infinite sign-in/up spinner** — `AuthNotifier.login()/register()` only caught `ApiError`; any other thrown error left the state stuck on `AuthState.loading`. Added a catch-all that resets state and surfaces the message.
+- Closing-brace fixes in the six `lib/services/api/*.dart` files and a dashboard nav fix (committed earlier).
+
+---
+
 ## What Was Built This Session
 
 ### Phase 1 — Project Scaffolding
