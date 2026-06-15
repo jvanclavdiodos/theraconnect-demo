@@ -105,7 +105,10 @@ class WebAssignmentController extends Controller
             404
         );
 
-        return Storage::disk('local')->download($submission->file_path);
+        return Storage::disk('local')->download(
+            $submission->file_path,
+            $submission->original_name
+        );
     }
 
     public function downloadWorksheet(Assignment $assignment): StreamedResponse

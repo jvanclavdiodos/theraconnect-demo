@@ -51,6 +51,13 @@
                             } }}">{{ ucfirst($appt->status) }}</span>
                         </td>
                         <td class="text-end">
+                            @if ($appt->mode === 'online' && $appt->meeting_link)
+                                <a href="{{ $appt->meeting_link }}" target="_blank" rel="noopener"
+                                   class="btn btn-sm btn-primary" title="Join video call">
+                                    <i class="bi bi-camera-video"></i>
+                                </a>
+                            @endif
+
                             @if ($appt->status === 'pending')
                                 <form action="{{ route('appointments.approve', $appt) }}" method="POST" class="d-inline">
                                     @csrf @method('PATCH')

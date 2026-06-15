@@ -50,8 +50,11 @@ class AssignmentService
             }
 
             // Private disk — submissions may contain sensitive patient content and
-            // are only reachable through an authenticated download route.
+            // are only reachable through an authenticated download route. The
+            // stored name is hashed (with a guessed extension), so keep the
+            // original client filename for correct downloads.
             $submissionData['file_path'] = $file->store('submissions', 'local');
+            $submissionData['original_name'] = $file->getClientOriginalName();
         }
 
         $submission = Submission::updateOrCreate(

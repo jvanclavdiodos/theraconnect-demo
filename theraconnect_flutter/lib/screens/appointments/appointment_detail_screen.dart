@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../providers/appointment_provider.dart';
 
 class AppointmentDetailScreen extends ConsumerWidget {
@@ -27,6 +27,9 @@ class AppointmentDetailScreen extends ConsumerWidget {
 
   Widget _buildContent(BuildContext context, WidgetRef ref, appointment) {
     final canCancel = appointment.status == 'pending' || appointment.status == 'approved';
+    final canJoin = appointment.mode == 'online' &&
+        appointment.meetingLink != null &&
+        (appointment.status == 'approved' || appointment.status == 'rescheduled');
 
     return Scaffold(
       appBar: AppBar(
@@ -61,6 +64,17 @@ class AppointmentDetailScreen extends ConsumerWidget {
               ),
             ),
           ),
+          if (canJoin) ...[
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.videocam),
+                label: const Text('Join Video Call'),
+                onPressed: () => _joinCall(context, appointment.meetingLink!),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
           Card(
             child: Padding(
@@ -72,7 +86,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
                   const Divider(),
                   _DetailRow(label: 'Clinician', value: appointment.clinicianName ?? 'Not assigned'),
                   _DetailRow(label: 'Mode', value: appointment.mode == 'online' ? 'Online' : 'In Person'),
-                  if (appointment.meetingLink != null) _DetailRow(label: 'Meeting Link', value: appointment.meetingLink!),
+                  if (appointment.meetingLink != null && !canJoin) _DetailRow(label: 'Meeting Link', value: appointment.meetingLink!),
                   if (appointment.reason != null) _DetailRow(label: 'Reason', value: appointment.reason!),
                   if (appointment.clinicNotes != null) _DetailRow(label: 'Notes', value: appointment.clinicNotes!),
                 ],
@@ -82,6 +96,16 @@ class AppointmentDetailScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _joinCall(BuildContext context, String url) async {
+    final uri = Uri.parse(url);
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open the video call.'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   Future<void> _cancel(BuildContext context, WidgetRef ref) async {

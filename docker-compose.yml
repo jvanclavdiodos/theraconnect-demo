@@ -12,6 +12,8 @@ services:
     volumes:
       - .:/var/www
       - /var/www/vendor
+      - ./.env.docker:/var/www/.env
+      - /var/www/bootstrap/cache
     ports:
       - '8080:8080'
     depends_on:
@@ -33,6 +35,8 @@ services:
       SANCTUM_STATEFUL_DOMAINS: localhost:8080
       FCM_PROJECT_ID: ${FCM_PROJECT_ID:-}
       FCM_CREDENTIALS: ${FCM_CREDENTIALS:-}
+      JITSI_BASE_URL: ${JITSI_BASE_URL:-https://meet.jit.si}
+      JITSI_ROOM_PREFIX: ${JITSI_ROOM_PREFIX:-TheraConnect}
     networks:
       - theraconnect
 
@@ -66,6 +70,8 @@ services:
     volumes:
       - .:/var/www
       - /var/www/vendor
+      - ./.env.docker:/var/www/.env
+      - /var/www/bootstrap/cache
     depends_on:
       mysql:
         condition: service_healthy
@@ -92,6 +98,8 @@ services:
     volumes:
       - .:/var/www
       - /var/www/vendor
+      - ./.env.docker:/var/www/.env
+      - /var/www/bootstrap/cache
     depends_on:
       mysql:
         condition: service_healthy

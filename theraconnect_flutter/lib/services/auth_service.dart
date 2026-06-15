@@ -9,7 +9,18 @@ class AuthService {
   }
 
   Future<String?> getToken() async {
-    return await _storage.read(key: _tokenKey);
+    try {
+      return await _storage.read(key: _tokenKey);
+    } catch (_) {
+      // The stored value can't be decrypted — e.g. the Android Keystore key
+      // changed across a reinstall (BadPaddingException / BAD_DECRYPT), which
+      // is common on some OEM ROMs. Wipe the corrupt entry so the app recovers
+      // (treats the user as logged out) instead of failing every request.
+      try {
+        await _storage.deleteAll();
+      } catch (_) {}
+      return null;
+    }
   }
 
   Future<void> clearToken() async {

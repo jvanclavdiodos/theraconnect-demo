@@ -38,7 +38,8 @@ class WebAppointmentController extends Controller
 
         $notification = $this->notificationService->appointmentApproved(
             $appointment->patient->user->id,
-            $appointment->scheduled_at->format('M d, Y h:i A')
+            $appointment->scheduled_at->format('M d, Y h:i A'),
+            $appointment->meeting_link
         );
 
         SendPushNotification::dispatch($notification->id)->afterCommit();
@@ -78,7 +79,8 @@ class WebAppointmentController extends Controller
 
         $notification = $this->notificationService->appointmentRescheduled(
             $appointment->patient->user->id,
-            $appointment->scheduled_at->format('M d, Y h:i A')
+            $appointment->scheduled_at->format('M d, Y h:i A'),
+            $appointment->meeting_link
         );
 
         SendPushNotification::dispatch($notification->id)->afterCommit();

@@ -40,4 +40,9 @@ return [
         'credentials_path' => env('FCM_CREDENTIALS'),
     ],
 
+    'jitsi' => [
+        'base_url' => env('JITSI_BASE_URL', 'https://meet.jit.si'),
+        'room_prefix' => env('JITSI_ROOM_PREFIX', 'TheraConnect'),
+    ],
+
 ];

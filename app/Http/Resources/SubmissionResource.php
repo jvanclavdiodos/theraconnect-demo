@@ -17,6 +17,7 @@ class SubmissionResource extends JsonResource
             // Authenticated download route — file is on the private disk and
             // requires the patient's bearer token (handled by the Dio client).
             'file_url' => $this->file_path ? url('/api/v1/submissions/' . $this->id . '/file') : null,
+            'file_name' => $this->original_name,
             'status' => $this->status,
             'submitted_at' => $this->submitted_at,
             'reviewed_at' => $this->reviewed_at,

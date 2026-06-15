@@ -14,6 +14,7 @@ class Submission extends Model
         'patient_id',
         'content',
         'file_path',
+        'original_name',
         'status',
         'submitted_at',
         'reviewed_at',

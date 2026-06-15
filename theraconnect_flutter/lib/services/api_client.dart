@@ -94,9 +94,15 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
-    final token = await _authService.getToken();
-    if (token != null) {
-      options.headers['Authorization'] = 'Bearer $token';
+    try {
+      final token = await _authService.getToken();
+      if (token != null) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
+    } catch (_) {
+      // Never let a token-read failure stall the request: a throw here would
+      // skip handler.next()/reject() entirely and hang the request forever
+      // (no timeout applies before the request starts). Proceed unauthenticated.
     }
     handler.next(options);
   }

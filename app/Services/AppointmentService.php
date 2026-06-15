@@ -8,6 +8,8 @@ use Carbon\Carbon;
 
 class AppointmentService
 {
+    public function __construct(private JitsiService $jitsi) {}
+
     public function getScheduleSlots(string $date): array
     {
         $slots = [];
@@ -91,6 +93,7 @@ class AppointmentService
         $appointment->update([
             'status' => 'approved',
             'scheduled_at' => $scheduledAt ?? $appointment->requested_at,
+            'meeting_link' => $this->resolveMeetingLink($appointment),
         ]);
 
         return $appointment->fresh();
@@ -108,9 +111,24 @@ class AppointmentService
         $appointment->update([
             'status' => 'rescheduled',
             'scheduled_at' => Carbon::parse($scheduledAt),
+            'meeting_link' => $this->resolveMeetingLink($appointment),
         ]);
 
         return $appointment->fresh();
+    }
+
+    /**
+     * Online appointments get a Jitsi room, generated once and kept stable
+     * across reschedules. In-person appointments never get a link.
+     */
+    private function resolveMeetingLink(Appointment $appointment): ?string
+    {
+        if ($appointment->mode !== 'online') {
+            return $appointment->meeting_link;
+        }
+
+        return $appointment->meeting_link
+            ?: $this->jitsi->generateMeetingLink($appointment->id);
     }
 
     private function generateTimeSlots(): array

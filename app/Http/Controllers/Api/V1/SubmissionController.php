@@ -63,6 +63,9 @@ class SubmissionController extends Controller
         abort_unless($patient && $submission->patient_id === $patient->id, 403);
         abort_unless($submission->file_path && Storage::disk('local')->exists($submission->file_path), 404);
 
-        return Storage::disk('local')->download($submission->file_path);
+        return Storage::disk('local')->download(
+            $submission->file_path,
+            $submission->original_name
+        );
     }
 }

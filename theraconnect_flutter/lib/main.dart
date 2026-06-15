@@ -47,19 +47,20 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
     final apiClient = ref.read(apiClientProvider);
     ref.read(authProvider.notifier).setApiClient(apiClient);
 
+    // checkAuth() flips auth state to authenticated when a saved token is
+    // valid; the ref.listen in build() then loads the user's data. Loading is
+    // driven off the auth transition so it also fires for interactive login —
+    // the old startup-only load left list screens spinning forever after a
+    // fresh sign-in (no token at launch).
     await ref.read(authProvider.notifier).checkAuth();
+  }
 
-    final authState = ref.read(authProvider);
-    if (authState.status == AuthState.authenticated) {
-      final loaders = [
-        ref.read(appointmentsProvider.notifier).loadAppointments(),
-        ref.read(assignmentsProvider.notifier).loadAssignments(),
-        ref.read(notificationsProvider.notifier).loadNotifications(),
-        ref.read(profileProvider.notifier).loadProfile(),
-        _initFcmIfAvailable(),
-      ];
-      await Future.wait(loaders);
-    }
+  void _loadUserData() {
+    ref.read(appointmentsProvider.notifier).loadAppointments();
+    ref.read(assignmentsProvider.notifier).loadAssignments();
+    ref.read(notificationsProvider.notifier).loadNotifications();
+    ref.read(profileProvider.notifier).loadProfile();
+    _initFcmIfAvailable();
   }
 
   Future<void> _initFcmIfAvailable() async {
@@ -76,6 +77,15 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
 
   @override
   Widget build(BuildContext context) {
+    // Load the user's data whenever they become authenticated — covers both
+    // app launch with a saved token (via checkAuth) and interactive login.
+    ref.listen(authProvider, (prev, next) {
+      if (prev?.status != AuthState.authenticated &&
+          next.status == AuthState.authenticated) {
+        _loadUserData();
+      }
+    });
+
     final router = ref.watch(routerProvider);
 
     return MaterialApp.router(

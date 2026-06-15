@@ -9,6 +9,7 @@ use App\Models\Notification;
 use App\Models\Patient;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\JitsiService;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -154,6 +155,18 @@ class DemoSeeder extends Seeder
             'mode' => 'online', 'status' => 'completed',
             'reason' => 'Couples session',
             'clinic_notes' => 'Good progress on communication goals.',
+        ]);
+
+        // Approved online — has a live Jitsi room (Join button shows out of the box)
+        $onlineApproved = Appointment::create([
+            'patient_id' => $p2->id, 'clinician_id' => $c2->id,
+            'requested_at' => $now->copy()->addDays(4)->setTime(15, 0),
+            'scheduled_at' => $now->copy()->addDays(4)->setTime(15, 0),
+            'mode' => 'online', 'status' => 'approved',
+            'reason' => 'Follow-up video consultation',
+        ]);
+        $onlineApproved->update([
+            'meeting_link' => app(JitsiService::class)->generateMeetingLink($onlineApproved->id),
         ]);
 
         // Rejected — was denied

@@ -18,14 +18,14 @@ class NotificationService
         ]);
     }
 
-    public function appointmentApproved(int $userId, string $scheduledAt): Notification
+    public function appointmentApproved(int $userId, string $scheduledAt, ?string $meetingLink = null): Notification
     {
         return $this->create(
             $userId,
             'appointment_approved',
             'Appointment Approved',
             "Your appointment on {$scheduledAt} is confirmed.",
-            null
+            $meetingLink ? ['meeting_link' => $meetingLink] : null
         );
     }
 
@@ -40,14 +40,14 @@ class NotificationService
         );
     }
 
-    public function appointmentRescheduled(int $userId, string $scheduledAt): Notification
+    public function appointmentRescheduled(int $userId, string $scheduledAt, ?string $meetingLink = null): Notification
     {
         return $this->create(
             $userId,
             'appointment_rescheduled',
             'Appointment Rescheduled',
             "Your appointment is now set for {$scheduledAt}.",
-            null
+            $meetingLink ? ['meeting_link' => $meetingLink] : null
         );
     }
 

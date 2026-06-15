@@ -60,7 +60,7 @@ class AssignmentListScreen extends ConsumerWidget {
                       ),
                     ),
                     title: Text(a.title),
-                    subtitle: Text(a.dueDate != null ? 'Due: $a.dueDate' : 'No due date'),
+                    subtitle: Text(a.dueDate != null ? 'Due: ${a.dueDate}' : 'No due date'),
                     trailing: Chip(
                       label: Text(
                         a.isReviewed ? 'Reviewed' : a.isSubmitted ? 'Submitted' : 'Pending',
