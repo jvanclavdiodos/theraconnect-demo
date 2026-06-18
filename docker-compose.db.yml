@@ -1,12 +1,16 @@
 version: '3.8'
 
+# Standalone MySQL for local PHP-native development (without the full app).
+# Sensitive password parameterized — set DB_PASSWORD in your shell or a local
+# .env file; defaults to "password" only for local-dev convenience.
+
 services:
   mysql:
     image: mysql:8.0
     container_name: theraconnect-local-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
       MYSQL_DATABASE: theraconnect_local
     ports:
       - '3307:3306'

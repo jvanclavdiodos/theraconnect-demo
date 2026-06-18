@@ -12,9 +12,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Railway (and most PaaS) terminate TLS at a reverse proxy and forward
-        // over HTTP. Trust the proxy so secure cookies, https URL generation,
-        // and the real client IP (used by rate limiters) work correctly.
+        // Trust all proxies: Railway (and most PaaS like Heroku, Render, Fly.io)
+        // terminate TLS at a reverse proxy and forward to the container over HTTP.
+        // Without this, secure-cookie session/CSRF logic would break and
+        // rate limiters would rate-limit on the proxy IP instead of real
+        // client IPs.
+        //
+        // SECURITY NOTE: trusting '*' is safe ONLY behind a PaaS proxy. If this
+        // app is ever directly exposed (no reverse proxy), restrict to the
+        // proxy's CIDR here (e.g. trustProxies(at: '10.0.0.0/8')) so a client
+        // cannot spoof X-Forwarded-* headers.
         $middleware->trustProxies(at: '*');
 
         $middleware->alias([
