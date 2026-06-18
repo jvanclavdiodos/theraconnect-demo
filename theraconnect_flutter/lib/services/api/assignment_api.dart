@@ -1,15 +1,17 @@
 import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../config/api_config.dart';
 import '../../models/assignment.dart';
+import '../../models/downloaded_file.dart';
 import '../../models/submission.dart';
 import '../api_client.dart';
 import '../api_error_handler.dart';
+import '../download_service.dart';
 
 class AssignmentApi {
   final ApiClient _client;
+  final DownloadService _downloads;
 
-  AssignmentApi(this._client);
+  AssignmentApi(this._client, this._downloads);
 
   Future<({List<Assignment> assignments, int currentPage, int lastPage, int total})>
       getAssignments({int page = 1}) async {
@@ -44,18 +46,21 @@ class AssignmentApi {
   }
 
   /// Downloads the clinician's worksheet for [assignmentId] through the
-  /// authenticated Dio client (the bearer token is attached by the interceptor),
-  /// saves it to the temp directory, and returns the local file path.
-  Future<String> downloadWorksheet(int assignmentId, String fileName) async {
+  /// authenticated Dio client (the bearer token is attached by the interceptor)
+  /// and persists it via [DownloadService]: a durable app-owned copy plus a
+  /// public Download/TheraConnect copy, recorded in the in-app Downloads index.
+  /// Returns the resulting [DownloadedFile].
+  Future<DownloadedFile> downloadWorksheet(
+    int assignmentId,
+    String fileName,
+    String title,
+  ) async {
     try {
-      final dir = await getTemporaryDirectory();
-      final safeName = fileName.replaceAll(RegExp(r'[\\/]+'), '_');
-      final savePath = '${dir.path}/$safeName';
-      await _client.dio.download(
-        '${ApiConfig.assignmentsEndpoint}/$assignmentId/worksheet',
-        savePath,
+      return await _downloads.downloadAndStore(
+        urlPath: '${ApiConfig.assignmentsEndpoint}/$assignmentId/worksheet',
+        fileName: fileName,
+        title: title,
       );
-      return savePath;
     } on DioException catch (e) {
       throw handleDioError(e);
     }

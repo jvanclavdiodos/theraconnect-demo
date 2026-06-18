@@ -5,6 +5,7 @@ import 'package:open_filex/open_filex.dart';
 import '../../models/assignment.dart';
 import '../../models/api_response.dart';
 import '../../providers/assignment_provider.dart';
+import '../../providers/download_provider.dart';
 
 class AssignmentDetailScreen extends ConsumerStatefulWidget {
   final int assignmentId;
@@ -26,10 +27,20 @@ class _AssignmentDetailScreenState
       final fileName = (a.attachmentName == null || a.attachmentName!.isEmpty)
           ? 'worksheet'
           : a.attachmentName!;
-      final path = await ref
+      final downloaded = await ref
           .read(assignmentApiProvider)
-          .downloadWorksheet(a.id, fileName);
-      final result = await OpenFilex.open(path);
+          .downloadWorksheet(a.id, fileName, a.title);
+      // Reflect the new file in the in-app Downloads list immediately.
+      ref.read(downloadsProvider.notifier).refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Saved to Downloads/TheraConnect'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      final result = await OpenFilex.open(downloaded.localPath);
       if (result.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -2,6 +2,11 @@
     package="com.theraconnect.app">
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Saving worksheets into the public Downloads/TheraConnect folder. Only
+         needed on Android <= 9; API 29+ writes to Downloads via MediaStore with
+         no permission. -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="28"/>
 
     <application
         android:label="TheraConnect"

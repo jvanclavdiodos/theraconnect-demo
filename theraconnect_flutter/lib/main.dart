@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:media_store_plus/media_store_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'providers/auth_provider.dart';
 import 'providers/appointment_provider.dart';
@@ -14,6 +15,13 @@ import 'router.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final prefs = await SharedPreferences.getInstance();
+
+  // Worksheets are saved into Download/TheraConnect via MediaStore. The plugin
+  // must be initialized once and the app folder set before any saveFile call.
+  MediaStore.appFolder = 'TheraConnect';
+  try {
+    await MediaStore.ensureInitialized();
+  } catch (_) {}
 
   try {
     await Firebase.initializeApp();
