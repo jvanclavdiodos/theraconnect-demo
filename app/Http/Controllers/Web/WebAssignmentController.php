@@ -12,6 +12,7 @@ use App\Services\AssignmentService;
 use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -61,21 +62,24 @@ class WebAssignmentController extends Controller
             $clinician = Clinician::with('user')->find($request->input('clinician_id'));
         }
 
-        $assignment = $this->assignmentService->create([
-            'clinician_id' => $clinician->id,
-            'patient_id' => $validated['patient_id'],
-            'title' => $validated['title'],
-            'description' => $validated['description'] ?? null,
-            'due_date' => $validated['due_date'] ?? null,
-        ], $request->file('attachment'));
+        $notification = DB::transaction(function () use ($validated, $request, $clinician) {
+            $assignment = $this->assignmentService->create([
+                'clinician_id' => $clinician->id,
+                'patient_id' => $validated['patient_id'],
+                'title' => $validated['title'],
+                'description' => $validated['description'] ?? null,
+                'due_date' => $validated['due_date'] ?? null,
+            ], $request->file('attachment'));
 
-        $patient = Patient::with('user')->find($validated['patient_id']);
-        $clinician->loadMissing('user');
-        $notification = $this->notificationService->assignmentCreated(
-            $patient->user->id,
-            $clinician->user->name,
-            $validated['title']
-        );
+            $patient = Patient::with('user')->find($validated['patient_id']);
+            $clinician->loadMissing('user');
+
+            return $this->notificationService->assignmentCreated(
+                $patient->user->id,
+                $clinician->user->name,
+                $validated['title']
+            );
+        });
 
         SendPushNotification::dispatch($notification->id)->afterCommit();
 

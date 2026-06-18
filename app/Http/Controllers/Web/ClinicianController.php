@@ -90,7 +90,18 @@ class ClinicianController extends Controller
 
     public function destroy(Clinician $clinician): RedirectResponse
     {
-        $clinician->delete();
+        // Soft-delete the related User too — otherwise the User row stays
+        // active: the email remains "taken" (blocks re-registration), the
+        // orphaned user can still authenticate, and the new-clinician form
+        // can't reuse the email. Both rows are soft-deletable so historical
+        // data is preserved; restore brings back both.
+        DB::transaction(function () use ($clinician) {
+            $clinician->delete();
+
+            if ($clinician->user) {
+                $clinician->user->delete();
+            }
+        });
 
         return redirect()->route('clinicians.index')
             ->with('status', 'Clinician deleted successfully.');
