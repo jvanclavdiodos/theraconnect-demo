@@ -4,10 +4,12 @@ import '../models/api_response.dart';
 import '../services/cache_service.dart';
 import '../services/api/assignment_api.dart';
 import 'auth_provider.dart';
+import 'download_provider.dart';
 
 final assignmentApiProvider = Provider<AssignmentApi>((ref) {
   final client = ref.watch(apiClientProvider);
-  return AssignmentApi(client);
+  final downloads = ref.watch(downloadServiceProvider);
+  return AssignmentApi(client, downloads);
 });
 
 class AssignmentNotifier extends StateNotifier<AsyncValue<List<Assignment>>> {

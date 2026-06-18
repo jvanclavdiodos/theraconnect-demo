@@ -17,6 +17,7 @@ import 'screens/chatbot/chatbot_screen.dart';
 import 'screens/notifications/notification_list_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
+import 'screens/downloads/downloads_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _authNotifier = ValueNotifier<bool>(false);
@@ -132,6 +133,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/notifications',
                 builder: (context, state) => const NotificationListScreen(),
+              ),
+              GoRoute(
+                path: '/downloads',
+                builder: (context, state) => const DownloadsScreen(),
               ),
             ],
           ),
