@@ -59,7 +59,7 @@ h1, h2, h3, h4, h5, h6, .h1, .h2, .h3 {
   letter-spacing: -0.02em;
 }
 
-a { color: var(--tc-teal); }
+a { color: var(--tc-teal); text-decoration: none; }
 a:hover { color: var(--tc-teal-dark); }
 
 /* ----------------------------------------------------------------- Sidebar */
