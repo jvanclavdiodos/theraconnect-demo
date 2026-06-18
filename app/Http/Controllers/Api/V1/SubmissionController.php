@@ -57,10 +57,12 @@ class SubmissionController extends Controller
     {
         $submission = Submission::findOrFail($id);
 
-        $patient = auth()->user()->patient;
-
         // Ownership: a patient may only download their own submission file.
-        abort_unless($patient && $submission->patient_id === $patient->id, 403);
+        // Replaces the prior inline `abort_unless($patient && ... === $patient->id)`
+        // with the SubmissionPolicy::view Gate, consistent with how the
+        // AppointmentController enforces ownership for appointment downloads.
+        Gate::authorize('view', $submission);
+
         abort_unless($submission->file_path && Storage::disk('local')->exists($submission->file_path), 404);
 
         return Storage::disk('local')->download(

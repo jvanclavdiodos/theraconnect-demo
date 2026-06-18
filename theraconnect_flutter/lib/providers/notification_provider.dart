@@ -40,11 +40,22 @@ class NotificationNotifier extends StateNotifier<AsyncValue<List<NotificationIte
     }
   }
 
-  Future<void> markRead(int id) async {
+  /// Marks a notification as read. Returns `null` on success, otherwise a
+  /// user-facing error message (caller should surface it via a SnackBar).
+  ///
+  /// Why a return value vs. throwing: this is fire-and-forget from the
+  /// notification list — bubbling an exception up to AsyncValue's `error`
+  /// state would replace the list with an error screen, which is too
+  /// disruptive for a single background tap. Callers can opt-in to surfacing
+  /// the error via the returned string.
+  Future<String?> markRead(int id) async {
     try {
       await _api.markRead(id);
       await loadNotifications();
-    } catch (_) {}
+      return null;
+    } catch (e) {
+      return ApiError.fromException(e).userMessage;
+    }
   }
 
   int get unreadCount {

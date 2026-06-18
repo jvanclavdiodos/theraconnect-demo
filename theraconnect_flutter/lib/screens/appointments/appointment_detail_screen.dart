@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/api_response.dart';
+import '../../models/appointment.dart';
 import '../../providers/appointment_provider.dart';
 
 class AppointmentDetailScreen extends ConsumerWidget {
@@ -20,12 +22,12 @@ class AppointmentDetailScreen extends ConsumerWidget {
       ),
       error: (e, _) => Scaffold(
         appBar: AppBar(title: const Text('Appointment')),
-        body: Center(child: Text('$e')),
+        body: Center(child: Text(ApiError.fromException(e).userMessage)),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, appointment) {
+  Widget _buildContent(BuildContext context, WidgetRef ref, Appointment appointment) {
     final canCancel = appointment.status == 'pending' || appointment.status == 'approved';
     final canJoin = appointment.mode == 'online' &&
         appointment.meetingLink != null &&

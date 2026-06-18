@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/api_response.dart';
 import '../../models/appointment.dart';
 import '../../providers/appointment_provider.dart';
 
@@ -85,7 +86,7 @@ class AppointmentListScreen extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (e, _) => Center(child: Text(ApiError.fromException(e).userMessage)),
         ),
       ),
     );

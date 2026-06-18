@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/api_response.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/appointment_provider.dart';
 import '../../providers/assignment_provider.dart';
@@ -17,6 +19,7 @@ class DashboardScreen extends ConsumerWidget {
     final notifications = ref.watch(notificationsProvider);
 
     final user = authState.user;
+    final l = AppLocalizations.of(context)!;
     final pendingAppointments =
         appointments.valueOrNull?.where((a) => a.status == 'pending' || a.status == 'approved').length ?? 0;
     final pendingAssignments =
@@ -125,7 +128,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Upcoming Appointments',
+              l.dashboardAppointmentsTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -140,11 +143,11 @@ class DashboardScreen extends ConsumerWidget {
                         children: [
                           Icon(Icons.event_busy, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           const SizedBox(height: 8),
-                          Text('No upcoming appointments', style: Theme.of(context).textTheme.bodyMedium),
+                          Text(l.dashboardNoAppointments, style: Theme.of(context).textTheme.bodyMedium),
                           const SizedBox(height: 8),
                           FilledButton.tonal(
                             onPressed: () => context.push('/schedule'),
-                            child: const Text('Book Appointment'),
+                            child: Text(l.dashboardBookAppointment),
                           ),
                         ],
                       ),
@@ -155,8 +158,8 @@ class DashboardScreen extends ConsumerWidget {
                   children: active.take(3).map((a) => Card(
                     child: ListTile(
                       leading: const Icon(Icons.event),
-                      title: Text(a.status == 'approved' ? 'Approved' : 'Pending'),
-                      subtitle: Text(a.scheduledAt ?? a.requestedAt ?? 'No date'),
+                      title: Text(a.status == 'approved' ? l.dashboardStatusApproved : l.dashboardStatusPending),
+                      subtitle: Text(a.scheduledAt ?? a.requestedAt ?? l.dashboardNoDate),
                       trailing: a.mode == 'online'
                           ? const Icon(Icons.videocam)
                           : const Icon(Icons.person),
@@ -168,7 +171,7 @@ class DashboardScreen extends ConsumerWidget {
               error: (e, _) => Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text('Failed to load: $e'),
+                  child: Text(ApiError.fromException(e).userMessage),
                 ),
               ),
             ),

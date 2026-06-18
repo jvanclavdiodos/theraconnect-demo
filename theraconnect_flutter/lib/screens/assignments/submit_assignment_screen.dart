@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:file_picker/file_picker.dart';
 import '../../models/api_response.dart';
+import '../../models/assignment.dart';
 import '../../providers/assignment_provider.dart';
 
 class SubmitAssignmentScreen extends ConsumerStatefulWidget {
@@ -82,12 +83,12 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
       ),
       error: (e, _) => Scaffold(
         appBar: AppBar(title: const Text('Submit Assignment')),
-        body: Center(child: Text('$e')),
+        body: Center(child: Text(ApiError.fromException(e).userMessage)),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, assignment) {
+  Widget _buildContent(BuildContext context, Assignment assignment) {
     return Scaffold(
       appBar: AppBar(title: const Text('Submit Assignment')),
       body: ListView(

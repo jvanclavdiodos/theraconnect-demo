@@ -121,7 +121,19 @@ class PatientController extends Controller
 
     public function destroy(Patient $patient): RedirectResponse
     {
-        $patient->delete();
+        // Soft-delete the related User too — otherwise the User row stays
+        // active: the email remains "taken" (blocks re-registration), the
+        // orphaned user can still authenticate (then 404s on getPatient()),
+        // and a fresh audit trail is broken. Both rows are soft-deletable
+        // (User & Patient models use SoftDeletes) so historical data is
+        // preserved; restore brings back both.
+        DB::transaction(function () use ($patient) {
+            $patient->delete();
+
+            if ($patient->user) {
+                $patient->user->delete();
+            }
+        });
 
         return redirect()->route('patients.index')
             ->with('status', 'Patient deleted successfully.');

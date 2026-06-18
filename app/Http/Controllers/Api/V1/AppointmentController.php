@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\SlotUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreAppointmentRequest;
 use App\Http\Resources\AppointmentResource;
@@ -21,6 +22,21 @@ class AppointmentController extends Controller
     public function schedules(Request $request): JsonResponse
     {
         $date = $request->query('date', now()->format('Y-m-d'));
+
+        // Validate the query param BEFORE Carbon::parse() throws an uncaught
+        // exception on garbage input (which would surface as a 500 to the
+        // patient). `date_format:Y-m-d` accepts the same shape the service
+        // expects and rejects anything else with a 422.
+        $validator = validator(['date' => $date], [
+            'date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'The date query parameter must be a valid date in YYYY-MM-DD format.',
+                'errors' => $validator->errors()->toArray(),
+            ], 422);
+        }
 
         $slots = $this->appointmentService->getScheduleSlots($date);
 
@@ -52,23 +68,22 @@ class AppointmentController extends Controller
     {
         $patient = $this->getPatient();
 
-        if ($request->clinician_id
-            && ! $this->appointmentService->isSlotAvailable($request->clinician_id, $request->requested_at)) {
+        try {
+            $appointment = $this->appointmentService->bookAppointment([
+                'patient_id' => $patient->id,
+                'clinician_id' => $request->clinician_id,
+                'requested_at' => $request->requested_at,
+                'mode' => $request->mode,
+                'reason' => $request->reason,
+            ]);
+        } catch (SlotUnavailableException $e) {
             return response()->json([
-                'message' => 'That time slot is no longer available for the selected clinician.',
+                'message' => $e->getMessage(),
                 'errors' => [
                     'requested_at' => ['That time slot is already booked.'],
                 ],
             ], 422);
         }
-
-        $appointment = $this->appointmentService->create([
-            'patient_id' => $patient->id,
-            'clinician_id' => $request->clinician_id,
-            'requested_at' => $request->requested_at,
-            'mode' => $request->mode,
-            'reason' => $request->reason,
-        ]);
 
         $appointment->load('clinician.user');
 

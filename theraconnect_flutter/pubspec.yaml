@@ -9,6 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
   flutter_riverpod: ^2.5.1
   go_router: ^14.2.7
   dio: ^5.7.0
@@ -30,3 +33,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Enables `flutter gen-l10n` to auto-generate the AppLocalizations class
+  # from lib/l10n/app_*.arb files. The generated code (app_localizations.dart
+  # + app_localizations_en.dart etc.) lands in lib/l10n/ — already covered
+  # by .gitignore on most projects; commit it so engines without gen-l10n
+  # (e.g. CI builds) don't need to regenerate.
+  generate: true
+

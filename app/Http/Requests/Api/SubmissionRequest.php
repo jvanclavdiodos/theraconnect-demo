@@ -15,7 +15,7 @@ class SubmissionRequest extends FormRequest
     {
         return [
             'content' => ['nullable', 'string'],
-            'file' => ['nullable', 'file', 'max:10240'],
+            'file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,txt,rtf,jpg,jpeg,png'],
         ];
     }
 
@@ -23,6 +23,7 @@ class SubmissionRequest extends FormRequest
     {
         return [
             'file.max' => 'The file must not be greater than 10 MB.',
+            'file.mimes' => 'The file must be a PDF, DOC, DOCX, TXT, RTF, JPG, or PNG.',
         ];
     }
 

@@ -2,6 +2,8 @@
 
 namespace Tests\Integration;
 
+use App\Models\Appointment;
+use App\Services\AppointmentService;
 use Tests\TestCase;
 
 class AppointmentFlowTest extends TestCase
@@ -14,7 +16,7 @@ class AppointmentFlowTest extends TestCase
 
         $response = $this->withHeaders($this->apiHeaders($token))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-06-10 09:00:00',
+                'requested_at' => '2030-12-31 09:00:00',
                 'mode' => 'in_person',
                 'reason' => 'Initial consultation',
                 'clinician_id' => $clinician['clinician']->id,
@@ -42,7 +44,7 @@ class AppointmentFlowTest extends TestCase
         // Book an appointment first
         $this->withHeaders($this->apiHeaders($token))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-06-10 10:00:00',
+                'requested_at' => '2030-12-31 10:00:00',
                 'mode' => 'online',
                 'clinician_id' => $clinician['clinician']->id,
             ]);
@@ -67,7 +69,7 @@ class AppointmentFlowTest extends TestCase
 
         $createResponse = $this->withHeaders($this->apiHeaders($tokenA))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-06-10 11:00:00',
+                'requested_at' => '2030-12-31 11:00:00',
                 'mode' => 'in_person',
                 'clinician_id' => $clinician['clinician']->id,
             ]);
@@ -99,7 +101,7 @@ class AppointmentFlowTest extends TestCase
 
         $create = $this->withHeaders($this->apiHeaders($token))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-06-10 14:00:00',
+                'requested_at' => '2030-12-31 14:00:00',
                 'mode' => 'in_person',
                 'clinician_id' => $clinician['clinician']->id,
             ]);
@@ -126,7 +128,7 @@ class AppointmentFlowTest extends TestCase
 
         $create = $this->withHeaders($this->apiHeaders($token))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-06-10 15:00:00',
+                'requested_at' => '2030-12-31 15:00:00',
                 'mode' => 'in_person',
                 'clinician_id' => $clinician['clinician']->id,
             ]);
@@ -178,7 +180,7 @@ class AppointmentFlowTest extends TestCase
         $token = $this->getApiToken($patient['user']);
 
         $response = $this->withHeaders($this->apiHeaders($token))
-            ->getJson('/api/v1/schedules?date=2026-06-10');
+            ->getJson('/api/v1/schedules?date=2030-12-31');
 
         $response->assertStatus(200)
             ->assertJsonCount(9, 'data');
@@ -200,14 +202,14 @@ class AppointmentFlowTest extends TestCase
         // Book the 09:00 slot
         $this->withHeaders($this->apiHeaders($token))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-06-10 09:00:00',
+                'requested_at' => '2030-12-31 09:00:00',
                 'mode' => 'in_person',
                 'clinician_id' => $clinician['clinician']->id,
             ]);
 
         // After booking one slot, total slots should remain 9 (all slots still listed, some unavailable)
         $response = $this->withHeaders($this->apiHeaders($token))
-            ->getJson('/api/v1/schedules?date=2026-06-10');
+            ->getJson('/api/v1/schedules?date=2030-12-31');
 
         $response->assertStatus(200)
             ->assertJsonCount(9, 'data');
@@ -215,5 +217,299 @@ class AppointmentFlowTest extends TestCase
         // At least one slot should be unavailable
         $hasUnavailable = collect($response->json('data'))->contains('available', false);
         $this->assertTrue($hasUnavailable, 'Expected at least one unavailable slot after booking');
+    }
+
+    /**
+     * `?date=` must be validated as YYYY-MM-DD BEFORE the service layer
+     * Carbon::parse()'s it — otherwise garbage input throws an uncaught
+     * exception and surfaces as an opaque 500.
+     */
+    public function test_schedules_rejects_bad_date_format(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $token = $this->getApiToken($patient['user']);
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->getJson('/api/v1/schedules?date=not-a-date')
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('date');
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->getJson('/api/v1/schedules?date=2030-06-15')  // valid ISO date
+            ->assertStatus(200)
+            ->assertJsonCount(9, 'data');
+    }
+
+    /**
+     * Verifies that AppointmentService::bookAppointment wraps the slot check +
+     * insert inside a DB transaction. Without the transaction, a throw from a
+     * post-INSERT hook would leave the row persisted (count = 1). With the
+     * transaction, the throw rolls back the INSERT (count = 0).
+     */
+    public function test_booking_is_atomic_on_post_create_hook_failure(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('atomic-book@test.com');
+        $token = $this->getApiToken($patient['user']);
+
+        Appointment::created(function () {
+            throw new \RuntimeException('simulated post-create failure');
+        });
+
+        try {
+            $response = $this->withHeaders($this->apiHeaders($token))
+                ->postJson('/api/v1/appointments', [
+                    'requested_at' => '2030-12-31 09:00:00',
+                    'mode' => 'in_person',
+                    'clinician_id' => $clinician['clinician']->id,
+                ]);
+
+            // The post-create hook aborts the request — Laravel's exception
+            // handler returns a server error response.
+            $this->assertGreaterThanOrEqual(
+                500,
+                $response->status(),
+                'Expected the post-create hook to abort the request with a server error.'
+            );
+        } finally {
+            Appointment::flushEventListeners();
+        }
+
+        // The critical assertion: the INSERT was rolled back, so no appointment
+        // row for this patient was persisted.
+        $this->assertEquals(0, Appointment::where('patient_id', $patient['patient']->id)->count());
+    }
+
+    /**
+     * Verifies that AppointmentService::reschedule wraps the slot check +
+     * UPDATE inside a DB transaction. If a post-UPDATE hook throws, the
+     * original appointment data must be preserved (UPDATE rolled back).
+     */
+    public function test_reschedule_is_atomic_on_post_update_hook_failure(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('atomic-resched@test.com');
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'scheduled_at' => '2030-12-31 09:00:00',
+            'mode' => 'in_person',
+            'status' => 'approved',
+        ]);
+
+        Appointment::updated(function () {
+            throw new \RuntimeException('simulated post-update failure');
+        });
+
+        try {
+            app(AppointmentService::class)->reschedule($appointment, '2030-12-31 14:00:00');
+            $this->fail('Expected the post-update hook to abort the reschedule.');
+        } catch (\RuntimeException $e) {
+            $this->assertStringContainsString('simulated post-update failure', $e->getMessage());
+        } finally {
+            Appointment::flushEventListeners();
+        }
+
+        // The UPDATE must have been rolled back: status is still 'approved'
+        // and scheduled_at still points at the original datetime.
+        $fresh = $appointment->fresh();
+        $this->assertEquals('approved', $fresh->status);
+        $this->assertEquals('2030-12-31 09:00:00', $fresh->scheduled_at->format('Y-m-d H:i:s'));
+    }
+
+    /**
+     * Slot-unavailability during reschedule should throw SlotUnavailableException
+     * (handled by the web controller to redirect back with errors). The service
+     * method itself enforces this inside the transaction.
+     */
+    public function test_reschedule_to_taken_slot_throws(): void
+    {
+        $clinician = $this->createClinician();
+        $patientA = $this->createPatient('rsched-a@test.com');
+        $patientB = $this->createPatient('rsched-b@test.com');
+
+        // Patient A holds an approved booking at 14:00 on 2026-07-01.
+        Appointment::create([
+            'patient_id' => $patientA['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2026-07-01 14:00:00',
+            'scheduled_at' => '2026-07-01 14:00:00',
+            'mode' => 'in_person',
+            'status' => 'approved',
+        ]);
+
+        // Patient B has an appointment that we'll try to reschedule to A's slot.
+        $b = Appointment::create([
+            'patient_id' => $patientB['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2026-07-01 10:00:00',
+            'scheduled_at' => '2026-07-01 10:00:00',
+            'mode' => 'in_person',
+            'status' => 'approved',
+        ]);
+
+        $this->expectException(\App\Exceptions\SlotUnavailableException::class);
+        app(AppointmentService::class)->reschedule($b, '2026-07-01 14:00:00');
+    }
+
+    /**
+     * Verifies the web controller wraps appointment approval + notification
+     * creation in a DB transaction. If the NotificationService throws (simulating
+     * a notification insert failure), the appointment UPDATE must roll back:
+     * status stays 'pending', no notification row, no push job dispatched.
+     */
+    public function test_web_approve_is_atomic_with_notification_creation(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('web-approve@test.com');
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'mode' => 'in_person',
+            'status' => 'pending',
+        ]);
+
+        // Swap NotificationService for a fake that throws on appointmentApproved.
+        $fakeNotif = $this->partialMock(\App\Services\NotificationService::class);
+        $fakeNotif->shouldReceive('appointmentApproved')
+            ->once()
+            ->andThrow(new \RuntimeException('notif insert failed'));
+
+        $this->app->instance(\App\Services\NotificationService::class, $fakeNotif);
+
+        // Admin approves via the web route (session-authenticated).
+        $admin = $this->createAdmin();
+
+        try {
+            $this->actingAs($admin, 'web')
+                ->patch("/appointments/{$appointment->id}/approve");
+        } catch (\RuntimeException $e) {
+            // The transaction re-throws — Laravel may convert to 500 response.
+        }
+
+        // Critical: appointment status must remain 'pending' (UPDATE rolled back)
+        $this->assertEquals('pending', $appointment->fresh()->status);
+
+        // And no notification row + no queued push job.
+        $this->assertEquals(0, \App\Models\Notification::where('user_id', $patient['user']->id)->count());
+        $this->assertEquals(0, \Illuminate\Support\Facades\DB::table('jobs')->count());
+    }
+
+    /**
+     * Verifies the web controller wraps assignment creation + notification in a
+     * DB transaction. If NotificationService throws, the assignment must roll
+     * back (no assignment row, no notification).
+     */
+    public function test_web_assignment_store_is_atomic_with_notification_creation(): void
+    {
+        $admin = $this->createAdmin();
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('web-assign@test.com');
+
+        $fakeNotif = $this->partialMock(\App\Services\NotificationService::class);
+        $fakeNotif->shouldReceive('assignmentCreated')
+            ->once()
+            ->andThrow(new \RuntimeException('notif insert failed'));
+
+        $this->app->instance(\App\Services\NotificationService::class, $fakeNotif);
+
+        try {
+            $this->actingAs($admin, 'web')
+                ->post('/assignments', [
+                    'patient_id' => $patient['patient']->id,
+                    'clinician_id' => $clinician['clinician']->id,
+                    'title' => 'Atomic Test Assignment',
+                    'description' => 'Should not persist on notif failure.',
+                    'due_date' => '2030-12-31',
+                ]);
+        } catch (\RuntimeException $e) {
+            // expected
+        }
+
+        $this->assertEquals(0, \App\Models\Assignment::where('title', 'Atomic Test Assignment')->count());
+        $this->assertEquals(0, \App\Models\Notification::where('user_id', $patient['user']->id)->count());
+        $this->assertEquals(0, \Illuminate\Support\Facades\DB::table('jobs')->count());
+    }
+
+    /**
+     * Patients may not cancel a `completed` appointment. Cancelling a
+     * finalized appointment would desync clinician reporting/analytics and
+     * flip a record that the care team considers closed.
+     */
+    public function test_patient_cannot_cancel_completed_appointment(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('cancel-completed@test.com');
+        $token = $this->getApiToken($patient['user']);
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'scheduled_at' => '2030-12-31 09:00:00',
+            'mode' => 'in_person',
+            'status' => 'completed',
+        ]);
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->deleteJson("/api/v1/appointments/{$appointment->id}")
+            ->assertStatus(403);
+
+        $this->assertEquals('completed', $appointment->fresh()->status);
+    }
+
+    /**
+     * Patients may not cancel a `rejected` appointment (terminal state — same
+     * reasoning as `completed`).
+     */
+    public function test_patient_cannot_cancel_rejected_appointment(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('cancel-rejected@test.com');
+        $token = $this->getApiToken($patient['user']);
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 10:00:00',
+            'mode' => 'in_person',
+            'status' => 'rejected',
+        ]);
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->deleteJson("/api/v1/appointments/{$appointment->id}")
+            ->assertStatus(403);
+
+        $this->assertEquals('rejected', $appointment->fresh()->status);
+    }
+
+    /**
+     * Patients may cancel a `cancelled` appointment — the controller's 409
+     * ("already cancelled") short-circuit is the expected response, NOT the
+     * policy's 403 (otherwise the existing test_double_cancel_returns_409
+     * regression test breaks).
+     */
+    public function test_patient_can_cancel_an_already_cancelled_appointment_for_409(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('cancel-cancelled@test.com');
+        $token = $this->getApiToken($patient['user']);
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 11:00:00',
+            'mode' => 'in_person',
+            'status' => 'cancelled',
+        ]);
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->deleteJson("/api/v1/appointments/{$appointment->id}")
+            ->assertStatus(409);
     }
 }

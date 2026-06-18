@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Exceptions\SlotUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Jobs\SendPushNotification;
 use App\Models\Appointment;
@@ -9,6 +10,7 @@ use App\Services\AppointmentService;
 use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class WebAppointmentController extends Controller
@@ -34,13 +36,15 @@ class WebAppointmentController extends Controller
 
     public function approve(Appointment $appointment): RedirectResponse
     {
-        $appointment = $this->appointmentService->approve($appointment);
+        $notification = DB::transaction(function () use ($appointment) {
+            $this->appointmentService->approve($appointment);
 
-        $notification = $this->notificationService->appointmentApproved(
-            $appointment->patient->user->id,
-            $appointment->scheduled_at->format('M d, Y h:i A'),
-            $appointment->meeting_link
-        );
+            return $this->notificationService->appointmentApproved(
+                $appointment->patient->user->id,
+                $appointment->scheduled_at->format('M d, Y h:i A'),
+                $appointment->meeting_link
+            );
+        });
 
         SendPushNotification::dispatch($notification->id)->afterCommit();
 
@@ -50,11 +54,13 @@ class WebAppointmentController extends Controller
 
     public function reject(Appointment $appointment): RedirectResponse
     {
-        $this->appointmentService->reject($appointment);
+        $notification = DB::transaction(function () use ($appointment) {
+            $this->appointmentService->reject($appointment);
 
-        $notification = $this->notificationService->appointmentRejected(
-            $appointment->patient->user->id
-        );
+            return $this->notificationService->appointmentRejected(
+                $appointment->patient->user->id
+            );
+        });
 
         SendPushNotification::dispatch($notification->id)->afterCommit();
 
@@ -68,20 +74,21 @@ class WebAppointmentController extends Controller
             'scheduled_at' => ['required', 'date', 'after:now'],
         ]);
 
-        if ($appointment->clinician_id
-            && ! $this->appointmentService->isSlotAvailable($appointment->clinician_id, $validated['scheduled_at'], $appointment->id)) {
+        try {
+            $notification = DB::transaction(function () use ($appointment, $validated) {
+                $appointment = $this->appointmentService->reschedule($appointment, $validated['scheduled_at']);
+
+                return $this->notificationService->appointmentRescheduled(
+                    $appointment->patient->user->id,
+                    $appointment->scheduled_at->format('M d, Y h:i A'),
+                    $appointment->meeting_link
+                );
+            });
+        } catch (SlotUnavailableException $e) {
             return back()->withErrors([
-                'scheduled_at' => 'That time slot is already booked for this clinician.',
+                'scheduled_at' => $e->getMessage(),
             ]);
         }
-
-        $appointment = $this->appointmentService->reschedule($appointment, $validated['scheduled_at']);
-
-        $notification = $this->notificationService->appointmentRescheduled(
-            $appointment->patient->user->id,
-            $appointment->scheduled_at->format('M d, Y h:i A'),
-            $appointment->meeting_link
-        );
 
         SendPushNotification::dispatch($notification->id)->afterCommit();
 

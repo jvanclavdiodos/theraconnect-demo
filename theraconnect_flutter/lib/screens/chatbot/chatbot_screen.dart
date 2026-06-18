@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/chatbot_message.dart';
 import '../../providers/chatbot_provider.dart';
 
@@ -16,20 +17,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   bool _sending = false;
 
   @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_scrollListener);
-  }
-
-  @override
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();
-  }
-
-  void _scrollListener() {
-    _scrollToBottom();
   }
 
   void _scrollToBottom() {
@@ -55,10 +46,24 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     final messages = ref.watch(chatbotProvider);
+    final l = AppLocalizations.of(context)!;
 
     ref.listen(chatbotProvider, (_, next) {
       if (next is AsyncData) {
-        setState(() => _sending = false);
+        // Reset _sending ONLY when the bot reply (or the error reply) has
+        // actually replaced the typing placeholder. The notifier emits
+        // AsyncValue.data([... , ChatMessage(text: '...', isUser: false)])
+        // immediately after sendMessage() is called (the placeholder for the
+        // typing animation) — if we reset _sending on every AsyncData, the
+        // send button gets re-enabled while the API request is still in
+        // flight. Infer the pending state by checking the last message's
+        // text against the well-known placeholder.
+        final messages = next.value ?? <ChatMessage>[];
+        final isStillTyping =
+            messages.isNotEmpty && messages.last.text == '...' && !messages.last.isUser;
+        if (!isStillTyping) {
+          setState(() => _sending = false);
+        }
         WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
       } else if (next is AsyncError) {
         setState(() => _sending = false);
@@ -69,11 +74,11 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chatbot'),
+        title: Text(l.chatbotTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            tooltip: 'Clear chat',
+            tooltip: l.chatbotClearTooltip,
             onPressed: () => ref.read(chatbotProvider.notifier).clearMessages(),
           ),
         ],
@@ -90,10 +95,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                             size: 64,
                             color: Theme.of(context).colorScheme.primary.withOpacity(0.4)),
                         const SizedBox(height: 16),
-                        Text('Ask me anything about the clinic',
+                        Text(l.chatbotEmptyPrompt,
                             style: Theme.of(context).textTheme.bodyLarge),
                         const SizedBox(height: 8),
-                        Text('Hours, location, appointments, and more',
+                        Text(l.chatbotEmptyHint,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                                 )),
@@ -144,10 +149,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                   Expanded(
                     child: TextField(
                       controller: _messageController,
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message...',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                      decoration: InputDecoration(
+                        hintText: l.chatbotInputHint,
+                        border: const OutlineInputBorder(),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
                       ),
                       textInputAction: TextInputAction.send,
                       enabled: !_sending,
