@@ -197,7 +197,7 @@ Invoke-RestMethod http://localhost:8080/api/v1/notifications -Headers @{Authoriz
 
 ```powershell
 php artisan test
-# 38 tests, 148 assertions — all green
+# 65 tests, 229 assertions — all green
 ```
 
 Walk through a test file: `tests\Integration\EndToEndFlowTest.php` — demonstrates full appointment lifecycle, assignment submission flow, and notification creation all in automated tests.

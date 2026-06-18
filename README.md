@@ -1,4 +1,4 @@
-# TheraConnect
+﻿# TheraConnect
 
 A three-tier clinic management system connecting patients, clinicians, and administrators. Patients use a Flutter mobile app (JSON API), while clinicians and admins use a server-rendered Blade dashboard.
 
@@ -29,8 +29,14 @@ A three-tier clinic management system connecting patients, clinicians, and admin
 | 9 | Web dashboard (all views + UI polish) | Done |
 | 10 | Flutter mobile app (all screens) | Done |
 | 11 | Integration & API wiring | Done |
-| 12 | System testing & usability | Pending |
-| 13 | Deployment & handoff | Pending |
+| 12 | System testing & usability | Partially done (automated suite green; SUS usability eval needs human participants) |
+| 13 | Deployment & handoff | Pilot live (Railway); hardened Dockerfile, S3 uploads, queue worker + scheduler templates |
+
+> **Security & ops hardening pass** (post-Phase 13): same-origin double-booking race fixed
+> (`lockForUpdate`), web controllers transactional, private/type-restricted uploads (S3-capable),
+> SRI on CDN tags, patient-only API `/login`, `AppointmentPolicy` blocks cancel of terminal
+> states, `SubmissionPolicy` view/delete via `Gate::authorize`, soft-deletes User on
+> Patient/Clinician delete, `NotificationResource`, composite-unique device tokens. See `handoff.md`.
 
 ## Prerequisites
 
@@ -47,23 +53,25 @@ Double-click `setup.bat` or run in PowerShell:
 
 ```powershell
 .\setup.ps1
+# To run migrate:fresh against a non-local DB host (refused by default):
+.\setup.ps1 -SkipLocalGuard
 ```
 
 This auto-installs dependencies, creates the database, runs migrations, and seeds data in ~90 seconds.
 
-### Manual setup
+### Manual setup (cross-platform)
 
-```powershell
+```bash
 # 1. Install PHP dependencies
 composer install
 
 # 2. Create your environment file
-copy .env.example .env
-php artisan key:generate
+cp .env.example .env && php artisan key:generate    # Windows cmd: copy .env.example .env
 
-# 3. Create the database (choose one)
-# Option A — via command line:
-mysql -u root -e "CREATE DATABASE theraconnect"
+# 3. Create the database (choose one):
+#    - CLI:  mysql -u root -e "CREATE DATABASE theraconnect"
+#    - Or Docker (DB only, nothing else on host):
+#      docker compose -f docker-compose.db.yml up -d   # MySQL on :3307
 
 # 4. Run migrations and seed with demo data
 php artisan migrate:fresh --seed
@@ -71,6 +79,8 @@ php artisan migrate:fresh --seed
 # 5. Start the dev server
 php artisan serve --port=8080
 ```
+
+> PowerShell 5+ accepts `cp`; on Windows `cmd.exe` use `copy` instead.
 
 Open **http://localhost:8080/login** and sign in with one of the demo accounts below.
 
@@ -110,38 +120,64 @@ A pilot/demo instance runs on Railway:
 - The Flutter app's API base URL lives in `theraconnect_flutter/lib/config/api_config.dart` (point it at the live URL, then `flutter build apk --release`).
 
 ### How it deploys
-- Railway builds the root `Dockerfile` (configured by `railway.json`).
-- On boot the container runs `storage:link → migrate --force → db:seed` (seeder is idempotent) → `php artisan serve` on `$PORT`.
-- Environment variables are documented in **`.env.railway.example`** — set them in the Railway service's **Variables** tab. The `${{MySQL.*}}` references auto-fill from the Railway MySQL plugin. `bootstrap/app.php` trusts the Railway proxy so HTTPS + secure cookies work.
+- Railway builds the root `Dockerfile` (configured by `railway.json`). The container runs as
+  **non-root `www-data`**, exposes a `HEALTHCHECK` probing `/api/v1/health`, and gates boot on
+  DB readiness (`until php artisan db:show …`) before running `migrate --force` →
+  `db:seed --force` (seeder is idempotent; **seed failures abort boot — no `|| true`**) →
+  `php artisan serve` on `$PORT`.
+- Environment variables are documented in **`.env.railway.example`** — set them in the Railway
+  service's **Variables** tab. The `${{MySQL.*}}` references auto-fill from the Railway MySQL
+  plugin. `bootstrap/app.php` trusts the Railway proxy so HTTPS + secure cookies work.
+
+### Persistent uploads (S3)
+Set `FILESYSTEM_DISK=s3` plus the `AWS_*` env vars (see `.env.railway.example`). Patient
+submissions and assignment worksheets are served **only** through authenticated download routes
+— the bucket must be **private** (block-public-access on). With no S3 creds, the app falls back
+to the private `local` disk (uploads reset on redeploy).
+
+### Auxiliary services (recommended)
+- **Queue worker** — deploy a second Railway service pointing at `railway.worker.json` (or use
+  the `queue-worker` service in `docker-compose.yml`). Runs
+  `php artisan queue:work --tries=3 --max-time=3600`. Required for `SendPushNotification` to
+  actually deliver (with `QUEUE_CONNECTION=database`).
+- **Scheduler** — deploy a third Railway service pointing at `railway.scheduler.json` (or the
+  `scheduler` compose service). Runs as a Railway Cron service firing
+  `php artisan schedule:run` every minute. Required for appointment/assignment reminders.
 
 ### Pilot trade-offs (NOT production-hardened)
-- **Uploaded files are ephemeral** — submissions/worksheets reset on each redeploy (no volume/S3 yet).
-- **`QUEUE_CONNECTION=sync`** with no scheduler/cron — in-app notifications still write, but hourly/daily auto-reminders don't fire.
-- **Push (FCM) is disabled** — no Firebase credentials configured.
+- Uses single-process `php artisan serve` for the app service — fine for a pilot; swap to
+  PHP-FPM + Nginx for prod.
+- **Push (FCM) optional** — no Firebase credentials configured by default. With creds set,
+  background delivery works; foreground display + tap-to-deeplink are deferred (need
+  `flutter_local_notifications`). In-app notifications always work.
 - **Demo accounts use password `password`** — rotate before any real use.
-- Uses single-process `php artisan serve`, and migrations run on every boot — fine for one instance only.
+- `queue-worker`/`scheduler` services exist as templates but are **not** auto-deployed on
+  Railway — create them manually per `railway.worker.json` / `railway.scheduler.json`.
 
 ## Testing
 
 ### PHPUnit
 
-```powershell
-php artisan test
+```bash
+php artisan test        # or: vendor/bin/phpunit
 ```
 
-**Test results: 43 passed, 167 assertions**
+Runs on an **in-memory SQLite** DB — no MySQL needed. **65 tests, 229 assertions, all green.**
 
 | Suite | Tests | Status |
 |-------|-------|--------|
-| Unit | 1 | Pass |
-| Feature | 1 | Pass |
-| Integration (AppointmentFlow) | 7 | Pass |
+| Integration (AppointmentFlow) | 9 | Pass |
 | Integration (AssignmentFlow) | 10 | Pass |
 | Integration (AuthFlow) | 8 | Pass |
 | Integration (ChatbotFlow) | 5 | Pass |
 | Integration (EndToEndFlow) | 4 | Pass |
 | Integration (NotificationFlow) | 6 | Pass |
 | Integration (Policy) | 1 | Pass |
+| Integration (WebProfileDelete) | 1 | Pass |
+| Integration (MeetingLink) | 3 | Pass |
+| Other | 18 | Pass |
+
+> The suite grows as fixes land — run `php artisan test` for the current count.
 
 ### Postman Collection
 
@@ -334,6 +370,3 @@ $base = "http://localhost:8080/api/v1"
 | S5 | CSRF on all web forms | `@csrf` in every form |
 | S6 | Delete confirmations | Alpine.js `confirm()` dialogs |
 | S7 | Role middleware is authoritative | Server-side, not Blade-only |
-
-#   t h e r a c o n n e c t  
- 
