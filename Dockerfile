@@ -26,11 +26,20 @@ WORKDIR /var/www
 
 # Layer cache: copy only manifest files first, so dependency install is cached
 # and is NOT invalidated by every source-code change.
+#
+# --no-scripts is REQUIRED here: composer's post-autoload-dump hook runs
+# `php artisan package:discover`, but at this layer only composer.json/.lock
+# exist — `artisan` and app/ haven't been copied yet, so the hook would fail
+# and abort the build. We defer the scripts until after the full source copy.
 COPY composer.json composer.lock /var/www/
-RUN composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader
+RUN composer install --no-interaction --prefer-dist --no-dev --optimize-autoloader --no-scripts
 
 # Now copy the rest of the application code.
 COPY . /var/www
+
+# Regenerate the optimized autoloader now that artisan + app/ are present, which
+# also runs the deferred post-autoload-dump scripts (php artisan package:discover).
+RUN composer dump-autoload --no-interaction --optimize --no-dev
 
 # Run the app as a non-root user (www-data). Container is internet-facing on
 # Railway, so maximum-blast-radius root execution is unacceptable even for a
