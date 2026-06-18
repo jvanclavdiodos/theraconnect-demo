@@ -56,29 +56,9 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
     CMD curl -fsS "http://127.0.0.1:${PORT:-8080}/api/v1/health" || exit 1
 
-# Boot flow:
-#   1. storage:link  — symlink public/storage → storage/app/public
-#   2. wait-for-db   — block until MySQL answers, then continue. Without this,
-#      on first deploy `migrate` runs before MySQL is ready and the container
-#      exits early — Railway may then exhaust its retry budget and leave the
-#      service down.
-#   3. migrate       — schema, fail-fast (no || true)
-#   4. db:seed       — idempotent (DemoSeeder early-returns if admin user
-#      already exists), no longer swallowed with `|| true`. A genuine seeder
-#      failure now aborts the boot instead of leaving a half-seeded DB.
-#   5. serve         — php artisan serve on $PORT (or 8080 locally)
-CMD sh -c "\
-    php artisan storage:link --force && \
-    ATTEMPTS=0; MAX_ATTEMPTS=30; \
-    until php artisan db:show > /dev/null 2>&1; do \
-        ATTEMPTS=\$((ATTEMPTS + 1)); \
-        if [ \"\$ATTEMPTS\" -ge \"\$MAX_ATTEMPTS\" ]; then \
-            echo \"Database not reachable after \$MAX_ATTEMPTS attempts (~60s); aborting boot.\"; \
-            exit 1; \
-        fi; \
-        echo \"Waiting for database... (\$ATTEMPTS/\$MAX_ATTEMPTS)\"; \
-        sleep 2; \
-    done && \
-    php artisan migrate --force && \
-    php artisan db:seed --force && \
-    php artisan serve --host=0.0.0.0 --port=${PORT:-8080}"
+# Boot flow lives in docker/entrypoint.sh (plain POSIX sh — easier to read and
+# free of nested-shell escaping). It: storage:link -> wait for the DB via a
+# lightweight PDO connect (bounded, ~60s) -> migrate --force -> db:seed --force
+# (idempotent) -> serve on $PORT. The PDO probe replaces `php artisan db:show`,
+# which needs the absent `intl` extension and failed against a non-empty DB.
+CMD ["sh", "/var/www/docker/entrypoint.sh"]
