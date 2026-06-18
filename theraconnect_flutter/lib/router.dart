@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,16 +21,33 @@ import 'screens/profile/edit_profile_screen.dart';
 import 'screens/downloads/downloads_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
-final _authNotifier = ValueNotifier<bool>(false);
+
+/// Bridges Riverpod's auth state changes to GoRouter's `refreshListenable`.
+///
+/// GoRouter expects a `Listenable`; when `notifyListeners` is called, it re-
+/// evaluates the redirect callback. The legacy pattern was a top-level global
+/// `ValueNotifier<bool>` that was *toggled* on every auth state change —
+/// fragile because (a) the toggle value carries no semantic meaning and
+/// (b) top-level globals outlive the router provider's lifetime.
+///
+/// This adapter is owned by `routerProvider`: each provider instance gets
+/// its own adapter + its own Riverpod subscription. Disposal of the provider
+/// also tears down the subscription (via Riverpod's ref.listen auto-unlisten),
+/// leaving no dangling listeners between HMR refreshes.
+class _GoRouterRefreshAuth extends ChangeNotifier {}
 
 final routerProvider = Provider<GoRouter>((ref) {
+  final refresh = _GoRouterRefreshAuth();
+
+  // Whenever auth state changes (login, logout, token expiry via
+  // _handleUnauthorized, etc.), tell GoRouter to re-run redirect.
   ref.listen(authProvider, (_, __) {
-    _authNotifier.value = !_authNotifier.value;
+    refresh.notifyListeners();
   });
 
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
-    refreshListenable: _authNotifier,
+    refreshListenable: refresh,
     initialLocation:
         ref.read(authProvider).status == AuthState.authenticated ? '/dashboard' : '/login',
     redirect: (context, state) {

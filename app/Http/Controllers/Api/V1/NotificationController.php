@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\NotificationResource;
 use App\Models\Notification;
 use Illuminate\Http\JsonResponse;
 
@@ -15,16 +16,7 @@ class NotificationController extends Controller
             ->paginate(20);
 
         return response()->json([
-            'data' => $notifications->map(fn ($n) => [
-                'id' => $n->id,
-                'type' => $n->type,
-                'title' => $n->title,
-                'body' => $n->body,
-                'data' => $n->data,
-                'read_at' => $n->read_at,
-                'sent_at' => $n->sent_at,
-                'created_at' => $n->created_at,
-            ]),
+            'data' => NotificationResource::collection($notifications),
             'meta' => [
                 'current_page' => $notifications->currentPage(),
                 'last_page' => $notifications->lastPage(),
@@ -41,16 +33,7 @@ class NotificationController extends Controller
         $notification->update(['read_at' => now()]);
 
         return response()->json([
-            'data' => [
-                'id' => $notification->id,
-                'type' => $notification->type,
-                'title' => $notification->title,
-                'body' => $notification->body,
-                'data' => $notification->data,
-                'read_at' => $notification->read_at,
-                'sent_at' => $notification->sent_at,
-                'created_at' => $notification->created_at,
-            ],
+            'data' => new NotificationResource($notification),
         ]);
     }
 }

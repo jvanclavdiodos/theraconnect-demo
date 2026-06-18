@@ -77,7 +77,7 @@ class _AssignmentDetailScreenState
       ),
       error: (e, _) => Scaffold(
         appBar: AppBar(title: const Text('Assignment')),
-        body: Center(child: Text('$e')),
+        body: Center(child: Text(ApiError.fromException(e).userMessage)),
       ),
     );
   }

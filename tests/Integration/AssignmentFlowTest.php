@@ -177,6 +177,36 @@ class AssignmentFlowTest extends TestCase
             ->assertStatus(422);
     }
 
+    /**
+     * API submission uploads must be restricted to a clinical allow-list
+     * (mirroring the web upload rule). A ".php" file must be rejected.
+     */
+    public function test_patient_cannot_upload_disallowed_file_type(): void
+    {
+        Storage::fake('local');
+
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $token = $this->getApiToken($patient['user']);
+
+        $assignment = Assignment::create([
+            'clinician_id' => $clinician['clinician']->id,
+            'patient_id' => $patient['patient']->id,
+            'title' => 'File Upload Test',
+            'description' => 'Upload your response.',
+        ]);
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+                'file' => UploadedFile::fake()->create('malicious.php', 1, 'application/x-php'),
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('file');
+
+        // Confirm nothing was persisted to the private disk.
+        $this->assertEquals(0, Submission::where('assignment_id', $assignment->id)->count());
+    }
+
     public function test_clinician_worksheet_stored_privately_and_exposed_to_owner(): void
     {
         Storage::fake('local');
@@ -253,5 +283,75 @@ class AssignmentFlowTest extends TestCase
             ->assertStatus(200)
             ->assertJsonPath('data.attachment_url', null)
             ->assertJsonPath('data.attachment_name', null);
+    }
+
+    /**
+     * Cross-patient submission file download must return 403 — the inline
+     * abort_unless was replaced with SubmissionPolicy::view via
+     * Gate::authorize(); this test verifies that gate-path actually fires.
+     */
+    public function test_patient_cannot_download_another_patients_submission_file(): void
+    {
+        Storage::fake('local');
+
+        $clinician = $this->createClinician();
+        $owner = $this->createPatient('sub-owner@test.com');
+        $intruder = $this->createPatient('sub-intruder@test.com');
+
+        $assignment = Assignment::create([
+            'clinician_id' => $clinician['clinician']->id,
+            'patient_id' => $owner['patient']->id,
+            'title' => 'Private Submission',
+        ]);
+
+        // Owner submits a file (exercise the service — the API requires a
+        // fixture file matching the SubmissionRequest mimes allowlist).
+        app(AssignmentService::class)->submit(
+            $assignment->id,
+            $owner['patient']->id,
+            null,
+            UploadedFile::fake()->create('evidence.pdf', 1, 'application/pdf'),
+        );
+
+        $submission = Submission::where('assignment_id', $assignment->id)->first();
+        $this->assertNotNull($submission, 'Owner submission should exist');
+        Storage::disk('local')->assertExists($submission->file_path);
+
+        // Intruder attempts to download the owner's submission file.
+        $this->withHeaders($this->apiHeaders($this->getApiToken($intruder['user'])))
+            ->get("/api/v1/submissions/{$submission->id}/file")
+            ->assertStatus(403);
+    }
+
+    /**
+     * Owner can download their own submission file (positive control for the
+     * test above — ensures the gate doesn't over-block).
+     */
+    public function test_owner_can_download_their_own_submission_file(): void
+    {
+        Storage::fake('local');
+
+        $clinician = $this->createClinician();
+        $owner = $this->createPatient('selfowner@test.com');
+
+        $assignment = Assignment::create([
+            'clinician_id' => $clinician['clinician']->id,
+            'patient_id' => $owner['patient']->id,
+            'title' => 'Self Download',
+        ]);
+
+        app(AssignmentService::class)->submit(
+            $assignment->id,
+            $owner['patient']->id,
+            null,
+            UploadedFile::fake()->create('mine.pdf', 1, 'application/pdf'),
+        );
+
+        $submission = Submission::where('assignment_id', $assignment->id)->first();
+
+        $this->withHeaders($this->apiHeaders($this->getApiToken($owner['user'])))
+            ->get("/api/v1/submissions/{$submission->id}/file")
+            ->assertStatus(200)
+            ->assertDownload('mine.pdf');
     }
 }
