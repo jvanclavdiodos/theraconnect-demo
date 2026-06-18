@@ -69,8 +69,14 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
 #   5. serve         — php artisan serve on $PORT (or 8080 locally)
 CMD sh -c "\
     php artisan storage:link --force && \
+    ATTEMPTS=0; MAX_ATTEMPTS=30; \
     until php artisan db:show > /dev/null 2>&1; do \
-        echo 'Waiting for database...'; \
+        ATTEMPTS=\$((ATTEMPTS + 1)); \
+        if [ \"\$ATTEMPTS\" -ge \"\$MAX_ATTEMPTS\" ]; then \
+            echo \"Database not reachable after \$MAX_ATTEMPTS attempts (~60s); aborting boot.\"; \
+            exit 1; \
+        fi; \
+        echo \"Waiting for database... (\$ATTEMPTS/\$MAX_ATTEMPTS)\"; \
         sleep 2; \
     done && \
     php artisan migrate --force && \
