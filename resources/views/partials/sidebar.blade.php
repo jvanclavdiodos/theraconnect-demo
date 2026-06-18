@@ -1,42 +1,89 @@
 @php
     $isActive = fn(string $route) => request()->routeIs($route) ? 'active' : '';
+    $role = auth()->check() ? auth()->user()->role : null;
+    $name = auth()->check() ? auth()->user()->name : '';
+    $initials = collect(explode(' ', trim($name)))
+        ->filter()
+        ->take(2)
+        ->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))
+        ->implode('');
+    $roleLabel = $role ? ucfirst($role) : '';
 @endphp
 
-<aside class="bg-dark text-white" id="sidebar-wrapper"
-       :class="{ 'open': sidebarOpen }">
-    <div class="sidebar-heading text-center py-3 border-bottom border-secondary d-flex justify-content-between align-items-center px-3">
-        <strong>{{ config('app.name', 'TheraConnect') }}</strong>
+<aside class="text-white" id="sidebar-wrapper" :class="{ 'open': sidebarOpen }">
+    <div class="sidebar-heading d-flex justify-content-between align-items-center">
+        <div class="tc-brand">
+            <span class="tc-logo"><i class="bi bi-activity"></i></span>
+            <div>
+                <div class="tc-brand-name">{{ config('app.name', 'TheraConnect') }}</div>
+                <div class="tc-brand-sub">Clinic Management</div>
+            </div>
+        </div>
         <button class="btn btn-sm btn-outline-light d-md-none" @click="sidebarOpen = false">
             <i class="bi bi-x-lg"></i>
         </button>
     </div>
-    <nav class="list-group list-group-flush">
+
+    <nav>
         @auth
-            <a href="{{ route('dashboard') }}" class="list-group-item list-group-item-action bg-dark text-white border-secondary {{ $isActive('dashboard') }}">
-                <i class="bi bi-speedometer2 me-2"></i> Dashboard
-            </a>
-            @if(in_array(auth()->user()->role, ['admin', 'clinician']))
-                <a href="{{ route('appointments.index') }}" class="list-group-item list-group-item-action bg-dark text-white border-secondary {{ $isActive('appointments.*') }}">
-                    <i class="bi bi-calendar-check me-2"></i> Appointments
+            {{-- Overview --}}
+            <div class="tc-nav-group">
+                <div class="tc-nav-group-label">Overview</div>
+                <a href="{{ route('dashboard') }}" class="tc-nav-item {{ $isActive('dashboard') }}">
+                    <i class="bi bi-grid-1x2"></i> <span>Dashboard</span>
+                    <i class="bi bi-chevron-right tc-nav-chevron"></i>
                 </a>
-                <a href="{{ route('patients.index') }}" class="list-group-item list-group-item-action bg-dark text-white border-secondary {{ $isActive('patients.*') }}">
-                    <i class="bi bi-people me-2"></i> Patients
-                </a>
-                <a href="{{ route('assignments.index') }}" class="list-group-item list-group-item-action bg-dark text-white border-secondary {{ $isActive('assignments.*') }}">
-                    <i class="bi bi-journal-check me-2"></i> Assignments
-                </a>
-                <a href="{{ route('chatbot-content.index') }}" class="list-group-item list-group-item-action bg-dark text-white border-secondary {{ $isActive('chatbot-content.*') }}">
-                    <i class="bi bi-robot me-2"></i> Chatbot Content
-                </a>
-                <a href="{{ route('notifications.logs') }}" class="list-group-item list-group-item-action bg-dark text-white border-secondary {{ $isActive('notifications.*') }}">
-                    <i class="bi bi-bell me-2"></i> Notification Logs
-                </a>
-            @endif
-            @if(auth()->user()->role === 'admin')
-                <a href="{{ route('clinicians.index') }}" class="list-group-item list-group-item-action bg-dark text-white border-secondary {{ $isActive('clinicians.*') }}">
-                    <i class="bi bi-person-badge me-2"></i> Clinicians
-                </a>
+            </div>
+
+            @if(in_array($role, ['admin', 'clinician']))
+                {{-- Clinical --}}
+                <div class="tc-nav-group">
+                    <div class="tc-nav-group-label">Clinical</div>
+                    <a href="{{ route('appointments.index') }}" class="tc-nav-item {{ $isActive('appointments.*') }}">
+                        <i class="bi bi-calendar-check"></i> <span>Appointments</span>
+                        <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                    </a>
+                    <a href="{{ route('assignments.index') }}" class="tc-nav-item {{ $isActive('assignments.*') }}">
+                        <i class="bi bi-clipboard-check"></i> <span>Assignments</span>
+                        <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                    </a>
+                    <a href="{{ route('patients.index') }}" class="tc-nav-item {{ $isActive('patients.*') }}">
+                        <i class="bi bi-people"></i> <span>Patients</span>
+                        <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                    </a>
+                </div>
+
+                {{-- Tools --}}
+                <div class="tc-nav-group">
+                    <div class="tc-nav-group-label">Tools</div>
+                    <a href="{{ route('chatbot-content.index') }}" class="tc-nav-item {{ $isActive('chatbot-content.*') }}">
+                        <i class="bi bi-robot"></i> <span>Chatbot Content</span>
+                        <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                    </a>
+                    <a href="{{ route('notifications.logs') }}" class="tc-nav-item {{ $isActive('notifications.*') }}">
+                        <i class="bi bi-bell"></i> <span>Notification Logs</span>
+                        <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                    </a>
+                    @if($role === 'admin')
+                        <a href="{{ route('clinicians.index') }}" class="tc-nav-item {{ $isActive('clinicians.*') }}">
+                            <i class="bi bi-person-badge"></i> <span>Clinicians</span>
+                            <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                        </a>
+                    @endif
+                </div>
             @endif
         @endauth
     </nav>
+
+    @auth
+        <div class="tc-sidebar-footer">
+            <div class="tc-user-chip">
+                <span class="tc-avatar">{{ $initials ?: 'U' }}</span>
+                <div class="overflow-hidden">
+                    <div class="tc-user-name text-truncate">{{ $name }}</div>
+                    <div class="tc-user-role">{{ $roleLabel }}</div>
+                </div>
+            </div>
+        </div>
+    @endauth
 </aside>

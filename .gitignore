@@ -24,6 +24,10 @@ yarn-error.log
 /.zed
 /composer.phar
 
+# Figma Make export + local extraction scratch (design reference only)
+/.makeextract
+*.make
+
 # Flutter
 theraconnect_flutter/.dart_tool/
 theraconnect_flutter/build/

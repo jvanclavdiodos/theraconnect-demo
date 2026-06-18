@@ -7,24 +7,32 @@
 @endsection
 
 @section('content')
-<h2>Appointments</h2>
+@php
+    $initials = fn($n) => collect(explode(' ', trim($n)))->filter()->take(2)
+        ->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
+    $filters = [
+        '' => 'All', 'pending' => 'Pending', 'approved' => 'Approved',
+        'rejected' => 'Rejected', 'completed' => 'Completed', 'cancelled' => 'Cancelled',
+    ];
+@endphp
 
-{{-- Filter tabs --}}
-<div class="mb-3">
-    <div class="btn-group btn-group-sm">
-        <a href="{{ route('appointments.index') }}" class="btn btn-outline-secondary {{ !request('status') ? 'active' : '' }}">All</a>
-        <a href="{{ route('appointments.index', ['status' => 'pending']) }}" class="btn btn-outline-warning {{ request('status') === 'pending' ? 'active' : '' }}">Pending</a>
-        <a href="{{ route('appointments.index', ['status' => 'approved']) }}" class="btn btn-outline-success {{ request('status') === 'approved' ? 'active' : '' }}">Approved</a>
-        <a href="{{ route('appointments.index', ['status' => 'rejected']) }}" class="btn btn-outline-danger {{ request('status') === 'rejected' ? 'active' : '' }}">Rejected</a>
-        <a href="{{ route('appointments.index', ['status' => 'completed']) }}" class="btn btn-outline-info {{ request('status') === 'completed' ? 'active' : '' }}">Completed</a>
-        <a href="{{ route('appointments.index', ['status' => 'cancelled']) }}" class="btn btn-outline-dark {{ request('status') === 'cancelled' ? 'active' : '' }}">Cancelled</a>
-    </div>
+<div class="mb-4">
+    <h1 class="tc-page-title">Appointments</h1>
+    <p class="tc-page-sub">Review, approve, and manage appointment requests.</p>
 </div>
 
-<div class="card shadow-sm">
+{{-- Filter pills --}}
+<div class="tc-filters mb-4">
+    @foreach ($filters as $key => $label)
+        <a href="{{ $key ? route('appointments.index', ['status' => $key]) : route('appointments.index') }}"
+           class="tc-filter {{ (request('status') ?? '') === $key ? 'active' : '' }}">{{ $label }}</a>
+    @endforeach
+</div>
+
+<div class="card">
     <div class="table-responsive">
         <table class="table table-hover mb-0">
-            <thead class="table-light">
+            <thead>
                 <tr>
                     <th>Patient</th>
                     <th>Clinician</th>
@@ -37,10 +45,19 @@
             <tbody>
                 @forelse ($appointments as $appt)
                     <tr>
-                        <td>{{ $appt->patient->user->name }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="tc-cell-avatar">{{ $initials($appt->patient->user->name) }}</span>
+                                <span class="fw-semibold">{{ $appt->patient->user->name }}</span>
+                            </div>
+                        </td>
                         <td>{{ $appt->clinician?->user?->name ?? '—' }}</td>
                         <td>{{ $appt->requested_at->format('M d, Y h:i A') }}</td>
-                        <td>{{ ucfirst($appt->mode) }}</td>
+                        <td>
+                            <span class="tc-mode {{ $appt->mode === 'online' ? 'online' : 'in-person' }}">
+                                {{ $appt->mode === 'online' ? 'Online' : 'In-Person' }}
+                            </span>
+                        </td>
                         <td>
                             <span class="badge bg-{{ match($appt->status) {
                                 'approved' => 'success',
@@ -85,9 +102,11 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <i class="bi bi-calendar-check text-muted" style="font-size: 3rem;"></i>
-                            <p class="text-muted mt-2 mb-3">No appointments found.</p>
+                        <td colspan="6">
+                            <div class="tc-empty">
+                                <div class="tc-empty-icon"><i class="bi bi-calendar-check"></i></div>
+                                <div>No appointments match this filter.</div>
+                            </div>
                         </td>
                     </tr>
                 @endforelse
