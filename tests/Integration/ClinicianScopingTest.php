@@ -177,13 +177,39 @@ class ClinicianScopingTest extends TestCase
     public function test_clinician_cannot_reach_admin_only_routes(): void
     {
         $a = $this->makeClinician('a@test.com', 'LIC-A');
+        $patientA = $this->makePatient('pa@test.com', 'Patient A', $a['clinician']->id);
 
-        // Patient record management is admin-only.
-        $this->actingAs($a['user'], 'web')->get('/patients/create')->assertForbidden();
+        // Editing an existing patient record is admin-only.
+        $this->actingAs($a['user'], 'web')->get("/patients/{$patientA->id}/edit")->assertForbidden();
         // Clinician management is admin-only.
         $this->actingAs($a['user'], 'web')->get('/clinicians')->assertForbidden();
         // Chatbot content + notification logs are admin-only.
         $this->actingAs($a['user'], 'web')->get('/chatbot-content')->assertForbidden();
         $this->actingAs($a['user'], 'web')->get('/notifications/logs')->assertForbidden();
+    }
+
+    public function test_clinician_can_add_patient_to_own_caseload(): void
+    {
+        $a = $this->makeClinician('a@test.com', 'LIC-A');
+
+        // The create form is reachable.
+        $this->actingAs($a['user'], 'web')->get('/patients/create')->assertOk();
+
+        // Creating a patient auto-assigns them to the acting clinician, even if
+        // a different clinician id is submitted (forced self-assignment).
+        $b = $this->makeClinician('b@test.com', 'LIC-B');
+        $this->actingAs($a['user'], 'web')->post('/patients', [
+            'name' => 'New Patient',
+            'email' => 'newp@test.com',
+            'password' => 'password123',
+            'assigned_clinician_id' => $b['clinician']->id, // attempt to assign to B
+        ])->assertRedirect(route('patients.index'));
+
+        $this->assertDatabaseHas('patients', [
+            'assigned_clinician_id' => $a['clinician']->id, // forced to A, not B
+        ]);
+
+        // And the new patient shows up in clinician A's scoped index.
+        $this->actingAs($a['user'], 'web')->get('/patients')->assertSee('New Patient');
     }
 }

@@ -43,6 +43,7 @@
                     <label for="emergency_contact" class="form-label">Emergency Contact</label>
                     <input type="text" id="emergency_contact" name="emergency_contact" class="form-control" value="{{ old('emergency_contact') }}">
                 </div>
+                @role('admin')
                 <div class="col-md-6">
                     <label for="assigned_clinician_id" class="form-label">Assigned Clinician</label>
                     <select id="assigned_clinician_id" name="assigned_clinician_id" class="form-select">
@@ -55,6 +56,11 @@
                     </select>
                     <small class="text-muted">The clinician who owns this patient's caseload.</small>
                 </div>
+                @else
+                <div class="col-md-6 d-flex align-items-end">
+                    <p class="text-muted mb-2"><i class="bi bi-person-check me-1"></i> This patient will be added to your caseload.</p>
+                </div>
+                @endrole
                 <div class="col-12">
                     <label for="address" class="form-label">Address</label>
                     <textarea id="address" name="address" class="form-control" rows="2">{{ old('address') }}</textarea>

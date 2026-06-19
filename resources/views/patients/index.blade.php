@@ -17,11 +17,9 @@
         <h1 class="tc-page-title">Patients</h1>
         <p class="tc-page-sub mb-0">Manage patient records and profiles.</p>
     </div>
-    @role('admin')
     <a href="{{ route('patients.create') }}" class="btn btn-primary">
         <i class="bi bi-plus-lg me-1"></i> Add Patient
     </a>
-    @endrole
 </div>
 
 {{-- Search --}}
@@ -81,11 +79,9 @@
                             <div class="tc-empty">
                                 <div class="tc-empty-icon"><i class="bi bi-people"></i></div>
                                 <div class="mb-3">No patients found.</div>
-                                @role('admin')
                                 <a href="{{ route('patients.create') }}" class="btn btn-primary btn-sm">
                                     <i class="bi bi-plus-lg me-1"></i> Add Your First Patient
                                 </a>
-                                @endrole
                             </div>
                         </td>
                     </tr>

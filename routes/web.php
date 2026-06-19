@@ -23,14 +23,18 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // ── Patients ─────────────────────────────────────────────────────────
+    // index/show/create/store are admin + clinician (clinician queries are
+    // scoped to their caseload; a clinician-created patient is auto-assigned to
+    // them). Editing/deleting an existing record stays admin-only. `create`
+    // is registered before the `{patient}` show route so it isn't swallowed.
+    Route::get('/patients', [PatientController::class, 'index'])->name('patients.index');
+    Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
+    Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
+    Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
+
     // ── Admin-only management ────────────────────────────────────────────
-    // Patient *records* are managed by admins (create/edit/delete + clinician
-    // assignment); clinicians get read-only access to their own caseload below.
-    // Registered before the shared `patients/{patient}` show route so
-    // `/patients/create` isn't swallowed by the wildcard.
     Route::middleware('role:admin')->group(function () {
-        Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
-        Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
         Route::get('/patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
         Route::match(['put', 'patch'], '/patients/{patient}', [PatientController::class, 'update'])->name('patients.update');
         Route::delete('/patients/{patient}', [PatientController::class, 'destroy'])->name('patients.destroy');
@@ -42,11 +46,6 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
         Route::resource('chatbot-content', ChatbotContentController::class)->except(['show']);
         Route::get('/notifications/logs', [NotificationLogController::class, 'index'])->name('notifications.logs');
     });
-
-    // ── Admin + clinician (clinician queries are scoped to their caseload) ──
-    // Patients — list + view (controller scopes clinicians to assigned patients)
-    Route::get('/patients', [PatientController::class, 'index'])->name('patients.index');
-    Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
 
     // Appointments — list + status changes (Gate::authorize('manage') per row)
     Route::get('/appointments', [WebAppointmentController::class, 'index'])->name('appointments.index');

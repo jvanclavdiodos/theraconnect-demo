@@ -61,7 +61,16 @@ class PatientController extends Controller
             'assigned_clinician_id' => ['nullable', 'exists:clinicians,id'],
         ]);
 
-        DB::transaction(function () use ($validated) {
+        // A clinician always onboards patients onto their OWN caseload — their
+        // clinician id is forced regardless of any submitted value, so they
+        // can't assign a patient to someone else. An admin chooses freely (the
+        // form's clinician dropdown), or leaves it unassigned.
+        $actor = $request->user();
+        $assignedClinicianId = ($actor->role === 'clinician' && $actor->clinician)
+            ? $actor->clinician->id
+            : ($validated['assigned_clinician_id'] ?? null);
+
+        DB::transaction(function () use ($validated, $assignedClinicianId) {
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -71,7 +80,7 @@ class PatientController extends Controller
 
             Patient::create([
                 'user_id' => $user->id,
-                'assigned_clinician_id' => $validated['assigned_clinician_id'] ?? null,
+                'assigned_clinician_id' => $assignedClinicianId,
                 'date_of_birth' => $validated['date_of_birth'] ?? null,
                 'contact_no' => $validated['contact_no'] ?? null,
                 'address' => $validated['address'] ?? null,
