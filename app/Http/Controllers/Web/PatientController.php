@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\Appointment;
+use App\Models\Clinician;
 use App\Models\Patient;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 
@@ -18,6 +20,12 @@ class PatientController extends Controller
     public function index(Request $request): View
     {
         $query = Patient::with('user')->latest();
+
+        // Clinicians see only patients assigned to them; admins see all.
+        $user = $request->user();
+        if ($user->role === 'clinician' && $user->clinician) {
+            $query->where('assigned_clinician_id', $user->clinician->id);
+        }
 
         if ($request->filled('search')) {
             $search = $request->search;
@@ -35,7 +43,9 @@ class PatientController extends Controller
 
     public function create(): View
     {
-        return view('patients.create');
+        $clinicians = Clinician::with('user')->orderBy('id')->get();
+
+        return view('patients.create', compact('clinicians'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -48,6 +58,7 @@ class PatientController extends Controller
             'contact_no' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
             'emergency_contact' => ['nullable', 'string', 'max:255'],
+            'assigned_clinician_id' => ['nullable', 'exists:clinicians,id'],
         ]);
 
         DB::transaction(function () use ($validated) {
@@ -60,6 +71,7 @@ class PatientController extends Controller
 
             Patient::create([
                 'user_id' => $user->id,
+                'assigned_clinician_id' => $validated['assigned_clinician_id'] ?? null,
                 'date_of_birth' => $validated['date_of_birth'] ?? null,
                 'contact_no' => $validated['contact_no'] ?? null,
                 'address' => $validated['address'] ?? null,
@@ -73,7 +85,9 @@ class PatientController extends Controller
 
     public function show(Patient $patient): View
     {
-        $patient->load('user');
+        Gate::authorize('view', $patient);
+
+        $patient->load('user', 'assignedClinician.user');
         $appointments = Appointment::where('patient_id', $patient->id)
             ->with('clinician.user')
             ->latest('requested_at')
@@ -86,8 +100,9 @@ class PatientController extends Controller
     public function edit(Patient $patient): View
     {
         $patient->load('user');
+        $clinicians = Clinician::with('user')->orderBy('id')->get();
 
-        return view('patients.edit', compact('patient'));
+        return view('patients.edit', compact('patient', 'clinicians'));
     }
 
     public function update(Request $request, Patient $patient): RedirectResponse
@@ -100,6 +115,7 @@ class PatientController extends Controller
             'address' => ['nullable', 'string', 'max:255'],
             'emergency_contact' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
+            'assigned_clinician_id' => ['nullable', 'exists:clinicians,id'],
         ]);
 
         $patient->user->update([
@@ -108,6 +124,7 @@ class PatientController extends Controller
         ]);
 
         $patient->update([
+            'assigned_clinician_id' => $validated['assigned_clinician_id'] ?? null,
             'date_of_birth' => $validated['date_of_birth'] ?? null,
             'contact_no' => $validated['contact_no'] ?? null,
             'address' => $validated['address'] ?? null,

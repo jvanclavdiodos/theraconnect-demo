@@ -67,6 +67,7 @@ class DemoSeeder extends Seeder
         ]);
         $p1 = Patient::create([
             'user_id' => $p1User->id,
+            'assigned_clinician_id' => $c1->id,
             'date_of_birth' => '1995-03-15',
             'contact_no' => '555-0200',
             'address' => '123 Main St, Springfield',
@@ -81,6 +82,7 @@ class DemoSeeder extends Seeder
         ]);
         $p2 = Patient::create([
             'user_id' => $p2User->id,
+            'assigned_clinician_id' => $c2->id,
             'date_of_birth' => '1988-07-22',
             'contact_no' => '555-0201',
             'address' => '456 Oak Ave, Springfield',
@@ -95,6 +97,7 @@ class DemoSeeder extends Seeder
         ]);
         $p3 = Patient::create([
             'user_id' => $p3User->id,
+            'assigned_clinician_id' => $c1->id,
             'date_of_birth' => '2000-11-08',
             'contact_no' => '555-0202',
             'address' => '789 Pine Rd, Springfield',

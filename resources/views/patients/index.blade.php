@@ -17,9 +17,11 @@
         <h1 class="tc-page-title">Patients</h1>
         <p class="tc-page-sub mb-0">Manage patient records and profiles.</p>
     </div>
+    @role('admin')
     <a href="{{ route('patients.create') }}" class="btn btn-primary">
         <i class="bi bi-plus-lg me-1"></i> Add Patient
     </a>
+    @endrole
 </div>
 
 {{-- Search --}}
@@ -61,6 +63,7 @@
                             <a href="{{ route('patients.show', $patient) }}" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-eye"></i>
                             </a>
+                            @role('admin')
                             <a href="{{ route('patients.edit', $patient) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i>
                             </a>
@@ -69,6 +72,7 @@
                                 @csrf @method('DELETE')
                                 <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                             </form>
+                            @endrole
                         </td>
                     </tr>
                 @empty
@@ -77,9 +81,11 @@
                             <div class="tc-empty">
                                 <div class="tc-empty-icon"><i class="bi bi-people"></i></div>
                                 <div class="mb-3">No patients found.</div>
+                                @role('admin')
                                 <a href="{{ route('patients.create') }}" class="btn btn-primary btn-sm">
                                     <i class="bi bi-plus-lg me-1"></i> Add Your First Patient
                                 </a>
+                                @endrole
                             </div>
                         </td>
                     </tr>

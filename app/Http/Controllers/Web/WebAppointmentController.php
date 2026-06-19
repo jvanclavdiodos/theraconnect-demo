@@ -11,6 +11,7 @@ use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class WebAppointmentController extends Controller
@@ -25,6 +26,12 @@ class WebAppointmentController extends Controller
         $query = Appointment::with(['patient.user', 'clinician.user'])
             ->latest('requested_at');
 
+        // Clinicians see only their own caseload; admins see every appointment.
+        $user = $request->user();
+        if ($user->role === 'clinician' && $user->clinician) {
+            $query->where('clinician_id', $user->clinician->id);
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -36,6 +43,8 @@ class WebAppointmentController extends Controller
 
     public function approve(Appointment $appointment): RedirectResponse
     {
+        Gate::authorize('manage', $appointment);
+
         $notification = DB::transaction(function () use ($appointment) {
             $this->appointmentService->approve($appointment);
 
@@ -54,6 +63,8 @@ class WebAppointmentController extends Controller
 
     public function reject(Appointment $appointment): RedirectResponse
     {
+        Gate::authorize('manage', $appointment);
+
         $notification = DB::transaction(function () use ($appointment) {
             $this->appointmentService->reject($appointment);
 
@@ -70,6 +81,8 @@ class WebAppointmentController extends Controller
 
     public function reschedule(Request $request, Appointment $appointment): RedirectResponse
     {
+        Gate::authorize('manage', $appointment);
+
         $validated = $request->validate([
             'scheduled_at' => ['required', 'date', 'after:now'],
         ]);

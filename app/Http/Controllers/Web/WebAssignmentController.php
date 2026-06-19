@@ -13,6 +13,7 @@ use App\Services\NotificationService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -24,19 +25,37 @@ class WebAssignmentController extends Controller
         private NotificationService $notificationService,
     ) {}
 
-    public function index(): View
+    public function index(Request $request): View
     {
-        $assignments = Assignment::with(['patient.user', 'clinician.user', 'submissions'])
-            ->latest()
-            ->paginate(20);
+        $query = Assignment::with(['patient.user', 'clinician.user', 'submissions'])
+            ->latest();
+
+        // Clinicians see only assignments they authored; admins see all.
+        $user = $request->user();
+        if ($user->role === 'clinician' && $user->clinician) {
+            $query->where('clinician_id', $user->clinician->id);
+        }
+
+        $assignments = $query->paginate(20);
 
         return view('assignments.index', compact('assignments'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
-        $patients = Patient::with('user')->orderBy('id')->get();
-        $clinicians = Clinician::with('user')->orderBy('id')->get();
+        $user = $request->user();
+
+        // A clinician may only assign to their own patients and is auto-attributed
+        // as the author (no clinician picker). An admin picks both.
+        if ($user->role === 'clinician' && $user->clinician) {
+            $patients = Patient::with('user')
+                ->where('assigned_clinician_id', $user->clinician->id)
+                ->orderBy('id')->get();
+            $clinicians = collect();
+        } else {
+            $patients = Patient::with('user')->orderBy('id')->get();
+            $clinicians = Clinician::with('user')->orderBy('id')->get();
+        }
 
         return view('assignments.create', compact('patients', 'clinicians'));
     }
@@ -61,6 +80,10 @@ class WebAssignmentController extends Controller
             ]);
             $clinician = Clinician::with('user')->find($request->input('clinician_id'));
         }
+
+        // A clinician may only create assignments for patients assigned to them
+        // (admins pass). Stops a crafted patient_id targeting another's patient.
+        Gate::authorize('view', Patient::findOrFail($validated['patient_id']));
 
         $notification = DB::transaction(function () use ($validated, $request, $clinician) {
             $assignment = $this->assignmentService->create([
@@ -89,6 +112,8 @@ class WebAssignmentController extends Controller
 
     public function submissions(Assignment $assignment): View
     {
+        Gate::authorize('manage', $assignment);
+
         $assignment->load('patient.user');
         $submissions = $assignment->submissions()->with('patient.user')->get();
 
@@ -97,6 +122,8 @@ class WebAssignmentController extends Controller
 
     public function review(Submission $submission): RedirectResponse
     {
+        Gate::authorize('review', $submission);
+
         $this->assignmentService->review($submission);
 
         return back()->with('status', 'Submission marked as reviewed.');
@@ -104,6 +131,8 @@ class WebAssignmentController extends Controller
 
     public function downloadSubmission(Submission $submission): StreamedResponse
     {
+        Gate::authorize('view', $submission);
+
         abort_unless(
             $submission->file_path && Storage::disk('local')->exists($submission->file_path),
             404
@@ -117,6 +146,8 @@ class WebAssignmentController extends Controller
 
     public function downloadWorksheet(Assignment $assignment): StreamedResponse
     {
+        Gate::authorize('manage', $assignment);
+
         abort_unless(
             $assignment->attachment_path && Storage::disk('local')->exists($assignment->attachment_path),
             404

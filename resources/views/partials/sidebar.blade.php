@@ -53,24 +53,24 @@
                     </a>
                 </div>
 
-                {{-- Tools --}}
-                <div class="tc-nav-group">
-                    <div class="tc-nav-group-label">Tools</div>
-                    <a href="{{ route('chatbot-content.index') }}" class="tc-nav-item {{ $isActive('chatbot-content.*') }}">
-                        <i class="bi bi-robot"></i> <span>Chatbot Content</span>
-                        <i class="bi bi-chevron-right tc-nav-chevron"></i>
-                    </a>
-                    <a href="{{ route('notifications.logs') }}" class="tc-nav-item {{ $isActive('notifications.*') }}">
-                        <i class="bi bi-bell"></i> <span>Notification Logs</span>
-                        <i class="bi bi-chevron-right tc-nav-chevron"></i>
-                    </a>
-                    @if($role === 'admin')
+                {{-- Tools — clinic administration (admin only) --}}
+                @if($role === 'admin')
+                    <div class="tc-nav-group">
+                        <div class="tc-nav-group-label">Administration</div>
                         <a href="{{ route('clinicians.index') }}" class="tc-nav-item {{ $isActive('clinicians.*') }}">
                             <i class="bi bi-person-badge"></i> <span>Clinicians</span>
                             <i class="bi bi-chevron-right tc-nav-chevron"></i>
                         </a>
-                    @endif
-                </div>
+                        <a href="{{ route('chatbot-content.index') }}" class="tc-nav-item {{ $isActive('chatbot-content.*') }}">
+                            <i class="bi bi-robot"></i> <span>Chatbot Content</span>
+                            <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                        </a>
+                        <a href="{{ route('notifications.logs') }}" class="tc-nav-item {{ $isActive('notifications.*') }}">
+                            <i class="bi bi-bell"></i> <span>Notification Logs</span>
+                            <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                        </a>
+                    </div>
+                @endif
             @endif
         @endauth
     </nav>

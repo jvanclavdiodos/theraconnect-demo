@@ -13,6 +13,7 @@ class Patient extends Model
 
     protected $fillable = [
         'user_id',
+        'assigned_clinician_id',
         'date_of_birth',
         'contact_no',
         'address',
@@ -30,6 +31,11 @@ class Patient extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function assignedClinician(): BelongsTo
+    {
+        return $this->belongsTo(Clinician::class, 'assigned_clinician_id');
     }
 
     public function appointments(): HasMany

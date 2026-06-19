@@ -21,11 +21,34 @@ class SubmissionPolicy
      */
     public function view(User $user, Submission $submission): bool
     {
-        if (in_array($user->role, ['admin', 'clinician'])) {
+        if ($user->role === 'admin') {
             return true;
         }
 
+        // A clinician may only view submissions for assignments they authored.
+        if ($user->role === 'clinician') {
+            return $user->clinician !== null
+                && $submission->assignment
+                && $submission->assignment->clinician_id === $user->clinician->id;
+        }
+
         return $user->patient !== null && $submission->patient_id === $user->patient->id;
+    }
+
+    /**
+     * Mark a submission reviewed (web dashboard). Admin any; clinician only
+     * submissions belonging to their own assignments.
+     */
+    public function review(User $user, Submission $submission): bool
+    {
+        if ($user->role === 'admin') {
+            return true;
+        }
+
+        return $user->role === 'clinician'
+            && $user->clinician !== null
+            && $submission->assignment
+            && $submission->assignment->clinician_id === $user->clinician->id;
     }
 
     /**
@@ -39,8 +62,15 @@ class SubmissionPolicy
      */
     public function delete(User $user, Submission $submission): bool
     {
-        if (in_array($user->role, ['admin', 'clinician'])) {
+        if ($user->role === 'admin') {
             return true;
+        }
+
+        // A clinician may delete only submissions for their own assignments.
+        if ($user->role === 'clinician') {
+            return $user->clinician !== null
+                && $submission->assignment
+                && $submission->assignment->clinician_id === $user->clinician->id;
         }
 
         // Patients may delete only their own submissions and only before
