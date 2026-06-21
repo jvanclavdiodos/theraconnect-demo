@@ -66,6 +66,23 @@ class MessageService
         return $message;
     }
 
+    /**
+     * Total unread messages for a clinician across all their conversations
+     * (one query; handles "never read"). Used for the sidebar badge.
+     */
+    public function clinicianUnreadCount(int $clinicianId, int $userId): int
+    {
+        return DB::table('messages')
+            ->join('conversations', 'messages.conversation_id', '=', 'conversations.id')
+            ->where('conversations.clinician_id', $clinicianId)
+            ->where('messages.sender_id', '!=', $userId)
+            ->where(function ($q) {
+                $q->whereNull('conversations.clinician_last_read_at')
+                  ->orWhereColumn('messages.created_at', '>', 'conversations.clinician_last_read_at');
+            })
+            ->count();
+    }
+
     /** Mark the conversation read up to now for the given participant. */
     public function markRead(Conversation $conversation, User $reader): void
     {

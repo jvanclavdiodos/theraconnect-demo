@@ -8,6 +8,12 @@
         ->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))
         ->implode('');
     $roleLabel = $role ? ucfirst($role) : '';
+
+    $msgUnread = 0;
+    if ($role === 'clinician' && auth()->user()->clinician) {
+        $msgUnread = app(\App\Services\MessageService::class)
+            ->clinicianUnreadCount(auth()->user()->clinician->id, auth()->id());
+    }
 @endphp
 
 <aside class="text-white" id="sidebar-wrapper" :class="{ 'open': sidebarOpen }">
@@ -51,6 +57,16 @@
                         <i class="bi bi-people"></i> <span>Patients</span>
                         <i class="bi bi-chevron-right tc-nav-chevron"></i>
                     </a>
+                    @if($role === 'clinician')
+                        <a href="{{ route('messages.index') }}" class="tc-nav-item {{ $isActive('messages.*') }}">
+                            <i class="bi bi-chat-dots"></i> <span>Messages</span>
+                            @if($msgUnread > 0)
+                                <span class="badge bg-primary rounded-pill ms-auto">{{ $msgUnread }}</span>
+                            @else
+                                <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                            @endif
+                        </a>
+                    @endif
                 </div>
 
                 {{-- Tools — clinic administration (admin only) --}}

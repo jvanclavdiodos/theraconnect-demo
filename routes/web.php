@@ -5,6 +5,7 @@ use App\Http\Controllers\Web\ChatbotContentController;
 use App\Http\Controllers\Web\ClinicianAvailabilityController;
 use App\Http\Controllers\Web\ClinicianController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\MessageController;
 use App\Http\Controllers\Web\NotificationLogController;
 use App\Http\Controllers\Web\PatientController;
 use App\Http\Controllers\Web\WebAppointmentController;
@@ -58,6 +59,12 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
         Route::get('/availability/day', [ClinicianAvailabilityController::class, 'day'])->name('availability.day');
         Route::post('/availability/toggle-day', [ClinicianAvailabilityController::class, 'toggleDay'])->name('availability.toggleDay');
         Route::post('/availability/toggle-hour', [ClinicianAvailabilityController::class, 'toggleHour'])->name('availability.toggleHour');
+
+        // Messaging (patient <-> assigned clinician). Participant-only per Policy.
+        Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
+        Route::post('/messages/open', [MessageController::class, 'open'])->name('messages.open');
+        Route::get('/messages/{conversation}', [MessageController::class, 'show'])->name('messages.show');
+        Route::post('/messages/{conversation}', [MessageController::class, 'store'])->name('messages.store');
     });
 
     // Appointments — list + status changes (Gate::authorize('manage') per row)
