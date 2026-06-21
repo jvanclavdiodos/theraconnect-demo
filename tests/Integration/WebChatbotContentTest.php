@@ -46,6 +46,34 @@ class WebChatbotContentTest extends TestCase
             ->assertSee("chatbot-content/{$intent->id}", false);
     }
 
+    public function test_create_page_renders(): void
+    {
+        $admin = $this->createAdmin();
+
+        $this->actingAs($admin, 'web')
+            ->get('/chatbot-content/create')
+            ->assertStatus(200);
+    }
+
+    public function test_store_creates_intent(): void
+    {
+        $admin = $this->createAdmin();
+
+        $this->actingAs($admin, 'web')
+            ->post('/chatbot-content', [
+                'intent_key' => 'new_intent',
+                'display_name' => 'New Intent',
+                'category' => 'faq',
+                'training_phrases' => ['hello there'],
+                'responses' => [
+                    ['response_text' => 'Hi!', 'priority' => 0],
+                ],
+            ])
+            ->assertRedirect(route('chatbot-content.index'));
+
+        $this->assertDatabaseHas('chatbot_intents', ['intent_key' => 'new_intent']);
+    }
+
     public function test_update_persists_changes(): void
     {
         $admin = $this->createAdmin();
