@@ -47,8 +47,12 @@ Route::prefix('v1')->group(function () {
             Route::get('/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'show']);
             Route::put('/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'update']);
 
+            // Clinicians (read-only list for clinician-first booking)
+            Route::get('/clinicians', [\App\Http\Controllers\Api\V1\ClinicianController::class, 'index']);
+
             // Appointments
             Route::get('/schedules', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'schedules']);
+            Route::get('/schedules/availability', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'availability']);
             Route::get('/appointments', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'index']);
             Route::post('/appointments', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'store']);
             Route::get('/appointments/{id}', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'show']);

@@ -10,7 +10,9 @@ use App\Http\Resources\ScheduleSlotResource;
 use App\Jobs\SendPushNotification;
 use App\Models\Appointment;
 use App\Services\AppointmentService;
+use App\Services\AvailabilityService;
 use App\Services\NotificationService;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -20,6 +22,7 @@ class AppointmentController extends Controller
     public function __construct(
         private AppointmentService $appointmentService,
         private NotificationService $notificationService,
+        private AvailabilityService $availabilityService,
     ) {}
 
     public function schedules(Request $request): JsonResponse
@@ -30,22 +33,68 @@ class AppointmentController extends Controller
         // exception on garbage input (which would surface as a 500 to the
         // patient). `date_format:Y-m-d` accepts the same shape the service
         // expects and rejects anything else with a 422.
-        $validator = validator(['date' => $date], [
+        $validator = validator([
+            'date' => $date,
+            'clinician_id' => $request->query('clinician_id'),
+        ], [
             'date' => ['required', 'date_format:Y-m-d'],
+            'clinician_id' => ['nullable', 'integer', 'exists:clinicians,id'],
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'message' => 'The date query parameter must be a valid date in YYYY-MM-DD format.',
+                'message' => 'Invalid query parameters.',
                 'errors' => $validator->errors()->toArray(),
             ], 422);
         }
 
-        $slots = $this->appointmentService->getScheduleSlots($date);
+        $slots = collect($this->appointmentService->getScheduleSlots($date));
+
+        // Clinician-first booking: optionally narrow to one clinician.
+        if ($clinicianId = $request->query('clinician_id')) {
+            $slots = $slots->where('clinician_id', (int) $clinicianId)->values();
+        }
 
         return response()->json([
-            'data' => ScheduleSlotResource::collection(collect($slots)),
+            'data' => ScheduleSlotResource::collection($slots),
         ]);
+    }
+
+    /**
+     * Dates a clinician has at least one open slot, across [from, to] — used to
+     * enable/disable days in the patient's booking calendar. Range is capped to
+     * keep the response and the per-day loop bounded.
+     */
+    public function availability(Request $request): JsonResponse
+    {
+        $validator = validator($request->all(), [
+            'clinician_id' => ['required', 'integer', 'exists:clinicians,id'],
+            'from' => ['required', 'date_format:Y-m-d'],
+            'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from'],
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Invalid query parameters.',
+                'errors' => $validator->errors()->toArray(),
+            ], 422);
+        }
+
+        $from = Carbon::parse($request->query('from'));
+        $to = Carbon::parse($request->query('to'));
+
+        // Cap the window to 62 days so a hostile request can't sweep years.
+        if ($from->diffInDays($to) > 62) {
+            $to = $from->copy()->addDays(62);
+        }
+
+        $dates = $this->availabilityService->openDates(
+            (int) $request->query('clinician_id'),
+            $from,
+            $to
+        );
+
+        return response()->json(['data' => $dates]);
     }
 
     public function index(): JsonResponse
