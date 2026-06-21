@@ -60,6 +60,12 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push('/notifications'),
                 ),
                 ListTile(
+                  leading: const Icon(Icons.description_outlined),
+                  title: const Text('Notes from your clinician'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/notes'),
+                ),
+                ListTile(
                   leading: const Icon(Icons.download),
                   title: const Text('Downloads'),
                   trailing: const Icon(Icons.chevron_right),

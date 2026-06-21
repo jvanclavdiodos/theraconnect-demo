@@ -20,6 +20,7 @@ import 'screens/messages/inbox_screen.dart';
 import 'screens/messages/message_thread_screen.dart';
 import 'screens/chatbot/chatbot_screen.dart';
 import 'screens/notifications/notification_list_screen.dart';
+import 'screens/notes/notes_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/downloads/downloads_screen.dart';
@@ -180,6 +181,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/notifications',
                 builder: (context, state) => const NotificationListScreen(),
+              ),
+              GoRoute(
+                path: '/notes',
+                builder: (context, state) => const NotesScreen(),
               ),
               GoRoute(
                 path: '/downloads',
