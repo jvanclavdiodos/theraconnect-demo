@@ -19,7 +19,11 @@ class AppointmentResource extends JsonResource
             'requested_at' => $this->requested_at,
             'scheduled_at' => $this->scheduled_at,
             'mode' => $this->mode,
-            'meeting_link' => $this->meeting_link,
+            // Online meeting links expire 5h after the appointment; once expired
+            // the URL is no longer sent to the client.
+            'meeting_link' => $this->meetingLinkActive() ? $this->meeting_link : null,
+            'meeting_link_active' => $this->meetingLinkActive(),
+            'meeting_link_expires_at' => $this->meetingLinkExpiresAt(),
             'status' => $this->status,
             'reason' => $this->reason,
             'clinic_notes' => $this->when(

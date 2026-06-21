@@ -68,11 +68,15 @@
                             } }}">{{ ucfirst($appt->status) }}</span>
                         </td>
                         <td class="text-end">
-                            @if ($appt->mode === 'online' && $appt->meeting_link)
+                            @if ($appt->meetingLinkActive())
                                 <a href="{{ $appt->meeting_link }}" target="_blank" rel="noopener"
                                    class="btn btn-sm btn-primary" title="Join video call">
                                     <i class="bi bi-camera-video"></i>
                                 </a>
+                            @elseif ($appt->mode === 'online' && $appt->meeting_link && optional($appt->meetingLinkExpiresAt())->isPast())
+                                <span class="badge bg-secondary" title="Link expired {{ $appt->meetingLinkExpiresAt()->diffForHumans() }}">
+                                    <i class="bi bi-camera-video-off"></i> Link expired
+                                </span>
                             @endif
 
                             @if ($appt->status === 'pending')

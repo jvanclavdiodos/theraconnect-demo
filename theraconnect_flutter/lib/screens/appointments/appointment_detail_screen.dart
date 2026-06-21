@@ -29,9 +29,9 @@ class AppointmentDetailScreen extends ConsumerWidget {
 
   Widget _buildContent(BuildContext context, WidgetRef ref, Appointment appointment) {
     final canCancel = appointment.status == 'pending' || appointment.status == 'approved';
-    final canJoin = appointment.mode == 'online' &&
-        appointment.meetingLink != null &&
-        (appointment.status == 'approved' || appointment.status == 'rescheduled');
+    // Server gates the link: meeting_link is only present (and active) within 5h
+    // of the appointment; expired online links are dropped to null.
+    final canJoin = appointment.meetingLinkActive && appointment.meetingLink != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -74,6 +74,21 @@ class AppointmentDetailScreen extends ConsumerWidget {
                 icon: const Icon(Icons.videocam),
                 label: const Text('Join Video Call'),
                 onPressed: () => _joinCall(context, appointment.meetingLink!),
+              ),
+            ),
+          ] else if (appointment.meetingLinkExpired) ...[
+            const SizedBox(height: 16),
+            Card(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.videocam_off_outlined),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('This meeting link has expired.')),
+                  ],
+                ),
               ),
             ),
           ],

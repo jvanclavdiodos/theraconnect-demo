@@ -43,6 +43,70 @@ class MeetingLinkTest extends TestCase
         $this->assertNull($approved->meeting_link);
     }
 
+    public function test_meeting_link_active_within_ttl_and_expires_after(): void
+    {
+        $appointment = $this->makeAppointment('online');
+        $approved = app(AppointmentService::class)->approve($appointment, now()->subHour()->toDateTimeString());
+
+        // Scheduled 1h ago → within the 5h window → active.
+        $this->assertTrue($approved->meetingLinkActive());
+        $this->assertEqualsWithDelta(
+            now()->addHours(4)->timestamp,
+            $approved->meetingLinkExpiresAt()->timestamp,
+            60
+        );
+
+        // Move scheduled time to 6h ago → past the 5h window → expired.
+        $approved->update(['scheduled_at' => now()->subHours(6)]);
+        $this->assertFalse($approved->fresh()->meetingLinkActive());
+    }
+
+    public function test_resource_hides_expired_meeting_link(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $patient['patient']->update(['assigned_clinician_id' => $clinician['clinician']->id]);
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => now()->subHours(6),
+            'scheduled_at' => now()->subHours(6),
+            'mode' => 'online',
+            'meeting_link' => 'https://meet.jit.si/TheraConnect-1-abc',
+            'status' => 'approved',
+        ]);
+
+        $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
+            ->getJson("/api/v1/appointments/{$appointment->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.meeting_link', null)
+            ->assertJsonPath('data.meeting_link_active', false);
+    }
+
+    public function test_resource_exposes_active_meeting_link(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $patient['patient']->update(['assigned_clinician_id' => $clinician['clinician']->id]);
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => now()->addHour(),
+            'scheduled_at' => now()->addHour(),
+            'mode' => 'online',
+            'meeting_link' => 'https://meet.jit.si/TheraConnect-1-abc',
+            'status' => 'approved',
+        ]);
+
+        $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
+            ->getJson("/api/v1/appointments/{$appointment->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.meeting_link', 'https://meet.jit.si/TheraConnect-1-abc')
+            ->assertJsonPath('data.meeting_link_active', true);
+    }
+
     public function test_reschedule_keeps_the_same_online_room(): void
     {
         $service = app(AppointmentService::class);
