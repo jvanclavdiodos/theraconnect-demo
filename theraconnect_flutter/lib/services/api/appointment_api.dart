@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../../config/api_config.dart';
 import '../../models/appointment.dart';
+import '../../models/clinician.dart';
 import '../../models/schedule_slot.dart';
 import '../api_client.dart';
 import '../api_error_handler.dart';
@@ -10,16 +11,53 @@ class AppointmentApi {
 
   AppointmentApi(this._client);
 
-  Future<List<ScheduleSlot>> getSchedules(String date) async {
+  Future<List<Clinician>> getClinicians() async {
+    try {
+      final response = await _client.get(ApiConfig.cliniciansEndpoint);
+      final data = response.data['data'] as List<dynamic>;
+      return data
+          .map((e) => Clinician.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on DioException catch (e) {
+      throw handleDioError(e);
+    }
+  }
+
+  Future<List<ScheduleSlot>> getSchedules(String date, {int? clinicianId}) async {
     try {
       final response = await _client.get(
         ApiConfig.schedulesEndpoint,
-        queryParameters: {'date': date},
+        queryParameters: {
+          'date': date,
+          if (clinicianId != null) 'clinician_id': clinicianId,
+        },
       );
       final data = response.data['data'] as List<dynamic>;
       return data
           .map((e) => ScheduleSlot.fromJson(e as Map<String, dynamic>))
           .toList();
+    } on DioException catch (e) {
+      throw handleDioError(e);
+    }
+  }
+
+  /// Y-m-d dates the clinician has at least one open slot in [from, to].
+  Future<List<String>> getAvailability({
+    required int clinicianId,
+    required String from,
+    required String to,
+  }) async {
+    try {
+      final response = await _client.get(
+        ApiConfig.availabilityEndpoint,
+        queryParameters: {
+          'clinician_id': clinicianId,
+          'from': from,
+          'to': to,
+        },
+      );
+      final data = response.data['data'] as List<dynamic>;
+      return data.map((e) => e as String).toList();
     } on DioException catch (e) {
       throw handleDioError(e);
     }

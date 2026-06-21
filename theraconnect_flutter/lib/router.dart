@@ -7,7 +7,9 @@ import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/shell/home_shell.dart';
 import 'screens/dashboard/dashboard_screen.dart';
+import 'models/clinician.dart';
 import 'screens/schedule/schedule_screen.dart';
+import 'screens/schedule/calendar_screen.dart';
 import 'screens/schedule/book_appointment_screen.dart';
 import 'screens/appointments/appointment_list_screen.dart';
 import 'screens/appointments/appointment_detail_screen.dart';
@@ -90,6 +92,15 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/schedule',
                 builder: (context, state) => const ScheduleScreen(),
+              ),
+              GoRoute(
+                path: '/schedule/calendar',
+                builder: (context, state) {
+                  final clinician = state.extra;
+                  // Reached without a clinician (deep link / restart) → restart flow.
+                  if (clinician is! Clinician) return const ScheduleScreen();
+                  return CalendarScreen(clinician: clinician);
+                },
               ),
               GoRoute(
                 path: '/schedule/book',

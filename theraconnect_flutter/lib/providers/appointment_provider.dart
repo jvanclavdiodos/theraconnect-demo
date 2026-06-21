@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/appointment.dart';
+import '../models/clinician.dart';
 import '../models/schedule_slot.dart';
 import '../models/api_response.dart';
 import '../services/cache_service.dart';
@@ -9,6 +10,11 @@ import 'auth_provider.dart';
 final appointmentApiProvider = Provider<AppointmentApi>((ref) {
   final client = ref.watch(apiClientProvider);
   return AppointmentApi(client);
+});
+
+/// Clinicians for the clinician-first booking flow.
+final cliniciansProvider = FutureProvider.autoDispose<List<Clinician>>((ref) async {
+  return ref.watch(appointmentApiProvider).getClinicians();
 });
 
 class AppointmentNotifier extends StateNotifier<AsyncValue<List<Appointment>>> {

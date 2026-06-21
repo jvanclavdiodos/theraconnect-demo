@@ -16,7 +16,9 @@ class ApiConfig {
   static const String logoutEndpoint = '/logout';
   static const String meEndpoint = '/me';
   static const String profileEndpoint = '/profile';
+  static const String cliniciansEndpoint = '/clinicians';
   static const String schedulesEndpoint = '/schedules';
+  static const String availabilityEndpoint = '/schedules/availability';
   static const String appointmentsEndpoint = '/appointments';
   static const String assignmentsEndpoint = '/assignments';
   static const String notificationsEndpoint = '/notifications';
