@@ -10,12 +10,15 @@ use Illuminate\Support\Facades\DB;
 
 class AppointmentService
 {
-    public function __construct(private JitsiService $jitsi) {}
+    public function __construct(
+        private JitsiService $jitsi,
+        private AvailabilityService $availability,
+    ) {}
 
     public function getScheduleSlots(string $date): array
     {
         $slots = [];
-        $clinicians = Clinician::with('user')->get();
+        $clinicians = Clinician::with(['user', 'weeklyAvailabilities', 'dateOverrides'])->get();
         $clinicianIds = $clinicians->pluck('id')->all();
 
         $dayStart = Carbon::parse($date)->startOfDay()->format('Y-m-d H:i:s');
@@ -39,10 +42,15 @@ class AppointmentService
             $busy[$appt->clinician_id][$at] = true;
         }
 
-        foreach ($this->generateTimeSlots() as $slotTime) {
-            foreach ($clinicians as $clinician) {
-                $slotDateTime = Carbon::parse($date)->setTimeFromTimeString($slotTime);
-                $formatted = $slotDateTime->format('Y-m-d H:i:s');
+        $day = Carbon::parse($date);
+
+        foreach ($clinicians as $clinician) {
+            // Only the clinician's open hours for this date are offered; closed
+            // days/hours simply produce no slots for that clinician.
+            foreach ($this->availability->availableSlots($clinician, $day) as $slotTime) {
+                $formatted = Carbon::parse($date)
+                    ->setTimeFromTimeString($slotTime)
+                    ->format('Y-m-d H:i:s');
 
                 $conflict = $busy[$clinician->id][$formatted] ?? false;
 
@@ -103,8 +111,14 @@ class AppointmentService
         return DB::transaction(function () use ($data) {
             $clinicianId = $data['clinician_id'] ?? null;
 
-            if ($clinicianId && ! $this->isSlotAvailable($clinicianId, $data['requested_at'], lock: true)) {
-                throw new SlotUnavailableException();
+            if ($clinicianId) {
+                if (! $this->availability->isAvailable($clinicianId, Carbon::parse($data['requested_at']))) {
+                    throw new SlotUnavailableException('The clinician is not available at that time.');
+                }
+
+                if (! $this->isSlotAvailable($clinicianId, $data['requested_at'], lock: true)) {
+                    throw new SlotUnavailableException();
+                }
             }
 
             return $this->create($data);
@@ -158,9 +172,14 @@ class AppointmentService
     public function reschedule(Appointment $appointment, string $scheduledAt): Appointment
     {
         return DB::transaction(function () use ($appointment, $scheduledAt) {
-            if ($appointment->clinician_id
-                && ! $this->isSlotAvailable($appointment->clinician_id, $scheduledAt, $appointment->id, lock: true)) {
-                throw new SlotUnavailableException('That time slot is already booked for this clinician.');
+            if ($appointment->clinician_id) {
+                if (! $this->availability->isAvailable($appointment->clinician_id, Carbon::parse($scheduledAt))) {
+                    throw new SlotUnavailableException('The clinician is not available at that time.');
+                }
+
+                if (! $this->isSlotAvailable($appointment->clinician_id, $scheduledAt, $appointment->id, lock: true)) {
+                    throw new SlotUnavailableException('That time slot is already booked for this clinician.');
+                }
             }
 
             $appointment->update([
@@ -185,10 +204,5 @@ class AppointmentService
 
         return $appointment->meeting_link
             ?: $this->jitsi->generateMeetingLink($appointment->id);
-    }
-
-    private function generateTimeSlots(): array
-    {
-        return ['08:00', '09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00'];
     }
 }

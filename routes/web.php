@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Web\AuthenticatedSessionController;
 use App\Http\Controllers\Web\ChatbotContentController;
+use App\Http\Controllers\Web\ClinicianAvailabilityController;
 use App\Http\Controllers\Web\ClinicianController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\NotificationLogController;
@@ -47,6 +48,16 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
             ->except(['show'])
             ->parameters(['chatbot-content' => 'intent']);
         Route::get('/notifications/logs', [NotificationLogController::class, 'index'])->name('notifications.logs');
+    });
+
+    // Clinician self-service availability (clinicians only; admins have no
+    // clinician profile). The controller always loads the current user's own
+    // clinician, so there is no cross-clinician access.
+    Route::middleware('role:clinician')->group(function () {
+        Route::get('/my-availability', [ClinicianAvailabilityController::class, 'edit'])->name('availability.edit');
+        Route::put('/my-availability', [ClinicianAvailabilityController::class, 'update'])->name('availability.update');
+        Route::post('/my-availability/overrides', [ClinicianAvailabilityController::class, 'storeOverride'])->name('availability.overrides.store');
+        Route::delete('/my-availability/overrides/{override}', [ClinicianAvailabilityController::class, 'destroyOverride'])->name('availability.overrides.destroy');
     });
 
     // Appointments — list + status changes (Gate::authorize('manage') per row)

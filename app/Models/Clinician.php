@@ -32,4 +32,14 @@ class Clinician extends Model
     {
         return $this->hasMany(Assignment::class);
     }
+
+    public function weeklyAvailabilities(): HasMany
+    {
+        return $this->hasMany(ClinicianWeeklyAvailability::class);
+    }
+
+    public function dateOverrides(): HasMany
+    {
+        return $this->hasMany(ClinicianDateOverride::class);
+    }
 }
