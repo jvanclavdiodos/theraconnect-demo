@@ -120,4 +120,9 @@
         </div>
     </div>
 </div>
+
+{{-- Availability calendar — clinicians manage their own schedule here. --}}
+@if(auth()->user()->role === 'clinician' && auth()->user()->clinician)
+    @include('partials.availability-calendar')
+@endif
 @endsection

@@ -50,14 +50,14 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
         Route::get('/notifications/logs', [NotificationLogController::class, 'index'])->name('notifications.logs');
     });
 
-    // Clinician self-service availability (clinicians only; admins have no
-    // clinician profile). The controller always loads the current user's own
+    // Clinician availability calendar (JSON; powers the dashboard calendar).
+    // Clinicians only; the controller always loads the current user's own
     // clinician, so there is no cross-clinician access.
     Route::middleware('role:clinician')->group(function () {
-        Route::get('/my-availability', [ClinicianAvailabilityController::class, 'edit'])->name('availability.edit');
-        Route::put('/my-availability', [ClinicianAvailabilityController::class, 'update'])->name('availability.update');
-        Route::post('/my-availability/overrides', [ClinicianAvailabilityController::class, 'storeOverride'])->name('availability.overrides.store');
-        Route::delete('/my-availability/overrides/{override}', [ClinicianAvailabilityController::class, 'destroyOverride'])->name('availability.overrides.destroy');
+        Route::get('/availability/month', [ClinicianAvailabilityController::class, 'month'])->name('availability.month');
+        Route::get('/availability/day', [ClinicianAvailabilityController::class, 'day'])->name('availability.day');
+        Route::post('/availability/toggle-day', [ClinicianAvailabilityController::class, 'toggleDay'])->name('availability.toggleDay');
+        Route::post('/availability/toggle-hour', [ClinicianAvailabilityController::class, 'toggleHour'])->name('availability.toggleHour');
     });
 
     // Appointments — list + status changes (Gate::authorize('manage') per row)

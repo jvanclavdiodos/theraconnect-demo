@@ -8,10 +8,11 @@ use Carbon\Carbon;
 /**
  * Single source of truth for when a clinician is bookable.
  *
- * Resolution precedence for a given date:
- *   1. A date override for that date (whole-day block, or custom hours).
- *   2. The clinician's recurring weekly row for that weekday.
- *   3. Default: available 08:00-16:00 ("available by default").
+ * A weekday has a working window (weekly row, or the 08:00-16:00 default —
+ * "available by default"). On top of that, date overrides for a specific date
+ * subtract availability:
+ *   - whole-day block  : is_available=false, start_time=null  → no slots that day
+ *   - hourly block     : is_available=false, start_time=HH:00 → that hour removed
  *
  * Slots are whole-hour starts; the window end is the LAST bookable start
  * (inclusive), preserving the original 08:00..16:00 = 9-slot behaviour.
@@ -23,27 +24,35 @@ class AvailabilityService
     public const DEFAULT_END = '16:00';
 
     /**
-     * The "HH:00" slot starts a clinician is open on $date, ignoring existing
-     * appointments (conflict filtering happens in AppointmentService).
+     * Bookable "HH:00" slot starts for $date (base hours minus any blocks),
+     * ignoring existing appointments (conflict filtering is done elsewhere).
      *
      * @return array<int, string>
      */
     public function availableSlots(Clinician $clinician, Carbon $date): array
     {
-        $override = $clinician->dateOverrides
-            ->first(fn ($o) => $o->date->isSameDay($date));
+        $overrides = $this->overridesFor($clinician, $date);
 
-        if ($override) {
-            if (! $override->is_available) {
-                return []; // whole day blocked (e.g. vacation)
-            }
-
-            return $this->hourlySlots(
-                $override->start_time ?? self::DEFAULT_START,
-                $override->end_time ?? self::DEFAULT_END
-            );
+        if ($this->hasWholeDayBlock($overrides)) {
+            return [];
         }
 
+        $blockedHours = $this->blockedHours($overrides);
+
+        return array_values(array_filter(
+            $this->baseHours($clinician, $date),
+            fn ($hour) => ! in_array($hour, $blockedHours, true)
+        ));
+    }
+
+    /**
+     * The weekday's working-hour slots, ignoring date overrides — the full grid
+     * a clinician could offer on this date. Empty when the weekday is off.
+     *
+     * @return array<int, string>
+     */
+    public function baseHours(Clinician $clinician, Carbon $date): array
+    {
         $weekly = $clinician->weeklyAvailabilities
             ->firstWhere('day_of_week', strtolower($date->format('l')));
 
@@ -105,6 +114,29 @@ class AvailabilityService
         }
 
         return $dates;
+    }
+
+    /** Overrides (from the loaded relation) that fall on $date. */
+    private function overridesFor(Clinician $clinician, Carbon $date)
+    {
+        return $clinician->dateOverrides->filter(fn ($o) => $o->date->isSameDay($date));
+    }
+
+    private function hasWholeDayBlock($overrides): bool
+    {
+        return $overrides->contains(
+            fn ($o) => ! $o->is_available && $o->start_time === null
+        );
+    }
+
+    /** @return array<int, string> blocked "HH:00" starts */
+    private function blockedHours($overrides): array
+    {
+        return $overrides
+            ->filter(fn ($o) => ! $o->is_available && $o->start_time !== null)
+            ->map(fn ($o) => substr($o->start_time, 0, 5))
+            ->values()
+            ->all();
     }
 
     /**

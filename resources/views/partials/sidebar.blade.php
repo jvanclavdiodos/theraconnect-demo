@@ -51,12 +51,6 @@
                         <i class="bi bi-people"></i> <span>Patients</span>
                         <i class="bi bi-chevron-right tc-nav-chevron"></i>
                     </a>
-                    @if($role === 'clinician')
-                        <a href="{{ route('availability.edit') }}" class="tc-nav-item {{ $isActive('availability.*') }}">
-                            <i class="bi bi-calendar-week"></i> <span>My Availability</span>
-                            <i class="bi bi-chevron-right tc-nav-chevron"></i>
-                        </a>
-                    @endif
                 </div>
 
                 {{-- Tools — clinic administration (admin only) --}}

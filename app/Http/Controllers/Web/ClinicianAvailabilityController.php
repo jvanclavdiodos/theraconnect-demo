@@ -3,129 +3,196 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\ClinicianDateOverride;
+use App\Models\Appointment;
+use App\Models\Clinician;
 use App\Services\AvailabilityService;
-use Illuminate\Http\RedirectResponse;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\View\View;
 
+/**
+ * JSON backend for the clinician dashboard availability calendar. Every action
+ * operates on the logged-in clinician's own records (ownership boundary).
+ */
 class ClinicianAvailabilityController extends Controller
 {
-    /** Weekday order for the form. */
-    private const DAYS = [
-        'monday', 'tuesday', 'wednesday', 'thursday',
-        'friday', 'saturday', 'sunday',
-    ];
+    /** Statuses that occupy a slot (everything except terminal-negative ones). */
+    private const ACTIVE_STATUSES = ['pending', 'approved', 'rescheduled', 'completed'];
 
-    /**
-     * Show the logged-in clinician's weekly schedule + upcoming date blocks.
-     * The clinician is always the current user — never a route-bound other
-     * clinician — which is the ownership boundary for this page.
-     */
-    public function edit(Request $request): View
+    public function __construct(private AvailabilityService $availability) {}
+
+    /** Per-day summary for a month: appointment count + whole-day block flag. */
+    public function month(Request $request): JsonResponse
     {
         $clinician = $this->currentClinician($request);
 
-        $existing = $clinician->weeklyAvailabilities->keyBy('day_of_week');
+        $validated = $request->validate(['month' => ['required', 'date_format:Y-m']]);
+        $start = Carbon::parse($validated['month'].'-01')->startOfMonth();
+        $end = $start->copy()->endOfMonth();
 
-        $weekly = [];
-        foreach (self::DAYS as $day) {
-            $row = $existing->get($day);
-            $weekly[$day] = [
-                'is_available' => $row ? $row->is_available : true,
-                'start_time' => $row && $row->start_time
-                    ? substr($row->start_time, 0, 5)
-                    : AvailabilityService::DEFAULT_START,
-                'end_time' => $row && $row->end_time
-                    ? substr($row->end_time, 0, 5)
-                    : AvailabilityService::DEFAULT_END,
+        $counts = $this->appointmentsBetween($clinician, $start, $end)
+            ->groupBy(fn ($a) => $this->apptDate($a)->toDateString())
+            ->map->count();
+
+        $blockedDays = $clinician->dateOverrides()
+            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->where('is_available', false)
+            ->whereNull('start_time')
+            ->pluck('date')
+            ->map(fn ($d) => Carbon::parse($d)->toDateString());
+
+        $days = [];
+        for ($d = $start->copy(); $d->lte($end); $d->addDay()) {
+            $ds = $d->toDateString();
+            $days[$ds] = [
+                'count' => $counts[$ds] ?? 0,
+                'blocked' => $blockedDays->contains($ds),
             ];
         }
 
-        $overrides = $clinician->dateOverrides()
-            ->whereDate('date', '>=', now()->toDateString())
-            ->orderBy('date')
-            ->get();
-
-        return view('availability.index', compact('weekly', 'overrides'));
+        return response()->json(['days' => $days]);
     }
 
-    public function update(Request $request): RedirectResponse
+    /** Detail for one day: appointments + per-hour status (booked/blocked/available). */
+    public function day(Request $request): JsonResponse
     {
         $clinician = $this->currentClinician($request);
+        $validated = $request->validate(['date' => ['required', 'date_format:Y-m-d']]);
 
-        $validated = $request->validate([
-            'weekly' => ['required', 'array'],
-            'weekly.*.start_time' => ['required', 'date_format:H:i'],
-            'weekly.*.end_time' => ['required', 'date_format:H:i'],
-        ]);
-
-        // For each day the patient can be offered, the end must be after the
-        // start. (Unavailable days keep their times but they're ignored.)
-        foreach (self::DAYS as $day) {
-            $isAvailable = $request->boolean("weekly.$day.is_available");
-            $start = $validated['weekly'][$day]['start_time'];
-            $end = $validated['weekly'][$day]['end_time'];
-
-            if ($isAvailable && $start >= $end) {
-                return back()
-                    ->withErrors(["weekly.$day.end_time" => ucfirst($day).": end time must be after start time."])
-                    ->withInput();
-            }
-
-            $clinician->weeklyAvailabilities()->updateOrCreate(
-                ['day_of_week' => $day],
-                [
-                    'is_available' => $isAvailable,
-                    'start_time' => $start,
-                    'end_time' => $end,
-                ]
-            );
-        }
-
-        return redirect()->route('availability.edit')
-            ->with('status', 'Weekly availability saved.');
+        return response()->json($this->buildDay($clinician, Carbon::parse($validated['date'])));
     }
 
-    public function storeOverride(Request $request): RedirectResponse
+    /** Toggle a whole-day block on/off. */
+    public function toggleDay(Request $request): JsonResponse
     {
         $clinician = $this->currentClinician($request);
+        $validated = $request->validate(['date' => ['required', 'date_format:Y-m-d']]);
+        $date = Carbon::parse($validated['date']);
 
-        $validated = $request->validate([
-            'date' => ['required', 'date', 'after_or_equal:today'],
-            'reason' => ['nullable', 'string', 'max:255'],
-        ]);
+        $existing = $clinician->dateOverrides()
+            ->whereDate('date', $date->toDateString())
+            ->where('is_available', false)
+            ->whereNull('start_time')
+            ->first();
 
-        // A date block makes the whole day unavailable (vacation / day off).
-        // Keyed on (clinician, date) so re-blocking the same day is idempotent.
-        $clinician->dateOverrides()->updateOrCreate(
-            ['date' => $validated['date']],
-            [
+        if ($existing) {
+            $existing->delete();
+        } else {
+            $clinician->dateOverrides()->create([
+                'date' => $date->toDateString(),
                 'is_available' => false,
                 'start_time' => null,
                 'end_time' => null,
-                'reason' => $validated['reason'] ?? null,
-            ]
-        );
+            ]);
+        }
 
-        return redirect()->route('availability.edit')
-            ->with('status', 'Date blocked.');
+        return response()->json($this->buildDay($clinician, $date));
     }
 
-    public function destroyOverride(Request $request, ClinicianDateOverride $override): RedirectResponse
+    /** Toggle a single hour block on/off (refused if that hour is booked). */
+    public function toggleHour(Request $request): JsonResponse
     {
         $clinician = $this->currentClinician($request);
+        $validated = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+            'hour' => ['required', 'date_format:H:i'],
+        ]);
+        $date = Carbon::parse($validated['date']);
+        $hour = $validated['hour'];
 
-        // Ownership: a clinician may only remove their own blocks.
-        abort_unless($override->clinician_id === $clinician->id, 403);
+        // Don't let a booked hour be blocked out from under a patient.
+        $booked = $this->appointmentsBetween($clinician, $date->copy()->startOfDay(), $date->copy()->endOfDay())
+            ->contains(fn ($a) => $this->apptDate($a)->format('H:i') === $hour);
 
-        $override->delete();
+        if ($booked) {
+            return response()->json(['message' => 'That hour has an appointment and cannot be blocked.'], 422);
+        }
 
-        return redirect()->route('availability.edit')
-            ->with('status', 'Date block removed.');
+        $existing = $clinician->dateOverrides()
+            ->whereDate('date', $date->toDateString())
+            ->where('is_available', false)
+            ->where('start_time', $hour)
+            ->first();
+
+        if ($existing) {
+            $existing->delete();
+        } else {
+            $clinician->dateOverrides()->create([
+                'date' => $date->toDateString(),
+                'is_available' => false,
+                'start_time' => $hour,
+                'end_time' => sprintf('%02d:00', ((int) substr($hour, 0, 2) + 1) % 24),
+            ]);
+        }
+
+        return response()->json($this->buildDay($clinician, $date));
     }
 
-    private function currentClinician(Request $request)
+    /** Assemble the day-detail payload shared by day()/toggle*(). */
+    private function buildDay(Clinician $clinician, Carbon $date): array
+    {
+        $clinician->load(['weeklyAvailabilities', 'dateOverrides']);
+
+        $appts = $this->appointmentsBetween($clinician, $date->copy()->startOfDay(), $date->copy()->endOfDay())
+            ->sortBy(fn ($a) => $this->apptDate($a)->format('H:i'))
+            ->values();
+
+        $byHour = [];
+        foreach ($appts as $a) {
+            $byHour[$this->apptDate($a)->format('H:i')] = $a;
+        }
+
+        $available = $this->availability->availableSlots($clinician, $date);
+
+        $dayBlocked = $clinician->dateOverrides
+            ->contains(fn ($o) => $o->date->isSameDay($date) && ! $o->is_available && $o->start_time === null);
+
+        $hours = [];
+        foreach ($this->availability->baseHours($clinician, $date) as $h) {
+            if (isset($byHour[$h])) {
+                $status = 'booked';
+            } elseif (in_array($h, $available, true)) {
+                $status = 'available';
+            } else {
+                $status = 'blocked';
+            }
+            $hours[] = [
+                'time' => $h,
+                'status' => $status,
+                'patient' => isset($byHour[$h]) ? $byHour[$h]->patient->user->name : null,
+            ];
+        }
+
+        return [
+            'date' => $date->toDateString(),
+            'day_blocked' => $dayBlocked,
+            'hours' => $hours,
+            'appointments' => $appts->map(fn ($a) => [
+                'time' => $this->apptDate($a)->format('H:i'),
+                'patient' => $a->patient->user->name,
+                'status' => $a->status,
+                'mode' => $a->mode,
+            ])->all(),
+        ];
+    }
+
+    /** Active appointments for the clinician whose effective date is in [from, to]. */
+    private function appointmentsBetween(Clinician $clinician, Carbon $from, Carbon $to)
+    {
+        return Appointment::where('clinician_id', $clinician->id)
+            ->whereIn('status', self::ACTIVE_STATUSES)
+            ->with('patient.user')
+            ->get()
+            ->filter(fn ($a) => $this->apptDate($a)->between($from, $to));
+    }
+
+    /** Effective datetime of an appointment (scheduled if set, else requested). */
+    private function apptDate(Appointment $a): Carbon
+    {
+        return $a->scheduled_at ?? $a->requested_at;
+    }
+
+    private function currentClinician(Request $request): Clinician
     {
         $clinician = $request->user()->clinician;
 

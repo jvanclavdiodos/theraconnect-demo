@@ -92,6 +92,27 @@ class AvailabilityServiceTest extends TestCase
         ));
     }
 
+    public function test_hourly_block_removes_only_that_hour(): void
+    {
+        $clinician = $this->clinician();
+        $date = $this->freshDate();
+        $clinician->dateOverrides()->create([
+            'date' => $date->toDateString(),
+            'is_available' => false,
+            'start_time' => '10:00',
+            'end_time' => '11:00',
+        ]);
+
+        $slots = $this->service->availableSlots(
+            $clinician->fresh(['weeklyAvailabilities', 'dateOverrides']),
+            $date
+        );
+
+        $this->assertNotContains('10:00', $slots);
+        $this->assertContains('09:00', $slots);
+        $this->assertContains('11:00', $slots);
+    }
+
     public function test_is_available_enforces_slot_alignment(): void
     {
         $id = $this->clinician()->id;
