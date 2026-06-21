@@ -43,7 +43,9 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
         Route::resource('clinicians', ClinicianController::class)->except(['show']);
 
         // Chatbot knowledge base + notification audit log (clinic-admin tools)
-        Route::resource('chatbot-content', ChatbotContentController::class)->except(['show']);
+        Route::resource('chatbot-content', ChatbotContentController::class)
+            ->except(['show'])
+            ->parameters(['chatbot-content' => 'intent']);
         Route::get('/notifications/logs', [NotificationLogController::class, 'index'])->name('notifications.logs');
     });
 
