@@ -7,8 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreAppointmentRequest;
 use App\Http\Resources\AppointmentResource;
 use App\Http\Resources\ScheduleSlotResource;
+use App\Jobs\SendPushNotification;
 use App\Models\Appointment;
 use App\Services\AppointmentService;
+use App\Services\NotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -17,6 +19,7 @@ class AppointmentController extends Controller
 {
     public function __construct(
         private AppointmentService $appointmentService,
+        private NotificationService $notificationService,
     ) {}
 
     public function schedules(Request $request): JsonResponse
@@ -85,7 +88,20 @@ class AppointmentController extends Controller
             ], 422);
         }
 
-        $appointment->load('clinician.user');
+        $appointment->load('clinician.user', 'patient.user');
+
+        // Tell the assigned clinician a new request is awaiting their approval.
+        // Bookings without a clinician (clinician_id is nullable) have no one to
+        // notify. The in-app row is written synchronously; the push is best-effort.
+        if ($appointment->clinician && $appointment->clinician->user) {
+            $notification = $this->notificationService->appointmentRequested(
+                $appointment->clinician->user->id,
+                $appointment->patient->user->name,
+                $appointment->requested_at->format('M d, Y h:i A'),
+            );
+
+            SendPushNotification::dispatch($notification->id)->afterCommit();
+        }
 
         return response()->json([
             'data' => new AppointmentResource($appointment),

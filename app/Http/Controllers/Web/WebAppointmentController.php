@@ -88,14 +88,33 @@ class WebAppointmentController extends Controller
         ]);
 
         try {
-            $notification = DB::transaction(function () use ($appointment, $validated) {
+            $notifications = DB::transaction(function () use ($appointment, $validated, $request) {
                 $appointment = $this->appointmentService->reschedule($appointment, $validated['scheduled_at']);
+                $appointment->load('patient.user', 'clinician.user');
 
-                return $this->notificationService->appointmentRescheduled(
-                    $appointment->patient->user->id,
-                    $appointment->scheduled_at->format('M d, Y h:i A'),
-                    $appointment->meeting_link
-                );
+                $scheduledAt = $appointment->scheduled_at->format('M d, Y h:i A');
+
+                $created = [
+                    // The patient learns their appointment moved.
+                    $this->notificationService->appointmentRescheduled(
+                        $appointment->patient->user->id,
+                        $scheduledAt,
+                        $appointment->meeting_link
+                    ),
+                ];
+
+                // Also tell the assigned clinician their schedule changed —
+                // unless they are the one who performed the reschedule.
+                $clinicianUser = $appointment->clinician?->user;
+                if ($clinicianUser && $clinicianUser->id !== $request->user()->id) {
+                    $created[] = $this->notificationService->appointmentRescheduledForClinician(
+                        $clinicianUser->id,
+                        $appointment->patient->user->name,
+                        $scheduledAt
+                    );
+                }
+
+                return $created;
             });
         } catch (SlotUnavailableException $e) {
             return back()->withErrors([
@@ -103,7 +122,9 @@ class WebAppointmentController extends Controller
             ]);
         }
 
-        SendPushNotification::dispatch($notification->id)->afterCommit();
+        foreach ($notifications as $notification) {
+            SendPushNotification::dispatch($notification->id)->afterCommit();
+        }
 
         return redirect()->route('appointments.index')
             ->with('status', 'Appointment rescheduled.');

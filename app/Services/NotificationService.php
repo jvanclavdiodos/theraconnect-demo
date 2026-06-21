@@ -51,6 +51,36 @@ class NotificationService
         );
     }
 
+    /**
+     * Sent to the assigned clinician when a patient books a new appointment
+     * that is waiting for their approval.
+     */
+    public function appointmentRequested(int $clinicianUserId, string $patientName, string $requestedAt): Notification
+    {
+        return $this->create(
+            $clinicianUserId,
+            'appointment_requested',
+            'New Appointment Request',
+            "{$patientName} requested an appointment for {$requestedAt}.",
+            null
+        );
+    }
+
+    /**
+     * Sent to the assigned clinician when their appointment is rescheduled
+     * (e.g. by an admin), so they know their schedule changed.
+     */
+    public function appointmentRescheduledForClinician(int $clinicianUserId, string $patientName, string $scheduledAt): Notification
+    {
+        return $this->create(
+            $clinicianUserId,
+            'appointment_rescheduled',
+            'Appointment Rescheduled',
+            "{$patientName}'s appointment is now set for {$scheduledAt}.",
+            null
+        );
+    }
+
     public function appointmentReminder(int $userId, int $appointmentId, string $time): Notification
     {
         return $this->create(
