@@ -78,6 +78,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::patch('/appointments/{appointment}/approve', [WebAppointmentController::class, 'approve'])->name('appointments.approve');
     Route::patch('/appointments/{appointment}/reject', [WebAppointmentController::class, 'reject'])->name('appointments.reject');
     Route::patch('/appointments/{appointment}/reschedule', [WebAppointmentController::class, 'reschedule'])->name('appointments.reschedule');
+    Route::patch('/appointments/{appointment}/complete', [WebAppointmentController::class, 'complete'])->name('appointments.complete');
 
     // Assignments (Gate::authorize per assignment/submission)
     Route::get('/assignments', [WebAssignmentController::class, 'index'])->name('assignments.index');

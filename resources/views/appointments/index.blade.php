@@ -70,7 +70,8 @@
                         <td class="text-end">
                             @if ($appt->meetingLinkActive())
                                 <a href="{{ $appt->meeting_link }}" target="_blank" rel="noopener"
-                                   class="btn btn-sm btn-primary" title="Join video call">
+                                   class="btn btn-sm btn-primary" title="Join video call"
+                                   x-data @click="$dispatch('open-conclude', { id: {{ $appt->id }} })">
                                     <i class="bi bi-camera-video"></i>
                                 </a>
                             @elseif ($appt->mode === 'online' && $appt->meeting_link && optional($appt->meetingLinkExpiresAt())->isPast())
@@ -100,6 +101,11 @@
                                         x-data
                                         @click="$dispatch('open-reschedule', { id: {{ $appt->id }} })">
                                     <i class="bi bi-calendar2-week"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-success" title="Conclude / close case"
+                                        x-data
+                                        @click="$dispatch('open-conclude', { id: {{ $appt->id }} })">
+                                    <i class="bi bi-clipboard-check"></i>
                                 </button>
                             @endif
                         </td>
@@ -145,6 +151,36 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @click="open = false">Cancel</button>
                         <button type="submit" class="btn btn-primary">Reschedule</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Post-meeting wrap-up / close case (hidden by default) --}}
+<div x-data="{ open: false, apptId: null }"
+     x-on:open-conclude.window="open = true; apptId = $event.detail.id"
+     x-show="open"
+     x-cloak
+     style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050;">
+    <div class="modal d-block" tabindex="-1" style="display: block !important;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form :action="'/appointments/' + apptId + '/complete'" method="POST">
+                    @csrf @method('PATCH')
+                    <div class="modal-header">
+                        <h5 class="modal-title">Conclude appointment</h5>
+                        <button type="button" class="btn-close" @click="open = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0">Was the meeting concluded successfully? Confirming will close this case and mark the appointment as <strong>completed</strong>.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="open = false">Not yet</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-lg"></i> Yes, close case
+                        </button>
                     </div>
                 </form>
             </div>
