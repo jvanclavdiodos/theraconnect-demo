@@ -1,0 +1,21 @@
+<?php
+
+namespace App\Policies;
+
+use App\Models\Conversation;
+use App\Models\User;
+
+class ConversationPolicy
+{
+    /**
+     * Only the two participants (the patient's user and the clinician's user)
+     * may view a conversation or post to it. This is the boundary that keeps
+     * one patient/clinician out of another pair's thread.
+     */
+    public function participate(User $user, Conversation $conversation): bool
+    {
+        $conversation->loadMissing(['patient', 'clinician']);
+
+        return $conversation->hasParticipant($user);
+    }
+}
