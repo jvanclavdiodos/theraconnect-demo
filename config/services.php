@@ -45,4 +45,9 @@ return [
         'room_prefix' => env('JITSI_ROOM_PREFIX', 'TheraConnect'),
     ],
 
+    'gemini' => [
+        'key' => env('GEMINI_API_KEY'),
+        'model' => env('GEMINI_CHATBOT_MODEL', 'gemini-2.0-flash'),
+    ],
+
 ];
