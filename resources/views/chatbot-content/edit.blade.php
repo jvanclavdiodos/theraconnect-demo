@@ -10,9 +10,12 @@
 @section('content')
 <h2>Edit Intent: {{ $intent->display_name }}</h2>
 
+{{-- Use @js (not @json) for data embedded in an Alpine attribute: @json emits raw
+     double quotes that close the x-data="" attribute early and break the
+     component; @js (Js::from) emits an attribute-safe JSON.parse('...') form. --}}
 <div class="card shadow-sm mt-3" x-data="intentForm(
-    @json($intent->training_phrases),
-    @json($intent->responses->map(fn($r) => ['response_text' => $r->response_text, 'priority' => $r->priority, 'is_fallback' => (int) $r->is_fallback])->toArray()),
+    @js($intent->training_phrases),
+    @js($intent->responses->map(fn($r) => ['response_text' => $r->response_text, 'priority' => $r->priority, 'is_fallback' => (int) $r->is_fallback])->toArray()),
     {{ $intent->is_active ? 'true' : 'false' }}
 )">
     <div class="card-body">

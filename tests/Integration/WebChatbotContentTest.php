@@ -46,6 +46,33 @@ class WebChatbotContentTest extends TestCase
             ->assertSee("chatbot-content/{$intent->id}", false);
     }
 
+    /**
+     * The x-data attribute must embed the phrase/response data with @js
+     * (Js::from), which escapes quotes to ". Using @json there emits raw
+     * double quotes that close the x-data="" attribute early, breaking Alpine
+     * (no rows render, Add buttons dead). Guard the attribute-safe form.
+     */
+    public function test_edit_page_embeds_alpine_data_attribute_safely(): void
+    {
+        $admin = $this->createAdmin();
+        $intent = $this->makeIntent();
+
+        $response = $this->actingAs($admin, 'web')
+            ->get("/chatbot-content/{$intent->id}/edit")
+            ->assertStatus(200)
+            // @js output: JSON.parse('..."..."...'), never a raw quote.
+            ->assertSee('JSON.parse(', false);
+
+        // The phrase data must appear with quotes escaped as " (the @js
+        // form), not as raw " which would close the x-data attribute.
+        $escapedQuote = chr(92).'u0022'; // literal backslash + u0022
+        $this->assertStringContainsString(
+            $escapedQuote.'what are your hours'.$escapedQuote,
+            $response->getContent(),
+            'x-data data should be quote-escaped via @js, not raw @json.'
+        );
+    }
+
     public function test_create_page_renders(): void
     {
         $admin = $this->createAdmin();
