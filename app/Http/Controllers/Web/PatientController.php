@@ -96,7 +96,11 @@ class PatientController extends Controller
     {
         Gate::authorize('view', $patient);
 
-        $patient->load('user', 'assignedClinician.user');
+        $patient->load([
+            'user',
+            'assignedClinician.user',
+            'clinicianNotes' => fn ($q) => $q->with('clinician.user')->latest(),
+        ]);
         $appointments = Appointment::where('patient_id', $patient->id)
             ->with('clinician.user')
             ->latest('requested_at')

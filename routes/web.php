@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MessageController;
 use App\Http\Controllers\Web\NotificationLogController;
 use App\Http\Controllers\Web\PatientController;
+use App\Http\Controllers\Web\PatientNoteController;
 use App\Http\Controllers\Web\WebAppointmentController;
 use App\Http\Controllers\Web\WebAssignmentController;
 use Illuminate\Support\Facades\Route;
@@ -59,6 +60,11 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
         Route::get('/availability/day', [ClinicianAvailabilityController::class, 'day'])->name('availability.day');
         Route::post('/availability/toggle-day', [ClinicianAvailabilityController::class, 'toggleDay'])->name('availability.toggleDay');
         Route::post('/availability/toggle-hour', [ClinicianAvailabilityController::class, 'toggleHour'])->name('availability.toggleHour');
+
+        // Patient notes (clinician writes about a patient; manage own per Policy).
+        Route::post('/patients/{patient}/notes', [PatientNoteController::class, 'store'])->name('patient-notes.store');
+        Route::put('/patient-notes/{note}', [PatientNoteController::class, 'update'])->name('patient-notes.update');
+        Route::delete('/patient-notes/{note}', [PatientNoteController::class, 'destroy'])->name('patient-notes.destroy');
 
         // Messaging (patient <-> assigned clinician). Participant-only per Policy.
         Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
