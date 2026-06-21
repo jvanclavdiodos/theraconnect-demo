@@ -6,6 +6,7 @@ import '../../models/assignment.dart';
 import '../../models/api_response.dart';
 import '../../providers/assignment_provider.dart';
 import '../../providers/download_provider.dart';
+import 'submission_preview.dart';
 
 class AssignmentDetailScreen extends ConsumerStatefulWidget {
   final int assignmentId;
@@ -224,6 +225,10 @@ class _AssignmentDetailScreenState
               ),
             ),
           ),
+          if (assignment.submission != null) ...[
+            const SizedBox(height: 16),
+            SubmissionPreview(submission: assignment.submission!),
+          ],
           const SizedBox(height: 24),
           if (!assignment.isReviewed)
             FilledButton.icon(

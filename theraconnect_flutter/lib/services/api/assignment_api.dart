@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import '../../config/api_config.dart';
 import '../../models/assignment.dart';
@@ -58,6 +59,38 @@ class AssignmentApi {
     try {
       return await _downloads.downloadAndStore(
         urlPath: '${ApiConfig.assignmentsEndpoint}/$assignmentId/worksheet',
+        fileName: fileName,
+        title: title,
+      );
+    } on DioException catch (e) {
+      throw handleDioError(e);
+    }
+  }
+
+  /// Raw bytes of a submission file (for inline image/text preview), fetched
+  /// through the authenticated Dio client.
+  Future<Uint8List> getSubmissionBytes(int submissionId) async {
+    try {
+      final response = await _client.dio.get(
+        '/submissions/$submissionId/file',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return Uint8List.fromList(List<int>.from(response.data as List));
+    } on DioException catch (e) {
+      throw handleDioError(e);
+    }
+  }
+
+  /// Download a submission file to device storage and record it in Downloads
+  /// (used for file types we don't preview inline, e.g. PDF/doc).
+  Future<DownloadedFile> downloadSubmission(
+    int submissionId,
+    String fileName,
+    String title,
+  ) async {
+    try {
+      return await _downloads.downloadAndStore(
+        urlPath: '/submissions/$submissionId/file',
         fileName: fileName,
         title: title,
       );

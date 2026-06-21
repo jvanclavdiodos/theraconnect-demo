@@ -1,3 +1,32 @@
+/// The patient's own submission for an assignment (for in-app preview).
+class AssignmentSubmission {
+  final int id;
+  final String? content;
+  final String? originalName;
+  final String kind; // image | pdf | text | other
+  final String? fileUrl;
+
+  const AssignmentSubmission({
+    required this.id,
+    this.content,
+    this.originalName,
+    required this.kind,
+    this.fileUrl,
+  });
+
+  factory AssignmentSubmission.fromJson(Map<String, dynamic> json) {
+    return AssignmentSubmission(
+      id: json['id'] as int,
+      content: json['content'] as String?,
+      originalName: json['original_name'] as String?,
+      kind: (json['kind'] as String?) ?? 'other',
+      fileUrl: json['file_url'] as String?,
+    );
+  }
+
+  bool get hasFile => fileUrl != null;
+}
+
 class Assignment {
   final int id;
   final int clinicianId;
@@ -10,6 +39,7 @@ class Assignment {
   final String? dueDate;
   final String? submissionStatus;
   final String? submittedAt;
+  final AssignmentSubmission? submission;
   final String? createdAt;
   final String? updatedAt;
 
@@ -25,6 +55,7 @@ class Assignment {
     this.dueDate,
     this.submissionStatus,
     this.submittedAt,
+    this.submission,
     this.createdAt,
     this.updatedAt,
   });
@@ -42,6 +73,9 @@ class Assignment {
       dueDate: json['due_date'] as String?,
       submissionStatus: json['submission_status'] as String?,
       submittedAt: json['submitted_at'] as String?,
+      submission: json['submission'] is Map<String, dynamic>
+          ? AssignmentSubmission.fromJson(json['submission'] as Map<String, dynamic>)
+          : null,
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
     );
