@@ -144,6 +144,26 @@ class WebAssignmentController extends Controller
         );
     }
 
+    /**
+     * Serve a submission file INLINE (Content-Disposition: inline) so the
+     * browser renders it inside an <img>/<iframe> preview instead of forcing a
+     * download. Same private disk + ownership gate as downloadSubmission.
+     */
+    public function previewSubmission(Submission $submission): StreamedResponse
+    {
+        Gate::authorize('view', $submission);
+
+        abort_unless(
+            $submission->file_path && Storage::disk('local')->exists($submission->file_path),
+            404
+        );
+
+        return Storage::disk('local')->response(
+            $submission->file_path,
+            $submission->original_name
+        );
+    }
+
     public function downloadWorksheet(Assignment $assignment): StreamedResponse
     {
         Gate::authorize('manage', $assignment);

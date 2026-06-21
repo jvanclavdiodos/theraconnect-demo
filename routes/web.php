@@ -86,5 +86,6 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/assignments/{assignment}/submissions', [WebAssignmentController::class, 'submissions'])->name('assignments.submissions');
     Route::get('/assignments/{assignment}/worksheet', [WebAssignmentController::class, 'downloadWorksheet'])->name('assignments.worksheet');
     Route::get('/submissions/{submission}/file', [WebAssignmentController::class, 'downloadSubmission'])->name('submissions.file');
+    Route::get('/submissions/{submission}/preview', [WebAssignmentController::class, 'previewSubmission'])->name('submissions.preview');
     Route::patch('/submissions/{submission}/review', [WebAssignmentController::class, 'review'])->name('submissions.review');
 });
