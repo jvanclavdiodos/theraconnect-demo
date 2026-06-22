@@ -232,5 +232,113 @@
     </div>
 </div>
 
-{{-- Goals are added in the next slice. --}}
+{{-- ── Therapy goals (Goal Attainment Scaling) ──────────────────────────── --}}
+@php
+    $gasLabels = [
+        -2 => 'Much less than expected',
+        -1 => 'Somewhat less than expected',
+        0  => 'Expected level',
+        1  => 'Somewhat more than expected',
+        2  => 'Much more than expected',
+    ];
+    $statusBadge = ['active' => 'primary', 'met' => 'success', 'dropped' => 'secondary'];
+@endphp
+<div class="card shadow-sm mb-4">
+    <div class="card-header"><strong>Therapy goals</strong></div>
+    <div class="card-body">
+        @if ($isAssignedClinician)
+            <form action="{{ route('progress.goals.store', $patient) }}" method="POST" class="mb-4">
+                @csrf
+                <label class="form-label">Add a goal to track with this patient</label>
+                <div class="row g-2">
+                    <div class="col-md-8">
+                        <input type="text" name="description" maxlength="500" required
+                               class="form-control" placeholder="e.g. Attend a social event without leaving early">
+                    </div>
+                    <div class="col-md-2">
+                        <input type="date" name="target_date" class="form-control" title="Target date (optional)">
+                    </div>
+                    <div class="col-md-2 d-grid">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> Add
+                        </button>
+                    </div>
+                </div>
+                @error('description') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+            </form>
+        @endif
+
+        @forelse ($goals as $goal)
+            <div class="border rounded p-3 mb-3">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="me-3">
+                        <div class="fw-semibold">{{ $goal->description }}</div>
+                        <div class="text-muted small">
+                            @if ($goal->target_date)
+                                Target: {{ $goal->target_date->format('M d, Y') }} ·
+                            @endif
+                            @if ($goal->latestRating)
+                                Latest:
+                                <span class="fw-semibold">{{ sprintf('%+d', $goal->latestRating->rating) }}</span>
+                                ({{ $gasLabels[$goal->latestRating->rating] ?? '' }})
+                                — {{ $goal->latestRating->created_at->format('M d') }}
+                            @else
+                                Not rated yet
+                            @endif
+                        </div>
+                    </div>
+                    <span class="badge bg-{{ $statusBadge[$goal->status] ?? 'secondary' }} text-capitalize">
+                        {{ $goal->status }}
+                    </span>
+                </div>
+
+                @if ($isAssignedClinician && $goal->status === 'active')
+                    <form action="{{ route('progress.goals.rate', $goal) }}" method="POST"
+                          class="row g-2 align-items-center mt-2">
+                        @csrf
+                        <div class="col-md-5">
+                            <select name="rating" class="form-select form-select-sm" required>
+                                <option value="" disabled selected>Rate progress (GAS)…</option>
+                                @foreach ($gasLabels as $val => $label)
+                                    <option value="{{ $val }}">{{ sprintf('%+d', $val) }} · {{ $label }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" name="note" maxlength="255" class="form-control form-control-sm"
+                                   placeholder="Note (optional)">
+                        </div>
+                        <div class="col-md-3 d-flex gap-1">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Rate</button>
+                        </div>
+                    </form>
+                    <div class="mt-2 d-flex gap-2">
+                        <form action="{{ route('progress.goals.status', $goal) }}" method="POST">
+                            @csrf @method('PATCH')
+                            <input type="hidden" name="status" value="met">
+                            <button type="submit" class="btn btn-sm btn-outline-success">
+                                <i class="bi bi-check-circle"></i> Mark met
+                            </button>
+                        </form>
+                        <form action="{{ route('progress.goals.status', $goal) }}" method="POST">
+                            @csrf @method('PATCH')
+                            <input type="hidden" name="status" value="dropped">
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Drop</button>
+                        </form>
+                    </div>
+                @elseif ($isAssignedClinician)
+                    <form action="{{ route('progress.goals.status', $goal) }}" method="POST" class="mt-2">
+                        @csrf @method('PATCH')
+                        <input type="hidden" name="status" value="active">
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Reactivate</button>
+                    </form>
+                @endif
+            </div>
+        @empty
+            <p class="text-muted mb-0">No goals defined yet.
+                @if ($isAssignedClinician) Add one above to start tracking attainment. @endif
+            </p>
+        @endforelse
+    </div>
+</div>
 @endsection

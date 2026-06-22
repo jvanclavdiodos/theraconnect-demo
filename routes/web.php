@@ -77,8 +77,11 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
         Route::put('/patient-notes/{note}', [PatientNoteController::class, 'update'])->name('patient-notes.update');
         Route::delete('/patient-notes/{note}', [PatientNoteController::class, 'destroy'])->name('patient-notes.destroy');
 
-        // Therapy progress: assign questionnaires (caseload-gated in controller).
+        // Therapy progress: assign questionnaires + manage goals (caseload-gated).
         Route::post('/patients/{patient}/assessments', [ProgressController::class, 'assignAssessment'])->name('progress.assessments.assign');
+        Route::post('/patients/{patient}/goals', [ProgressController::class, 'storeGoal'])->name('progress.goals.store');
+        Route::post('/goals/{goal}/ratings', [ProgressController::class, 'rateGoal'])->name('progress.goals.rate');
+        Route::patch('/goals/{goal}/status', [ProgressController::class, 'updateGoalStatus'])->name('progress.goals.status');
 
         // Messaging (patient <-> assigned clinician). Participant-only per Policy.
         Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');

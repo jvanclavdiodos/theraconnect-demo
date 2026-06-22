@@ -5,6 +5,7 @@ import '../../models/api_response.dart';
 import '../../models/mood_log.dart';
 import '../../providers/mood_provider.dart';
 import '../../providers/assessment_provider.dart';
+import '../../providers/goals_provider.dart';
 
 /// "My progress" — a quick mood check-in (1–10) with a recent trend, plus a
 /// shortcut to the questionnaires. The clinician sees the same data on the web
@@ -73,6 +74,7 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(moodLogsProvider);
+          ref.invalidate(goalsProvider);
           await ref.read(moodLogsProvider.future);
         },
         child: ListView(
@@ -157,6 +159,10 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
             ),
             const SizedBox(height: 16),
 
+            // ── Therapy goals (read-only) ───────────────────────────────
+            const _GoalsSection(),
+            const SizedBox(height: 16),
+
             // ── Mood trend ──────────────────────────────────────────────
             Text('Recent mood',
                 style: Theme.of(context)
@@ -210,6 +216,58 @@ Color _moodColor(int score) {
   if (score <= 6) return Colors.amber.shade700;
   if (score <= 8) return Colors.lightGreen.shade700;
   return Colors.green;
+}
+
+/// Read-only list of the patient's therapy goals with the clinician's latest
+/// Goal Attainment Scaling rating.
+class _GoalsSection extends ConsumerWidget {
+  const _GoalsSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final goalsAsync = ref.watch(goalsProvider);
+
+    return goalsAsync.when(
+      data: (goals) {
+        if (goals.isEmpty) return const SizedBox.shrink();
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('My goals',
+                style: Theme.of(context)
+                    .textTheme
+                    .titleMedium
+                    ?.copyWith(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            ...goals.map((g) => Card(
+                  child: ListTile(
+                    leading: Icon(
+                      g.status == 'met'
+                          ? Icons.check_circle
+                          : Icons.flag_outlined,
+                      color: g.status == 'met'
+                          ? Colors.green
+                          : Theme.of(context).colorScheme.primary,
+                    ),
+                    title: Text(g.description),
+                    subtitle: g.latestRating != null
+                        ? Text(
+                            'Latest: ${g.latestRating!.label ?? g.latestRating!.rating.toString()}')
+                        : const Text('Not rated yet'),
+                    trailing: g.status == 'met'
+                        ? const Chip(
+                            label: Text('Met'),
+                            visualDensity: VisualDensity.compact)
+                        : null,
+                  ),
+                )),
+          ],
+        );
+      },
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+    );
+  }
 }
 
 /// A dependency-free bar chart of recent mood scores (oldest → newest).

@@ -77,4 +77,9 @@ class Patient extends Model
     {
         return $this->hasMany(MoodLog::class);
     }
+
+    public function therapyGoals(): HasMany
+    {
+        return $this->hasMany(TherapyGoal::class);
+    }
 }

@@ -79,6 +79,9 @@ Route::prefix('v1')->group(function () {
             Route::get('/mood-logs', [\App\Http\Controllers\Api\V1\MoodLogController::class, 'index']);
             Route::post('/mood-logs', [\App\Http\Controllers\Api\V1\MoodLogController::class, 'store']);
 
+            // Therapy goals (read-only; clinician-authored, GAS-rated)
+            Route::get('/goals', [\App\Http\Controllers\Api\V1\GoalController::class, 'index']);
+
             // Messaging (patient <-> assigned clinician)
             Route::get('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'index']);
             Route::post('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'store']);

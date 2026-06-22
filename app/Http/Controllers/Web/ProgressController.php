@@ -8,8 +8,10 @@ use App\Models\Appointment;
 use App\Models\Assessment;
 use App\Models\MoodLog;
 use App\Models\Patient;
+use App\Models\TherapyGoal;
 use App\Services\AssessmentService;
 use App\Services\AttendanceService;
+use App\Services\GoalService;
 use App\Services\NotificationService;
 use App\Support\Assessments;
 use Illuminate\Http\RedirectResponse;
@@ -23,6 +25,7 @@ class ProgressController extends Controller
     public function __construct(
         private AttendanceService $attendance,
         private AssessmentService $assessments,
+        private GoalService $goals,
         private NotificationService $notifications,
     ) {}
 
@@ -66,8 +69,16 @@ class ProgressController extends Controller
             ->reverse()
             ->values();
 
+        // Therapy goals (active first), each with its latest GAS rating.
+        $goals = TherapyGoal::where('patient_id', $patient->id)
+            ->with('latestRating')
+            ->orderByRaw("status = 'active' desc")
+            ->latest()
+            ->get();
+
         return view('patients.progress', compact(
-            'patient', 'attendance', 'sessions', 'scoreTrends', 'pendingAssessments', 'instruments', 'moodLogs'
+            'patient', 'attendance', 'sessions', 'scoreTrends', 'pendingAssessments',
+            'instruments', 'moodLogs', 'goals'
         ));
     }
 
@@ -97,5 +108,65 @@ class ProgressController extends Controller
 
         return redirect()->route('patients.progress', $patient)
             ->with('status', Assessments::title($validated['instrument']) . ' assigned to the patient.');
+    }
+
+    /** Co-define a therapy goal with the patient. */
+    public function storeGoal(Request $request, Patient $patient): RedirectResponse
+    {
+        $clinician = $this->caseloadClinician($request, $patient);
+
+        $validated = $request->validate([
+            'description' => ['required', 'string', 'max:500'],
+            'target_date' => ['nullable', 'date'],
+        ]);
+
+        $this->goals->create($patient, $clinician, $validated);
+
+        return redirect()->route('patients.progress', $patient)
+            ->with('status', 'Goal added.');
+    }
+
+    /** Record a Goal Attainment Scaling rating for one goal. */
+    public function rateGoal(Request $request, TherapyGoal $goal): RedirectResponse
+    {
+        $this->caseloadClinician($request, $goal->patient);
+
+        $validated = $request->validate([
+            'rating' => ['required', 'integer', 'between:-2,2'],
+            'note' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        $this->goals->rate($goal, $validated['rating'], $validated['note'] ?? null);
+
+        return redirect()->route('patients.progress', $goal->patient_id)
+            ->with('status', 'Progress rated.');
+    }
+
+    /** Move a goal between active / met / dropped. */
+    public function updateGoalStatus(Request $request, TherapyGoal $goal): RedirectResponse
+    {
+        $this->caseloadClinician($request, $goal->patient);
+
+        $validated = $request->validate([
+            'status' => ['required', 'in:' . implode(',', TherapyGoal::STATUSES)],
+        ]);
+
+        $this->goals->setStatus($goal, $validated['status']);
+
+        return redirect()->route('patients.progress', $goal->patient_id)
+            ->with('status', 'Goal updated.');
+    }
+
+    /**
+     * Resolve the acting clinician and assert the patient is on their caseload.
+     * (Goals are clinician-authored data about a patient — same gate as notes.)
+     */
+    private function caseloadClinician(Request $request, Patient $patient)
+    {
+        $clinician = $request->user()->clinician;
+        abort_unless($clinician !== null, 403, 'No clinician profile.');
+        abort_unless($patient->assigned_clinician_id === $clinician->id, 403);
+
+        return $clinician;
     }
 }
