@@ -22,6 +22,9 @@ class ApiConfig {
   static const String appointmentsEndpoint = '/appointments';
   static const String conversationsEndpoint = '/conversations';
   static const String notesEndpoint = '/notes';
+  static const String assessmentsEndpoint = '/assessments';
+  static const String moodLogsEndpoint = '/mood-logs';
+  static const String goalsEndpoint = '/goals';
   static const String assignmentsEndpoint = '/assignments';
   static const String notificationsEndpoint = '/notifications';
   static const String deviceTokenEndpoint = '/device-token';

@@ -67,4 +67,19 @@ class Patient extends Model
     {
         return $this->hasMany(PatientNote::class);
     }
+
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class);
+    }
+
+    public function moodLogs(): HasMany
+    {
+        return $this->hasMany(MoodLog::class);
+    }
+
+    public function therapyGoals(): HasMany
+    {
+        return $this->hasMany(TherapyGoal::class);
+    }
 }

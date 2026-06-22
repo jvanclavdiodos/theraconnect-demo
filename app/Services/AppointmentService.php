@@ -144,10 +144,18 @@ class AppointmentService
         return $appointment->fresh();
     }
 
-    /** Close the case: mark a held appointment as completed. */
+    /** Close the case: mark a held appointment as completed (patient attended). */
     public function complete(Appointment $appointment): Appointment
     {
         $appointment->update(['status' => 'completed']);
+
+        return $appointment->fresh();
+    }
+
+    /** Record that the patient missed the session (attendance tracking). */
+    public function markNoShow(Appointment $appointment): Appointment
+    {
+        $appointment->update(['status' => 'no_show']);
 
         return $appointment->fresh();
     }

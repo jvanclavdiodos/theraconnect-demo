@@ -20,6 +20,7 @@ return new class extends Migration
                 'assignment_created',
                 'assignment_deadline',
                 'message_received',
+                'assessment_assigned',
                 'generic',
             ]);
             $table->string('title');

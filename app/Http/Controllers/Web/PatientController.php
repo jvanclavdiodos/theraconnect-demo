@@ -39,7 +39,12 @@ class PatientController extends Controller
 
         $patients = $query->paginate(20)->appends($request->query());
 
-        return view('patients.index', compact('patients'));
+        // Flag patients with a current no-show streak so disengagement is
+        // visible on the list without opening each profile.
+        $atRisk = app(\App\Services\AttendanceService::class)
+            ->atRiskPatientIds($patients->getCollection());
+
+        return view('patients.index', compact('patients', 'atRisk'));
     }
 
     public function create(): View
