@@ -30,6 +30,18 @@
                     <dt class="col-sm-5">Date of Birth</dt>
                     <dd class="col-sm-7">{{ $patient->date_of_birth ? $patient->date_of_birth->format('M d, Y') : '—' }}</dd>
 
+                    <dt class="col-sm-5">Gender</dt>
+                    <dd class="col-sm-7">{{ $patient->gender ?? '—' }}</dd>
+
+                    <dt class="col-sm-5">Educational Attainment</dt>
+                    <dd class="col-sm-7">{{ $patient->educational_attainment ?? '—' }}</dd>
+
+                    <dt class="col-sm-5">Employment Status</dt>
+                    <dd class="col-sm-7">{{ $patient->employment_status ?? '—' }}</dd>
+
+                    <dt class="col-sm-5">Personal Issues</dt>
+                    <dd class="col-sm-7" style="white-space: pre-wrap;">{{ $patient->personal_issues ?? '—' }}</dd>
+
                     <dt class="col-sm-5">Contact No.</dt>
                     <dd class="col-sm-7">{{ $patient->contact_no ?? '—' }}</dd>
 

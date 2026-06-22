@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 class PatientController extends Controller
@@ -55,6 +56,10 @@ class PatientController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8'],
             'date_of_birth' => ['nullable', 'date'],
+            'gender' => ['nullable', 'string', Rule::in(Patient::GENDERS)],
+            'educational_attainment' => ['nullable', 'string', Rule::in(Patient::EDUCATION_LEVELS)],
+            'employment_status' => ['nullable', 'string', Rule::in(Patient::EMPLOYMENT_STATUSES)],
+            'personal_issues' => ['nullable', 'string', 'max:2000'],
             'contact_no' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
             'emergency_contact' => ['nullable', 'string', 'max:255'],
@@ -82,6 +87,10 @@ class PatientController extends Controller
                 'user_id' => $user->id,
                 'assigned_clinician_id' => $assignedClinicianId,
                 'date_of_birth' => $validated['date_of_birth'] ?? null,
+                'gender' => $validated['gender'] ?? null,
+                'educational_attainment' => $validated['educational_attainment'] ?? null,
+                'employment_status' => $validated['employment_status'] ?? null,
+                'personal_issues' => $validated['personal_issues'] ?? null,
                 'contact_no' => $validated['contact_no'] ?? null,
                 'address' => $validated['address'] ?? null,
                 'emergency_contact' => $validated['emergency_contact'] ?? null,
@@ -124,6 +133,10 @@ class PatientController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $patient->user_id],
             'date_of_birth' => ['nullable', 'date'],
+            'gender' => ['nullable', 'string', Rule::in(Patient::GENDERS)],
+            'educational_attainment' => ['nullable', 'string', Rule::in(Patient::EDUCATION_LEVELS)],
+            'employment_status' => ['nullable', 'string', Rule::in(Patient::EMPLOYMENT_STATUSES)],
+            'personal_issues' => ['nullable', 'string', 'max:2000'],
             'contact_no' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
             'emergency_contact' => ['nullable', 'string', 'max:255'],
@@ -139,6 +152,10 @@ class PatientController extends Controller
         $patient->update([
             'assigned_clinician_id' => $validated['assigned_clinician_id'] ?? null,
             'date_of_birth' => $validated['date_of_birth'] ?? null,
+            'gender' => $validated['gender'] ?? null,
+            'educational_attainment' => $validated['educational_attainment'] ?? null,
+            'employment_status' => $validated['employment_status'] ?? null,
+            'personal_issues' => $validated['personal_issues'] ?? null,
             'contact_no' => $validated['contact_no'] ?? null,
             'address' => $validated['address'] ?? null,
             'emergency_contact' => $validated['emergency_contact'] ?? null,

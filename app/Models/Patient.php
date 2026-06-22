@@ -11,10 +11,20 @@ class Patient extends Model
 {
     use SoftDeletes;
 
+    public const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
+
+    public const EDUCATION_LEVELS = ['None', 'Elementary', 'High School', 'Vocational', 'College', 'Postgraduate'];
+
+    public const EMPLOYMENT_STATUSES = ['Employed', 'Self-employed', 'Unemployed', 'Student', 'Retired'];
+
     protected $fillable = [
         'user_id',
         'assigned_clinician_id',
         'date_of_birth',
+        'gender',
+        'educational_attainment',
+        'employment_status',
+        'personal_issues',
         'contact_no',
         'address',
         'emergency_contact',
