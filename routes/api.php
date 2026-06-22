@@ -70,6 +70,11 @@ Route::prefix('v1')->group(function () {
             // Notes shared by the clinician (read-only)
             Route::get('/notes', [\App\Http\Controllers\Api\V1\PatientNoteController::class, 'index']);
 
+            // Therapy progress — standardized questionnaires (PHQ-9 / GAD-7)
+            Route::get('/assessments', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'index']);
+            Route::get('/assessments/{assessment}', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'show']);
+            Route::post('/assessments/{assessment}/submit', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'submit']);
+
             // Messaging (patient <-> assigned clinician)
             Route::get('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'index']);
             Route::post('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'store']);

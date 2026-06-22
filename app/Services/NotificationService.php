@@ -106,6 +106,21 @@ class NotificationService
         );
     }
 
+    /**
+     * Sent to the patient when their clinician assigns a standardized
+     * questionnaire (PHQ-9 / GAD-7) to complete in the app.
+     */
+    public function assessmentAssigned(int $userId, string $instrumentTitle): Notification
+    {
+        return $this->create(
+            $userId,
+            'assessment_assigned',
+            'New questionnaire to complete',
+            "Your clinician asked you to complete the {$instrumentTitle}.",
+            null
+        );
+    }
+
     public function assignmentCreated(int $userId, string $clinicianName, string $title): Notification
     {
         return $this->create(
