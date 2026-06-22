@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/patient.dart';
 import '../../providers/profile_provider.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
@@ -16,6 +17,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   final _contactController = TextEditingController();
   final _addressController = TextEditingController();
   final _emergencyContactController = TextEditingController();
+  final _personalIssuesController = TextEditingController();
+  String? _gender;
+  String? _education;
+  String? _employment;
   bool _saving = false;
 
   @override
@@ -28,6 +33,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
         _contactController.text = p.contactNo ?? '';
         _addressController.text = p.address ?? '';
         _emergencyContactController.text = p.emergencyContact ?? '';
+        _personalIssuesController.text = p.personalIssues ?? '';
+        _gender = Patient.genders.contains(p.gender) ? p.gender : null;
+        _education = Patient.educationLevels.contains(p.educationalAttainment) ? p.educationalAttainment : null;
+        _employment = Patient.employmentStatuses.contains(p.employmentStatus) ? p.employmentStatus : null;
       }
     });
   }
@@ -38,8 +47,12 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     _contactController.dispose();
     _addressController.dispose();
     _emergencyContactController.dispose();
+    _personalIssuesController.dispose();
     super.dispose();
   }
+
+  String? _trimOrNull(TextEditingController c) =>
+      c.text.trim().isEmpty ? null : c.text.trim();
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
@@ -47,18 +60,14 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     setState(() => _saving = true);
 
     final error = await ref.read(profileProvider.notifier).updateProfile(
-          dateOfBirth: _dateOfBirthController.text.trim().isEmpty
-              ? null
-              : _dateOfBirthController.text.trim(),
-          contactNo: _contactController.text.trim().isEmpty
-              ? null
-              : _contactController.text.trim(),
-          address: _addressController.text.trim().isEmpty
-              ? null
-              : _addressController.text.trim(),
-          emergencyContact: _emergencyContactController.text.trim().isEmpty
-              ? null
-              : _emergencyContactController.text.trim(),
+          dateOfBirth: _trimOrNull(_dateOfBirthController),
+          gender: _gender,
+          educationalAttainment: _education,
+          employmentStatus: _employment,
+          personalIssues: _trimOrNull(_personalIssuesController),
+          contactNo: _trimOrNull(_contactController),
+          address: _trimOrNull(_addressController),
+          emergencyContact: _trimOrNull(_emergencyContactController),
         );
 
     if (mounted) {
@@ -76,6 +85,9 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     }
   }
 
+  DropdownMenuItem<String> _item(String v) =>
+      DropdownMenuItem(value: v, child: Text(v));
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -92,6 +104,53 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
                 hintText: 'YYYY-MM-DD',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.cake),
+              ),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _gender,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Gender',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.wc),
+              ),
+              items: Patient.genders.map(_item).toList(),
+              onChanged: (v) => setState(() => _gender = v),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _education,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Educational Attainment',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.school),
+              ),
+              items: Patient.educationLevels.map(_item).toList(),
+              onChanged: (v) => setState(() => _education = v),
+            ),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: _employment,
+              isExpanded: true,
+              decoration: const InputDecoration(
+                labelText: 'Employment Status',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.work_outline),
+              ),
+              items: Patient.employmentStatuses.map(_item).toList(),
+              onChanged: (v) => setState(() => _employment = v),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: _personalIssuesController,
+              maxLines: 4,
+              decoration: const InputDecoration(
+                labelText: 'Personal Issues',
+                hintText: 'Anything you want your clinician to know',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.favorite_border),
               ),
             ),
             const SizedBox(height: 16),

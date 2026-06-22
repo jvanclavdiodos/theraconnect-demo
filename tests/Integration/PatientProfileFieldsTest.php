@@ -44,6 +44,39 @@ class PatientProfileFieldsTest extends TestCase
             ->assertSessionHasErrors('gender');
     }
 
+    public function test_patient_updates_profile_fields_via_api(): void
+    {
+        $patient = $this->createPatient();
+
+        $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
+            ->putJson('/api/v1/profile', [
+                'gender' => 'Other',
+                'educational_attainment' => 'Vocational',
+                'employment_status' => 'Unemployed',
+                'personal_issues' => 'Sleep trouble.',
+            ])
+            ->assertStatus(200)
+            ->assertJsonPath('data.gender', 'Other')
+            ->assertJsonPath('data.educational_attainment', 'Vocational')
+            ->assertJsonPath('data.employment_status', 'Unemployed')
+            ->assertJsonPath('data.personal_issues', 'Sleep trouble.');
+
+        $this->assertDatabaseHas('patients', [
+            'id' => $patient['patient']->id,
+            'gender' => 'Other',
+            'employment_status' => 'Unemployed',
+        ]);
+    }
+
+    public function test_api_rejects_invalid_employment_status(): void
+    {
+        $patient = $this->createPatient();
+
+        $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
+            ->putJson('/api/v1/profile', ['employment_status' => 'Astronaut'])
+            ->assertStatus(422);
+    }
+
     public function test_admin_can_update_and_show_displays_fields(): void
     {
         $admin = $this->createAdmin();

@@ -42,6 +42,10 @@ class ProfileNotifier extends StateNotifier<AsyncValue<Patient?>> {
 
   Future<String?> updateProfile({
     String? dateOfBirth,
+    String? gender,
+    String? educationalAttainment,
+    String? employmentStatus,
+    String? personalIssues,
     String? contactNo,
     String? address,
     String? emergencyContact,
@@ -49,6 +53,10 @@ class ProfileNotifier extends StateNotifier<AsyncValue<Patient?>> {
     try {
       final patient = await _api.updateProfile(
         dateOfBirth: dateOfBirth,
+        gender: gender,
+        educationalAttainment: educationalAttainment,
+        employmentStatus: employmentStatus,
+        personalIssues: personalIssues,
         contactNo: contactNo,
         address: address,
         emergencyContact: emergencyContact,

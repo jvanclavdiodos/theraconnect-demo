@@ -94,6 +94,30 @@ class ProfileScreen extends ConsumerWidget {
                         title: const Text('Date of Birth'),
                         subtitle: Text(patient.dateOfBirth!),
                       ),
+                    if (patient.gender != null)
+                      ListTile(
+                        leading: const Icon(Icons.wc),
+                        title: const Text('Gender'),
+                        subtitle: Text(patient.gender!),
+                      ),
+                    if (patient.educationalAttainment != null)
+                      ListTile(
+                        leading: const Icon(Icons.school),
+                        title: const Text('Educational Attainment'),
+                        subtitle: Text(patient.educationalAttainment!),
+                      ),
+                    if (patient.employmentStatus != null)
+                      ListTile(
+                        leading: const Icon(Icons.work_outline),
+                        title: const Text('Employment Status'),
+                        subtitle: Text(patient.employmentStatus!),
+                      ),
+                    if (patient.personalIssues != null && patient.personalIssues!.isNotEmpty)
+                      ListTile(
+                        leading: const Icon(Icons.favorite_border),
+                        title: const Text('Personal Issues'),
+                        subtitle: Text(patient.personalIssues!),
+                      ),
                     if (patient.contactNo != null)
                       ListTile(
                         leading: const Icon(Icons.phone),

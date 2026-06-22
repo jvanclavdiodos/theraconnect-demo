@@ -20,16 +20,24 @@ class ProfileApi {
 
   Future<Patient> updateProfile({
     String? dateOfBirth,
+    String? gender,
+    String? educationalAttainment,
+    String? employmentStatus,
+    String? personalIssues,
     String? contactNo,
     String? address,
     String? emergencyContact,
   }) async {
     try {
       final response = await _client.put(ApiConfig.profileEndpoint, data: {
-        if (dateOfBirth != null) 'date_of_birth': dateOfBirth,
-        if (contactNo != null) 'contact_no': contactNo,
-        if (address != null) 'address': address,
-        if (emergencyContact != null) 'emergency_contact': emergencyContact,
+        'date_of_birth': dateOfBirth,
+        'gender': gender,
+        'educational_attainment': educationalAttainment,
+        'employment_status': employmentStatus,
+        'personal_issues': personalIssues,
+        'contact_no': contactNo,
+        'address': address,
+        'emergency_contact': emergencyContact,
       });
       return Patient.fromJson(response.data['data']);
     } on DioException catch (e) {
