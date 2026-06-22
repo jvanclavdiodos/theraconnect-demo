@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -54,6 +55,8 @@ class AccountController extends Controller
      */
     public function showAvatar(User $user): StreamedResponse
     {
+        Gate::authorize('viewAvatar', $user);
+
         abort_unless(
             $user->avatar_path && Storage::disk('local')->exists($user->avatar_path),
             404

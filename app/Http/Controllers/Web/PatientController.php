@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\Clinician;
 use App\Models\Patient;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -106,9 +107,11 @@ class PatientController extends Controller
             ->with('status', 'Patient created successfully.');
     }
 
-    public function show(Patient $patient): View
+    public function show(Request $request, Patient $patient): View
     {
         Gate::authorize('view', $patient);
+
+        app(ActivityLogService::class)->log($request->user(), 'patient.viewed', $patient);
 
         $patient->load([
             'user',

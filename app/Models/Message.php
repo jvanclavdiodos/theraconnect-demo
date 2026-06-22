@@ -13,6 +13,11 @@ class Message extends Model
         'body',
     ];
 
+    protected function casts(): array
+    {
+        return ['body' => 'encrypted'];
+    }
+
     public function conversation(): BelongsTo
     {
         return $this->belongsTo(Conversation::class);

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Web\AccountController;
+use App\Http\Controllers\Web\ActivityLogController;
 use App\Http\Controllers\Web\AuthenticatedSessionController;
 use App\Http\Controllers\Web\ChatbotContentController;
 use App\Http\Controllers\Web\ClinicianAvailabilityController;
@@ -30,7 +31,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
 
     // Account / profile picture (any staff user manages their own).
     Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
-    Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->name('account.avatar.update');
+    Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->middleware('throttle:10,1')->name('account.avatar.update');
     Route::delete('/account/avatar', [AccountController::class, 'destroyAvatar'])->name('account.avatar.destroy');
     Route::get('/avatars/{user}', [AccountController::class, 'showAvatar'])->name('avatars.show');
 
@@ -61,6 +62,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
             ->except(['show'])
             ->parameters(['chatbot-content' => 'intent']);
         Route::get('/notifications/logs', [NotificationLogController::class, 'index'])->name('notifications.logs');
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     });
 
     // Clinician availability calendar (JSON; powers the dashboard calendar).

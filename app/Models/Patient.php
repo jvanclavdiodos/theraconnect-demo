@@ -35,6 +35,7 @@ class Patient extends Model
     {
         return [
             'date_of_birth' => 'date',
+            'personal_issues' => 'encrypted',
         ];
     }
 

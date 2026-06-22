@@ -85,6 +85,10 @@
                             <i class="bi bi-bell"></i> <span>Notification Logs</span>
                             <i class="bi bi-chevron-right tc-nav-chevron"></i>
                         </a>
+                        <a href="{{ route('activity-logs.index') }}" class="tc-nav-item {{ $isActive('activity-logs.*') }}">
+                            <i class="bi bi-journal-text"></i> <span>Activity Audit</span>
+                            <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                        </a>
                     </div>
                 @endif
             @endif

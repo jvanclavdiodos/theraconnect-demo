@@ -26,8 +26,12 @@ class PatientProfileFieldsTest extends TestCase
             'gender' => 'Female',
             'educational_attainment' => 'College',
             'employment_status' => 'Student',
-            'personal_issues' => 'Anxiety around exams.',
         ]);
+        // personal_issues is encrypted at rest — verify via model
+        $this->assertSame(
+            'Anxiety around exams.',
+            \App\Models\Patient::latest()->first()->personal_issues
+        );
     }
 
     public function test_invalid_option_is_rejected(): void

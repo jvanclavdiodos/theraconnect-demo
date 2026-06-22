@@ -9,6 +9,7 @@ use App\Models\Assessment;
 use App\Models\MoodLog;
 use App\Models\Patient;
 use App\Models\TherapyGoal;
+use App\Services\ActivityLogService;
 use App\Services\AssessmentService;
 use App\Services\AttendanceService;
 use App\Services\GoalService;
@@ -95,8 +96,13 @@ class ProgressController extends Controller
             'instrument' => ['required', 'in:' . implode(',', array_keys(Assessments::INSTRUMENTS))],
         ]);
 
-        $notification = DB::transaction(function () use ($patient, $clinician, $validated) {
+        $notification = DB::transaction(function () use ($request, $patient, $clinician, $validated) {
             $assessment = $this->assessments->assign($patient, $clinician, $validated['instrument']);
+
+            app(ActivityLogService::class)->log(
+                $request->user(), 'assessment.assigned', $assessment,
+                ['instrument' => $validated['instrument'], 'patient_id' => $patient->id]
+            );
 
             return $this->notifications->assessmentAssigned(
                 $patient->user->id,

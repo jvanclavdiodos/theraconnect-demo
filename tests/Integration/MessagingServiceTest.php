@@ -40,8 +40,8 @@ class MessagingServiceTest extends TestCase
         $this->assertDatabaseHas('messages', [
             'conversation_id' => $conversation->id,
             'sender_id' => $patient['user']->id,
-            'body' => 'Hello doctor',
         ]);
+        $this->assertSame('Hello doctor', $message->fresh()->body);
         $this->assertNotNull($conversation->fresh()->last_message_at);
 
         // Clinician (the recipient) is notified.

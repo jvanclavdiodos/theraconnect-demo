@@ -16,9 +16,11 @@ class ClinicianController extends Controller
     public function index(): JsonResponse
     {
         $clinicians = Clinician::with('user')
-            ->get()
-            ->sortBy(fn ($c) => $c->user?->name)
-            ->values();
+            ->join('users', 'users.id', '=', 'clinicians.user_id')
+            ->orderBy('users.name')
+            ->select('clinicians.*')
+            ->limit(100)
+            ->get();
 
         return response()->json([
             'data' => ClinicianResource::collection($clinicians),

@@ -32,8 +32,12 @@ class WebAppointmentController extends Controller
             $query->where('clinician_id', $user->clinician->id);
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        $validStatus = $request->validate([
+            'status' => ['nullable', 'in:pending,approved,rejected,completed,cancelled,rescheduled,no_show'],
+        ])['status'] ?? null;
+
+        if ($validStatus) {
+            $query->where('status', $validStatus);
         }
 
         $appointments = $query->paginate(20);
