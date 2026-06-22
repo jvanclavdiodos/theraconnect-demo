@@ -10,6 +10,7 @@ use App\Http\Controllers\Web\MessageController;
 use App\Http\Controllers\Web\NotificationLogController;
 use App\Http\Controllers\Web\PatientController;
 use App\Http\Controllers\Web\PatientNoteController;
+use App\Http\Controllers\Web\ProgressController;
 use App\Http\Controllers\Web\WebAppointmentController;
 use App\Http\Controllers\Web\WebAssignmentController;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,9 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
     Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
     Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
+
+    // Patient therapy-progress view (attendance + assessments + mood + goals).
+    Route::get('/patients/{patient}/progress', [ProgressController::class, 'show'])->name('patients.progress');
 
     // ── Admin-only management ────────────────────────────────────────────
     Route::middleware('role:admin')->group(function () {

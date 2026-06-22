@@ -52,6 +52,11 @@
                             <a href="{{ route('patients.show', $patient) }}" class="text-decoration-none d-flex align-items-center gap-2">
                                 <span class="tc-cell-avatar">{{ $initials($patient->user->name) }}</span>
                                 <span class="fw-semibold">{{ $patient->user->name }}</span>
+                                @if (!empty($atRisk[$patient->id]))
+                                    <span class="badge bg-danger" title="Consecutive no-shows — at risk of disengaging">
+                                        <i class="bi bi-exclamation-triangle"></i> At risk
+                                    </span>
+                                @endif
                             </a>
                         </td>
                         <td>{{ $patient->user->email }}</td>

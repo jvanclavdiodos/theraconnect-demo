@@ -13,6 +13,7 @@
     $filters = [
         '' => 'All', 'pending' => 'Pending', 'approved' => 'Approved',
         'rejected' => 'Rejected', 'completed' => 'Completed', 'cancelled' => 'Cancelled',
+        'no_show' => 'No-show',
     ];
 @endphp
 
@@ -62,10 +63,10 @@
                             <span class="badge bg-{{ match($appt->status) {
                                 'approved' => 'success',
                                 'pending', 'rescheduled' => 'warning',
-                                'rejected', 'cancelled' => 'danger',
+                                'rejected', 'cancelled', 'no_show' => 'danger',
                                 'completed' => 'info',
                                 default => 'secondary'
-                            } }}">{{ ucfirst($appt->status) }}</span>
+                            } }}">{{ $appt->status === 'no_show' ? 'No-show' : ucfirst($appt->status) }}</span>
                         </td>
                         <td class="text-end">
                             @if ($appt->meetingLinkActive())
@@ -158,7 +159,7 @@
     </div>
 </div>
 
-{{-- Post-meeting wrap-up / close case (hidden by default) --}}
+{{-- Post-meeting wrap-up / session outcome (hidden by default) --}}
 <div x-data="{ open: false, apptId: null }"
      x-on:open-conclude.window="open = true; apptId = $event.detail.id"
      x-show="open"
@@ -174,12 +175,24 @@
                         <button type="button" class="btn-close" @click="open = false"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="mb-0">Was the meeting concluded successfully? Confirming will close this case and mark the appointment as <strong>completed</strong>.</p>
+                        <p>How did this session go? This closes the case and records attendance for progress tracking.</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="outcome" id="outcome-attended" value="attended" checked>
+                            <label class="form-check-label" for="outcome-attended">
+                                <strong>Patient attended</strong> — mark completed
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="outcome" id="outcome-no-show" value="no_show">
+                            <label class="form-check-label" for="outcome-no-show">
+                                <strong>Patient no-showed</strong> — record as missed
+                            </label>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @click="open = false">Not yet</button>
                         <button type="submit" class="btn btn-success">
-                            <i class="bi bi-check-lg"></i> Yes, close case
+                            <i class="bi bi-check-lg"></i> Save &amp; close case
                         </button>
                     </div>
                 </form>
