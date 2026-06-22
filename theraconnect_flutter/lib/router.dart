@@ -21,6 +21,7 @@ import 'screens/messages/message_thread_screen.dart';
 import 'screens/chatbot/chatbot_screen.dart';
 import 'screens/notifications/notification_list_screen.dart';
 import 'screens/notes/notes_screen.dart';
+import 'screens/progress/my_progress_screen.dart';
 import 'screens/progress/assessments_screen.dart';
 import 'screens/progress/assessment_fill_screen.dart';
 import 'screens/profile/profile_screen.dart';
@@ -187,6 +188,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/notes',
                 builder: (context, state) => const NotesScreen(),
+              ),
+              GoRoute(
+                path: '/progress',
+                builder: (context, state) => const MyProgressScreen(),
               ),
               GoRoute(
                 path: '/assessments',

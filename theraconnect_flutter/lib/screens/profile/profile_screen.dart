@@ -63,10 +63,11 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push('/notes'),
                 ),
                 ListTile(
-                  leading: const Icon(Icons.fact_check_outlined),
-                  title: const Text('My questionnaires'),
+                  leading: const Icon(Icons.insights_outlined),
+                  title: const Text('My progress'),
+                  subtitle: const Text('Mood check-ins & questionnaires'),
                   trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push('/assessments'),
+                  onTap: () => context.push('/progress'),
                 ),
                 ListTile(
                   leading: const Icon(Icons.download),

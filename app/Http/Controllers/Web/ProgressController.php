@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Jobs\SendPushNotification;
 use App\Models\Appointment;
 use App\Models\Assessment;
+use App\Models\MoodLog;
 use App\Models\Patient;
 use App\Services\AssessmentService;
 use App\Services\AttendanceService;
@@ -57,8 +58,16 @@ class ProgressController extends Controller
 
         $instruments = Assessments::INSTRUMENTS;
 
+        // Recent mood check-ins (oldest → newest) for a denser between-scale trend.
+        $moodLogs = MoodLog::where('patient_id', $patient->id)
+            ->latest()
+            ->take(30)
+            ->get()
+            ->reverse()
+            ->values();
+
         return view('patients.progress', compact(
-            'patient', 'attendance', 'sessions', 'scoreTrends', 'pendingAssessments', 'instruments'
+            'patient', 'attendance', 'sessions', 'scoreTrends', 'pendingAssessments', 'instruments', 'moodLogs'
         ));
     }
 

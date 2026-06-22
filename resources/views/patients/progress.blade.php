@@ -193,5 +193,44 @@
     </div>
 </div>
 
-{{-- Mood and goals are added in later slices. --}}
+{{-- ── Mood check-ins ────────────────────────────────────────────────────── --}}
+<div class="card shadow-sm mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>Mood check-ins</strong>
+        @if ($moodLogs->isNotEmpty())
+            <span class="text-muted small">
+                Latest: <span class="fw-bold">{{ $moodLogs->last()->score }}</span>/10
+            </span>
+        @endif
+    </div>
+    <div class="card-body">
+        @if ($moodLogs->isNotEmpty())
+            @php $moodScores = $moodLogs->pluck('score')->all(); @endphp
+            {!! $sparkline($moodScores, 10, '#f59e0b') !!}
+            <div class="table-responsive mt-1">
+                <table class="table table-sm mb-0">
+                    <tbody>
+                        <tr class="text-muted small">
+                            @foreach ($moodLogs as $m)
+                                <td class="text-center">{{ $m->created_at->format('M d') }}</td>
+                            @endforeach
+                        </tr>
+                        <tr class="fw-semibold">
+                            @foreach ($moodLogs as $m)
+                                <td class="text-center">{{ $m->score }}</td>
+                            @endforeach
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p class="text-muted small mb-0 mt-2">
+                The patient logs these in their app (1 = very low, 10 = very good).
+            </p>
+        @else
+            <p class="text-muted mb-0">No mood check-ins logged yet.</p>
+        @endif
+    </div>
+</div>
+
+{{-- Goals are added in the next slice. --}}
 @endsection

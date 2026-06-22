@@ -75,6 +75,10 @@ Route::prefix('v1')->group(function () {
             Route::get('/assessments/{assessment}', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'show']);
             Route::post('/assessments/{assessment}/submit', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'submit']);
 
+            // Therapy progress — quick mood check-ins (1–10)
+            Route::get('/mood-logs', [\App\Http\Controllers\Api\V1\MoodLogController::class, 'index']);
+            Route::post('/mood-logs', [\App\Http\Controllers\Api\V1\MoodLogController::class, 'store']);
+
             // Messaging (patient <-> assigned clinician)
             Route::get('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'index']);
             Route::post('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'store']);

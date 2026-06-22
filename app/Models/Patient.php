@@ -72,4 +72,9 @@ class Patient extends Model
     {
         return $this->hasMany(Assessment::class);
     }
+
+    public function moodLogs(): HasMany
+    {
+        return $this->hasMany(MoodLog::class);
+    }
 }
