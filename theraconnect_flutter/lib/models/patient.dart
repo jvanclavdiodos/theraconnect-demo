@@ -1,6 +1,7 @@
 class Patient {
   final int id;
   final int userId;
+  final bool hasAvatar;
   final String? dateOfBirth;
   final String? gender;
   final String? educationalAttainment;
@@ -16,6 +17,7 @@ class Patient {
   const Patient({
     required this.id,
     required this.userId,
+    this.hasAvatar = false,
     this.dateOfBirth,
     this.gender,
     this.educationalAttainment,
@@ -33,6 +35,7 @@ class Patient {
     return Patient(
       id: json['id'] as int,
       userId: json['user_id'] as int,
+      hasAvatar: json['has_avatar'] as bool? ?? false,
       dateOfBirth: json['date_of_birth'] as String?,
       gender: json['gender'] as String?,
       educationalAttainment: json['educational_attainment'] as String?,
@@ -51,6 +54,7 @@ class Patient {
     return {
       'id': id,
       'user_id': userId,
+      'has_avatar': hasAvatar,
       'date_of_birth': dateOfBirth,
       'gender': gender,
       'educational_attainment': educationalAttainment,

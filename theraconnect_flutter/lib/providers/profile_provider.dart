@@ -40,6 +40,17 @@ class ProfileNotifier extends StateNotifier<AsyncValue<Patient?>> {
     }
   }
 
+  Future<String?> uploadAvatar(String filePath) async {
+    try {
+      final patient = await _api.uploadAvatar(filePath);
+      _cache.put('patient', patient.toJson());
+      state = AsyncValue.data(patient);
+      return null;
+    } on ApiError catch (e) {
+      return e.userMessage;
+    }
+  }
+
   Future<String?> updateProfile({
     String? dateOfBirth,
     String? gender,

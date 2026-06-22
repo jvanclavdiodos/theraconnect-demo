@@ -12,6 +12,8 @@ class PatientResource extends JsonResource
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
+            'has_avatar' => $this->relationLoaded('user') ? (bool) $this->user?->avatar_path : false,
+            'avatar_url' => url('/api/v1/profile/avatar'),
             'date_of_birth' => $this->date_of_birth,
             'gender' => $this->gender,
             'educational_attainment' => $this->educational_attainment,

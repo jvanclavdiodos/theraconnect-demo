@@ -46,6 +46,8 @@ Route::prefix('v1')->group(function () {
             // Profile
             Route::get('/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'show']);
             Route::put('/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'update']);
+            Route::post('/profile/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'updateAvatar']);
+            Route::get('/profile/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'avatar']);
 
             // Clinicians (read-only list for clinician-first booking)
             Route::get('/clinicians', [\App\Http\Controllers\Api\V1\ClinicianController::class, 'index']);

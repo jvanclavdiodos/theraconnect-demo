@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
+import 'profile_avatar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -22,11 +23,7 @@ class ProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    child: Icon(Icons.person, size: 40, color: Theme.of(context).colorScheme.onPrimaryContainer),
-                  ),
+                  ProfileAvatar(hasAvatar: profile.valueOrNull?.hasAvatar ?? false),
                   const SizedBox(height: 12),
                   Text(authState.user?.name ?? '', style: Theme.of(context).textTheme.titleLarge),
                   Text(authState.user?.email ?? '', style: Theme.of(context).textTheme.bodyMedium),

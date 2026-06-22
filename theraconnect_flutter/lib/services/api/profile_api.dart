@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import '../../config/api_config.dart';
 import '../../models/patient.dart';
@@ -8,6 +9,32 @@ class ProfileApi {
   final ApiClient _client;
 
   ProfileApi(this._client);
+
+  Future<Patient> uploadAvatar(String filePath) async {
+    try {
+      final response = await _client.postMultipart(
+        '${ApiConfig.profileEndpoint}/avatar',
+        data: const {},
+        filePath: filePath,
+        fileField: 'avatar',
+      );
+      return Patient.fromJson(response.data['data']);
+    } on DioException catch (e) {
+      throw handleDioError(e);
+    }
+  }
+
+  Future<Uint8List> getAvatarBytes() async {
+    try {
+      final response = await _client.dio.get(
+        '${ApiConfig.profileEndpoint}/avatar',
+        options: Options(responseType: ResponseType.bytes),
+      );
+      return Uint8List.fromList(List<int>.from(response.data as List));
+    } on DioException catch (e) {
+      throw handleDioError(e);
+    }
+  }
 
   Future<Patient> getProfile() async {
     try {
