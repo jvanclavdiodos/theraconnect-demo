@@ -20,6 +20,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'avatar_path',
     ];
 
     protected $hidden = [
@@ -53,5 +54,10 @@ class User extends Authenticatable
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
+    }
+
+    public function hasAvatar(): bool
+    {
+        return ! empty($this->avatar_path);
     }
 }

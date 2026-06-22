@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Web\AccountController;
 use App\Http\Controllers\Web\AuthenticatedSessionController;
 use App\Http\Controllers\Web\ChatbotContentController;
 use App\Http\Controllers\Web\ClinicianAvailabilityController;
@@ -25,6 +26,12 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Account / profile picture (any staff user manages their own).
+    Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
+    Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->name('account.avatar.update');
+    Route::delete('/account/avatar', [AccountController::class, 'destroyAvatar'])->name('account.avatar.destroy');
+    Route::get('/avatars/{user}', [AccountController::class, 'showAvatar'])->name('avatars.show');
 
     // ── Patients ─────────────────────────────────────────────────────────
     // index/show/create/store are admin + clinician (clinician queries are
