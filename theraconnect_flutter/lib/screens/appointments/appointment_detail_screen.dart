@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../models/api_response.dart';
+import '../../models/appointment.dart';
 import '../../providers/appointment_provider.dart';
 
 class AppointmentDetailScreen extends ConsumerWidget {
@@ -20,16 +22,16 @@ class AppointmentDetailScreen extends ConsumerWidget {
       ),
       error: (e, _) => Scaffold(
         appBar: AppBar(title: const Text('Appointment')),
-        body: Center(child: Text('$e')),
+        body: Center(child: Text(ApiError.fromException(e).userMessage)),
       ),
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, appointment) {
+  Widget _buildContent(BuildContext context, WidgetRef ref, Appointment appointment) {
     final canCancel = appointment.status == 'pending' || appointment.status == 'approved';
-    final canJoin = appointment.mode == 'online' &&
-        appointment.meetingLink != null &&
-        (appointment.status == 'approved' || appointment.status == 'rescheduled');
+    // Server gates the link: meeting_link is only present (and active) within 5h
+    // of the appointment; expired online links are dropped to null.
+    final canJoin = appointment.meetingLinkActive && appointment.meetingLink != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -72,6 +74,21 @@ class AppointmentDetailScreen extends ConsumerWidget {
                 icon: const Icon(Icons.videocam),
                 label: const Text('Join Video Call'),
                 onPressed: () => _joinCall(context, appointment.meetingLink!),
+              ),
+            ),
+          ] else if (appointment.meetingLinkExpired) ...[
+            const SizedBox(height: 16),
+            Card(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              child: const Padding(
+                padding: EdgeInsets.all(16),
+                child: Row(
+                  children: [
+                    Icon(Icons.videocam_off_outlined),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('This meeting link has expired.')),
+                  ],
+                ),
               ),
             ),
           ],

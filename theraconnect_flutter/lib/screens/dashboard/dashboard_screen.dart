@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
+import '../../models/api_response.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/appointment_provider.dart';
 import '../../providers/assignment_provider.dart';
+import '../../providers/assessment_provider.dart';
 import '../../providers/notification_provider.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -14,9 +17,14 @@ class DashboardScreen extends ConsumerWidget {
     final authState = ref.watch(authProvider);
     final appointments = ref.watch(appointmentsProvider);
     final assignments = ref.watch(assignmentsProvider);
+    final assessments = ref.watch(assessmentsProvider);
     final notifications = ref.watch(notificationsProvider);
 
+    final pendingAssessments =
+        assessments.valueOrNull?.where((a) => a.isPending).toList() ?? [];
+
     final user = authState.user;
+    final l = AppLocalizations.of(context)!;
     final pendingAppointments =
         appointments.valueOrNull?.where((a) => a.status == 'pending' || a.status == 'approved').length ?? 0;
     final pendingAssignments =
@@ -40,6 +48,7 @@ class DashboardScreen extends ConsumerWidget {
             ref.read(appointmentsProvider.notifier).loadAppointments(),
             ref.read(assignmentsProvider.notifier).loadAssignments(),
             ref.read(notificationsProvider.notifier).loadNotifications(),
+            ref.refresh(assessmentsProvider.future),
           ]);
         },
         child: ListView(
@@ -70,6 +79,45 @@ class DashboardScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            if (pendingAssessments.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Card(
+                color: Theme.of(context).colorScheme.tertiaryContainer,
+                child: InkWell(
+                  onTap: () => context.push('/assessments'),
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Icon(Icons.fact_check_outlined,
+                            color: Theme.of(context).colorScheme.onTertiaryContainer),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                pendingAssessments.length == 1
+                                    ? 'You have a questionnaire to complete'
+                                    : 'You have ${pendingAssessments.length} questionnaires to complete',
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              Text(
+                                pendingAssessments.map((a) => a.title).join(', '),
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
             const SizedBox(height: 16),
             Text(
               'Overview',
@@ -125,7 +173,7 @@ class DashboardScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             Text(
-              'Upcoming Appointments',
+              l.dashboardAppointmentsTitle,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
@@ -140,11 +188,11 @@ class DashboardScreen extends ConsumerWidget {
                         children: [
                           Icon(Icons.event_busy, size: 40, color: Theme.of(context).colorScheme.onSurfaceVariant),
                           const SizedBox(height: 8),
-                          Text('No upcoming appointments', style: Theme.of(context).textTheme.bodyMedium),
+                          Text(l.dashboardNoAppointments, style: Theme.of(context).textTheme.bodyMedium),
                           const SizedBox(height: 8),
                           FilledButton.tonal(
                             onPressed: () => context.push('/schedule'),
-                            child: const Text('Book Appointment'),
+                            child: Text(l.dashboardBookAppointment),
                           ),
                         ],
                       ),
@@ -155,8 +203,8 @@ class DashboardScreen extends ConsumerWidget {
                   children: active.take(3).map((a) => Card(
                     child: ListTile(
                       leading: const Icon(Icons.event),
-                      title: Text(a.status == 'approved' ? 'Approved' : 'Pending'),
-                      subtitle: Text(a.scheduledAt ?? a.requestedAt ?? 'No date'),
+                      title: Text(a.status == 'approved' ? l.dashboardStatusApproved : l.dashboardStatusPending),
+                      subtitle: Text(a.scheduledAt ?? a.requestedAt ?? l.dashboardNoDate),
                       trailing: a.mode == 'online'
                           ? const Icon(Icons.videocam)
                           : const Icon(Icons.person),
@@ -168,7 +216,7 @@ class DashboardScreen extends ConsumerWidget {
               error: (e, _) => Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Text('Failed to load: $e'),
+                  child: Text(ApiError.fromException(e).userMessage),
                 ),
               ),
             ),

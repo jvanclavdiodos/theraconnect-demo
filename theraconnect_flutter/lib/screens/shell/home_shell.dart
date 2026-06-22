@@ -39,6 +39,11 @@ class HomeShell extends ConsumerWidget {
             label: 'Assignments',
           ),
           const NavigationDestination(
+            icon: Icon(Icons.forum_outlined),
+            selectedIcon: Icon(Icons.forum),
+            label: 'Messages',
+          ),
+          const NavigationDestination(
             icon: Icon(Icons.chat),
             selectedIcon: Icon(Icons.chat),
             label: 'Chatbot',

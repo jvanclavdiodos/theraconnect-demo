@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../models/api_response.dart';
 import '../../providers/notification_provider.dart';
 
 class NotificationListScreen extends ConsumerWidget {
@@ -76,7 +77,16 @@ class NotificationListScreen extends ConsumerWidget {
                         ? IconButton(
                             icon: const Icon(Icons.done),
                             tooltip: 'Mark read',
-                            onPressed: () => ref.read(notificationsProvider.notifier).markRead(n.id),
+                            onPressed: () async {
+                              final error = await ref
+                                  .read(notificationsProvider.notifier)
+                                  .markRead(n.id);
+                              if (error != null && context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(error)),
+                                );
+                              }
+                            },
                           )
                         : null,
                   ),
@@ -85,7 +95,7 @@ class NotificationListScreen extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text('Error: $e')),
+          error: (e, _) => Center(child: Text(ApiError.fromException(e).userMessage)),
         ),
       ),
     );

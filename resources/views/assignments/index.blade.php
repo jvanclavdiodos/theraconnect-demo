@@ -7,17 +7,25 @@
 @endsection
 
 @section('content')
+@php
+    $initials = fn($n) => collect(explode(' ', trim($n)))->filter()->take(2)
+        ->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
+@endphp
+
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Assignments</h2>
+    <div>
+        <h1 class="tc-page-title">Assignments</h1>
+        <p class="tc-page-sub mb-0">Assign home exercises and review submissions.</p>
+    </div>
     <a href="{{ route('assignments.create') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> New Assignment
+        <i class="bi bi-plus-lg me-1"></i> New Assignment
     </a>
 </div>
 
-<div class="card shadow-sm">
+<div class="card">
     <div class="table-responsive">
         <table class="table table-hover mb-0">
-            <thead class="table-light">
+            <thead>
                 <tr>
                     <th>Title</th>
                     <th>Patient</th>
@@ -39,7 +47,12 @@
                                 <br><small class="text-muted">{{ Str::limit($assignment->description, 60) }}</small>
                             @endif
                         </td>
-                        <td>{{ $assignment->patient->user->name }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="tc-cell-avatar">{{ $initials($assignment->patient->user->name) }}</span>
+                                <span>{{ $assignment->patient->user->name }}</span>
+                            </div>
+                        </td>
                         <td>{{ $assignment->clinician?->user?->name ?? '—' }}</td>
                         <td>{{ $assignment->due_date ? $assignment->due_date->format('M d, Y') : '—' }}</td>
                         <td>
@@ -56,12 +69,14 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <i class="bi bi-journal-check text-muted" style="font-size: 3rem;"></i>
-                            <p class="text-muted mt-2 mb-3">No assignments yet.</p>
-                            <a href="{{ route('assignments.create') }}" class="btn btn-primary btn-sm">
-                                <i class="bi bi-plus-lg"></i> Create Your First Assignment
-                            </a>
+                        <td colspan="6">
+                            <div class="tc-empty">
+                                <div class="tc-empty-icon"><i class="bi bi-journal-check"></i></div>
+                                <div class="mb-3">No assignments yet.</div>
+                                <a href="{{ route('assignments.create') }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-lg me-1"></i> Create Your First Assignment
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 @endforelse

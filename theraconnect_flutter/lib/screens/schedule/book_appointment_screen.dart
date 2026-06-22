@@ -15,6 +15,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
   String _mode = 'in_person';
   final _reasonController = TextEditingController();
   bool _submitting = false;
+  bool _redirectScheduled = false;
 
   @override
   void dispose() {
@@ -22,10 +23,41 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
     super.dispose();
   }
 
+  /// Parses the GoRouter `extra` payload. Returns `null` when the route was
+  /// reached without `extra` (deep link, web back/forward, hot restart) — in
+  /// that case we redirect back to the schedule screen instead of letting the
+  /// `as` casts crash and red-error the screen.
+  (ScheduleSlot, String)? _parseExtra() {
+    final extra = GoRouterState.of(context).extra;
+    if (extra is! Map<String, dynamic>) return null;
+    final slot = extra['slot'];
+    final date = extra['date'];
+    if (slot is! ScheduleSlot || date is! String || date.isEmpty) return null;
+    return (slot, date);
+  }
+
+  void _ensureExtraOrRedirect() {
+    if (_redirectScheduled) return;
+    final parsed = _parseExtra();
+    if (parsed == null) {
+      _redirectScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please pick a slot from the schedule first.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        context.go('/schedule');
+      });
+    }
+  }
+
   Future<void> _book() async {
-    final extra = GoRouterState.of(context).extra as Map<String, dynamic>;
-    final slot = extra['slot'] as ScheduleSlot;
-    final date = extra['date'] as String;
+    final parsed = _parseExtra();
+    if (parsed == null) return;
+    final (slot, date) = parsed;
 
     final slotStart = slot.slot.split('-')[0];
     final requestedAt = '$date $slotStart:00';
@@ -56,8 +88,19 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final extra = GoRouterState.of(context).extra as Map<String, dynamic>;
-    final slot = extra['slot'] as ScheduleSlot;
+    final parsed = _parseExtra();
+
+    if (parsed == null) {
+      // Schedule a one-time redirect back to the schedule list so the user
+      // can pick a valid slot. Render a minimal placeholder meanwhile.
+      _ensureExtraOrRedirect();
+      return Scaffold(
+        appBar: AppBar(title: const Text('Book Appointment')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    final (slot, _) = parsed;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Book Appointment')),

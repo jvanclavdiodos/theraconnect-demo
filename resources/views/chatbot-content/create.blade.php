@@ -92,11 +92,18 @@
 </div>
 
 @push('scripts')
+@php
+    // Assign to variables first: @json() splits its argument on commas to parse
+    // its optional $options/$depth args, so an inline literal with >2 commas
+    // (e.g. old('responses', [[...]])) gets truncated and fails to compile.
+    $defaultPhrases = old('training_phrases', ['']);
+    $defaultResponses = old('responses', [['response_text' => '', 'priority' => 0, 'is_fallback' => 0]]);
+@endphp
 <script>
 function intentForm() {
     return {
-        phrases: @json(old('training_phrases', [''])),
-        responses: @json(old('responses', [['response_text' => '', 'priority' => 0, 'is_fallback' => 0]])),
+        phrases: @json($defaultPhrases),
+        responses: @json($defaultResponses),
     }
 }
 </script>

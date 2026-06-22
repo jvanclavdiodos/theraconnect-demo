@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
+import 'profile_avatar.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -22,11 +23,7 @@ class ProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    child: Icon(Icons.person, size: 40, color: Theme.of(context).colorScheme.onPrimaryContainer),
-                  ),
+                  ProfileAvatar(hasAvatar: profile.valueOrNull?.hasAvatar ?? false),
                   const SizedBox(height: 12),
                   Text(authState.user?.name ?? '', style: Theme.of(context).textTheme.titleLarge),
                   Text(authState.user?.email ?? '', style: Theme.of(context).textTheme.bodyMedium),
@@ -59,6 +56,25 @@ class ProfileScreen extends ConsumerWidget {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () => context.push('/notifications'),
                 ),
+                ListTile(
+                  leading: const Icon(Icons.description_outlined),
+                  title: const Text('Notes from your clinician'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/notes'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.insights_outlined),
+                  title: const Text('My progress'),
+                  subtitle: const Text('Mood check-ins & questionnaires'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/progress'),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.download),
+                  title: const Text('Downloads'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/downloads'),
+                ),
               ],
             ),
           ),
@@ -81,6 +97,30 @@ class ProfileScreen extends ConsumerWidget {
                         leading: const Icon(Icons.cake),
                         title: const Text('Date of Birth'),
                         subtitle: Text(patient.dateOfBirth!),
+                      ),
+                    if (patient.gender != null)
+                      ListTile(
+                        leading: const Icon(Icons.wc),
+                        title: const Text('Gender'),
+                        subtitle: Text(patient.gender!),
+                      ),
+                    if (patient.educationalAttainment != null)
+                      ListTile(
+                        leading: const Icon(Icons.school),
+                        title: const Text('Educational Attainment'),
+                        subtitle: Text(patient.educationalAttainment!),
+                      ),
+                    if (patient.employmentStatus != null)
+                      ListTile(
+                        leading: const Icon(Icons.work_outline),
+                        title: const Text('Employment Status'),
+                        subtitle: Text(patient.employmentStatus!),
+                      ),
+                    if (patient.personalIssues != null && patient.personalIssues!.isNotEmpty)
+                      ListTile(
+                        leading: const Icon(Icons.favorite_border),
+                        title: const Text('Personal Issues'),
+                        subtitle: Text(patient.personalIssues!),
                       ),
                     if (patient.contactNo != null)
                       ListTile(

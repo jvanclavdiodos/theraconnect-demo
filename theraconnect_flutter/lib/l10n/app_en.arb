@@ -1,0 +1,60 @@
+{
+  "@@locale": "en",
+
+  "appName": "TheraConnect",
+  "@appName": {
+    "description": "Application name shown in title bars and the dashboard header."
+  },
+
+  "loginTitle": "Sign in to your account",
+  "@loginTitle": {
+    "description": "Subtitle on the login screen."
+  },
+  "loginEmailLabel": "Email",
+  "@loginEmailLabel": {},
+  "loginPasswordLabel": "Password",
+  "@loginPasswordLabel": {},
+  "loginEmailRequired": "Email is required",
+  "@loginEmailRequired": {},
+  "loginEmailInvalid": "Enter a valid email",
+  "@loginEmailInvalid": {},
+  "loginPasswordRequired": "Password is required",
+  "@loginPasswordRequired": {},
+  "loginButton": "Sign In",
+  "@loginButton": {},
+  "loginNoAccountPrompt": "Don't have an account? Sign Up",
+  "@loginNoAccountPrompt": {},
+
+  "dashboardWelcome": "Welcome back",
+  "@dashboardWelcome": {
+    "description": "Header on the patient dashboard."
+  },
+  "dashboardAppointmentsTitle": "Upcoming Appointments",
+  "@dashboardAppointmentsTitle": {},
+  "dashboardNoAppointments": "No upcoming appointments",
+  "@dashboardNoAppointments": {},
+  "dashboardBookAppointment": "Book Appointment",
+  "@dashboardBookAppointment": {},
+  "dashboardStatusApproved": "Approved",
+  "@dashboardStatusApproved": {},
+  "dashboardStatusPending": "Pending",
+  "@dashboardStatusPending": {},
+  "dashboardNoDate": "No date",
+  "@dashboardNoDate": {},
+
+  "chatbotTitle": "Chatbot",
+  "@chatbotTitle": {},
+  "chatbotClearTooltip": "Clear chat",
+  "@chatbotClearTooltip": {},
+  "chatbotEmptyPrompt": "Ask me anything about the clinic",
+  "@chatbotEmptyPrompt": {},
+  "chatbotEmptyHint": "Hours, location, appointments, and more",
+  "@chatbotEmptyHint": {},
+  "chatbotInputHint": "Type a message...",
+  "@chatbotInputHint": {},
+
+  "errorGeneric": "Something went wrong. Please try again.",
+  "@errorGeneric": {
+    "description": "Generic patient-facing error fallback — never leaks backend stack traces or paths."
+  }
+}

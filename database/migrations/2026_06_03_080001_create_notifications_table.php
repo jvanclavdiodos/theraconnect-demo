@@ -12,12 +12,15 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->enum('type', [
+                'appointment_requested',
                 'appointment_approved',
                 'appointment_rejected',
                 'appointment_rescheduled',
                 'appointment_reminder',
                 'assignment_created',
                 'assignment_deadline',
+                'message_received',
+                'assessment_assigned',
                 'generic',
             ]);
             $table->string('title');

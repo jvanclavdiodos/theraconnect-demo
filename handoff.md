@@ -1,9 +1,89 @@
 # TheraConnect — Session Handoff
 
-**Date:** June 3, 2026  
-**Repo:** https://github.com/TatoesTV/theraconnect  
-**Branch:** `master` (commit `05d6a7b`)  
-**Phases completed:** 1 through 9 (of 13)  
+A living session-by-session changelog. Newest session first. Pair with `CLAUDE.md`
+(conventions), `README.md` (setup/endpoints), and `SYSTEM_NOTES.md` (working notes).
+
+---
+
+## Session 3 — Security & Ops Hardening (June 18, 2026)
+
+**Repo:** `jvanclavdiodos/theraconnect-demo` · **Live:** https://theraconnect-demo-production.up.railway.app
+**Tests:** 65 passing, 229 assertions. No Flutter SDK on this machine — Dart changes are
+unverified by `flutter analyze` (PHP suite stays green throughout).
+
+A multi-lens code review (backend + frontend + devops subagents) surfaced 0 Critical, 3 High,
+12 Medium, 19 Low findings. This session remediated all of them across three phases.
+
+### Phase 1 — Correctness & security (backend)
+- **Double-booking race fixed** — `AppointmentService::bookAppointment` + `reschedule` now run the
+  availability check + insert inside `DB::transaction` with `lockForUpdate`, closing the TOCTOU
+  race. New `SlotUnavailableException` → 409. (Previously the check was non-transactional.)
+- **Web controllers transactional** — `WebAppointmentController::approve/reject/reschedule` and
+  `WebAssignmentController::store` wrap the service call + `NotificationService->…()` in
+  `DB::transaction` so `SendPushNotification::dispatch(...)->afterCommit()` actually means "after commit."
+- **Schedule N+1 fixed** — `getScheduleSlots()` eager-loads the clinician instead of lazily
+  loading per slot.
+- **Upload mimes restricted** — `SubmissionRequest` now enforces
+  `mimes:pdf,doc,docx,txt,rtf,jpg,jpeg,png` (matches the web allow-list).
+- **Device tokens composite-unique** — new migration
+  `2026_06_18_000000_make_device_token_unique_per_user.php` makes `(user_id, token)` unique, so
+  two patients on a shared device can register the same physical FCM token without a 500.
+- **SRI on CDN tags** — Subresource Integrity hashes added to the 4 Blade CDN `<script>`/`<link>` tags.
+- **Chatbot scroll listener leak** — removed the listener that was never detached.
+- **Flutter null-check** — `book_appointment_screen.dart` guarded a nullable access.
+
+### Phase 2 — Deployment hardening (devops)
+- **Dockerfile rewritten** — runs as **non-root `www-data`**, layer-cached, DB-ready gate
+  (`until php artisan db:show …`) before `migrate --force` → `db:seed --force` (seed failures
+  abort boot — dropped the `|| true` swallow), `HEALTHCHECK` probing `/api/v1/health`.
+- **Railway configs** — `railway.json` updated; new `railway.worker.json` (queue worker) and
+  `railway.scheduler.json` (cron-style scheduler) for the two auxiliary services.
+- **Docker Compose hardened** — `docker-compose.yml` + `docker-compose.db.yml` updated with the
+  new boot sequence + non-root user; includes `queue-worker` + `scheduler` services.
+- **`setup.ps1` non-local guard** — refuses `migrate:fresh` against non-local DB hosts; bypass
+  with `-SkipLocalGuard`. Also fixed em-dash encoding (added UTF-8 BOM, swapped em dashes for ASCII).
+- **S3 support** — `league/flysystem-aws-s3-v3 ^3.0` added; `FILESYSTEM_DISK=s3` + `AWS_*` env
+  vars documented in `.env.railway.example`. Patient submissions/worksheets served only through
+  authenticated download routes; bucket must be private.
+- **CORS published** — `config/cors.php`; `CORS_ALLOWED_ORIGINS` env var. `.env.example` +
+  `.env.railway.example` hardened (`SESSION_ENCRYPT=true`, `QUEUE_CONNECTION=database`,
+  `FILESYSTEM_DISK=s3` defaults for production).
+- **`bootstrap/app.php`** — `trustProxies(at: '*')` (correct behind PaaS reverse proxy; restrict
+  if directly exposed).
+
+### Phase 3 — Code polish & Flutter (frontend)
+- **Patient-only API login** — API `/login` now refuses non-`patient` roles with 403 (mirrors web
+  login blocking patients).
+- **`?date=` validation** — schedules endpoint validates the date format.
+- **`AppointmentPolicy::delete`** — refuses cancel of `completed`/`rejected` (terminal states);
+  still allows `cancelled` so the controller's 409 short-circuit fires.
+- **`SubmissionPolicy`** — added `view` + `delete`; `SubmissionController@downloadFile` now uses
+  `Gate::authorize('view', $submission)` (not an inline `abort_unless`).
+- **Soft-delete User on profile delete** — deleting a `Patient`/`Clinician` row soft-deletes the
+  related `User` in the same transaction (`WebProfileDeleteTest`).
+- **`NotificationResource`** — created; `NotificationController` refactored to return
+  `NotificationResource::collection(...)` (no hand-rolled `->map()` payloads).
+- **`ApiError.fromException`** — Flutter factory that collapses any non-`ApiError` exception to a
+  generic `"Something went wrong. Please try again."` (never leaks stack traces / API paths to
+  patients). Applied across 8 screens.
+- **Chatbot `_sending` reset** — flag now resets in a `finally` block on error.
+- **FCM documented** — Flutter `FcmService` is **background-only** (foreground messages silently
+  dropped; no tap-to-deeplink). Documented inline + in `CLAUDE.md`; foreground display deferred
+  (needs `flutter_local_notifications`).
+- **i18n scaffold** — `flutter_localizations` + `intl` added; `l10n.yaml`, `app_en.arb` created;
+  `main.dart` wired. `flutter gen-l10n` auto-generates `app_localizations*.dart` (commit those).
+- **Router refresh** — replaced global `_authNotifier` with a `_GoRouterRefreshAuth`
+  ChangeNotifier subscribed to the auth state.
+- **Filtered log interceptor** — `_FilteredLogInterceptor` suppresses `/login` + `/register`
+  request/response bodies (tokens/credentials) from the Dio debug log.
+
+### Test deltas this session
+| Before | After |
+|---|---|
+| 53 tests (post-Session 2) | 65 tests / 229 assertions |
+| Double-booking check non-transactional | `lockForUpdate` in `DB::transaction` |
+| 0 tests on web profile delete | `WebProfileDeleteTest` (soft-deletes User) |
+| `downloadFile` used `abort_unless` | `Gate::authorize('view', $submission)` |
 
 ---
 
@@ -13,7 +93,7 @@
 **Tests:** 43 passing, 167 assertions.
 
 ### Correctness & security fixes
-- **Double-booking prevented** — `AppointmentService::isSlotAvailable()` now guards API booking and web reschedule (was unchecked).
+- **Double-booking prevented** — `AppointmentService::isSlotAvailable()` now guards API booking and web reschedule (was unchecked). *(Note: made fully race-safe in Session 3.)*
 - **Admins can create assignments** — web create form has a clinician picker; `WebAssignmentController` resolves the author (clinician = self, admin = chosen). Previously admins were blocked.
 - **Submission files made private** — moved from the public disk to the private `local` disk, served via authenticated download routes (`/api/v1/submissions/{id}/file`, web `submissions.file`). Previously world-readable via `asset('storage/...')`.
 - **Reminders include rescheduled appointments**; assignment-deadline reminder uses a true 24h window.
@@ -26,7 +106,7 @@
 
 ### Deployment (Railway, pilot)
 - Added `railway.json`, `.env.railway.example`; `bootstrap/app.php` trusts the proxy (`trustProxies(at: '*')`); `DemoSeeder` made idempotent (safe on per-boot `db:seed`).
-- Chosen trade-offs: ephemeral storage, `QUEUE_CONNECTION=sync`, no cron, FCM deferred. See README "Deployment (Railway)".
+- Chosen trade-offs (at the time): ephemeral storage, `QUEUE_CONNECTION=sync`, no cron, FCM deferred. *(All improved in Session 3 — see S3 + queue worker + scheduler templates.)*
 
 ### Flutter
 - API base URL pointed at the live Railway URL (`lib/config/api_config.dart`).
@@ -35,7 +115,9 @@
 
 ---
 
-## What Was Built This Session
+## Session 1 — Core Build, Phases 1–9
+
+`Phases completed: 1 through 9 (of 13).`
 
 ### Phase 1 — Project Scaffolding
 - Laravel 11.6.1 installed with PHP 8.2.12 (XAMPP)
@@ -94,7 +176,7 @@
 - `SubmissionRequest` — enforces content-or-file constraint via `passedValidation()`
 - API: `GET /assignments`, `GET /assignments/{id}`, `POST /assignments/{id}/submit`
 - Web: `WebAssignmentController` — index, create, store, submissions, review
-- File upload to `storage/app/public/submissions/` via `storage:link`
+- File upload to `storage/app/public/submissions/` via `storage:link` *(moved to private disk in Session 2)*
 - `AssignmentResource` with conditional `submission_status`, `SubmissionResource` with `file_url`
 - 3 Blade views: assignments/{index,create,submissions}
 - Re-submit preserves existing `file_path` on text-only updates
@@ -154,60 +236,9 @@
 | **Separated scheduler jobs** | `GenerateAssignmentReminders` (hourly) + `GenerateAppointmentReminders` (dailyAt 08:00) | Prevents 24× duplicate appointment notifications |
 | **`file_path` conditional persistence** | Only set when new file uploaded | Prevents clobbering existing files on text-only re-submit |
 | **`@role` Blade directive** | `Gate::define('role', ...)` + `Blade::if('role', ...)` | Spec-compliant UI gating, convenience layer over middleware |
-
----
-
-## Project Structure
-
-```
-theraconnect-b/
-├── app/
-│   ├── Http/
-│   │   ├── Controllers/
-│   │   │   ├── Api/V1/        # 9 JSON controllers (patient API)
-│   │   │   └── Web/           # 8 Blade controllers (dashboard)
-│   │   ├── Middleware/RoleMiddleware.php
-│   │   ├── Requests/Api/      # 5 FormRequest classes
-│   │   └── Resources/         # 6 JsonResource classes
-│   ├── Jobs/                  # 3 queued jobs
-│   ├── Models/                # 10 Eloquent models
-│   ├── Policies/              # 3 ownership policies
-│   ├── Providers/             # AppServiceProvider (rate limiters, pagination, @role, policies)
-│   └── Services/              # 4 services (Appointment, Assignment, Notification, Chatbot) + 1 FCM
-├── config/                    # 13 config files (hashing, sanctum, queue, services, etc.)
-├── database/
-│   ├── migrations/            # 14 migration files
-│   └── seeders/               # DatabaseSeeder, ChatbotSeeder
-├── resources/views/           # 25+ Blade views across 8 directories
-├── routes/
-│   ├── api.php                # 20+ API endpoints under /api/v1
-│   ├── web.php                # 25+ web routes
-│   └── console.php            # Scheduler definitions
-├── theraconnect_flutter/      # Flutter stub (pubspec.yaml + main.dart)
-├── setup.ps1 + setup.bat      # One-click QA setup scripts
-├── WALKTHROUGH.md             # Client demo guide (10 parts)
-├── README.md                  # Project README with QA checklist (24 web + 20 API tests)
-└── TheraConnect_Agent_Spec.md # Original architectural specification
-```
-
----
-
-## Test Results
-
-**Comprehensive suite:** 94/94 tests passed across all phases
-
-| Phase | Tests | Status |
-|---|---|---|
-| 1-2 Schema & Models | 15 | Pass |
-| 3 Auth & Roles | 9 | Pass |
-| 4 Appointments | 7 | Pass |
-| 5 Web Dashboard CRUD | 9 | Pass |
-| 6 Assignments | 9 | Pass |
-| 7 Notifications + FCM | 11 | Pass |
-| 8 Chatbot | 7 | Pass |
-| 9 UI Polish | 9 | Pass |
-| Data Integrity | 3 | Pass |
-| Routes | 15 | Pass |
+| **`lockForUpdate` double-booking** | Check + insert in `DB::transaction` (Session 3) | Closes TOCTOU race without a schema-level unique constraint |
+| **S3 for uploads** | `FILESYSTEM_DISK=s3` + private bucket (Session 3) | Persistent across redeploys; private by default |
+| **Queue worker + scheduler as separate services** | `railway.worker.json`, `railway.scheduler.json` (Session 3) | Lets `SendPushNotification::afterCommit` + reminders actually run on Railway |
 
 ---
 
@@ -217,53 +248,32 @@ theraconnect-b/
 |---|---|---|---|
 | Admin | `admin@theraconnect.test` | `password` | Full access (all pages) |
 | Clinician | `clinician@theraconnect.test` | `password` | All except Clinicians page |
-| Patient | `patient@theraconnect.test` | `password` | Flutter mobile app |
+| Clinician | `dr.rivera@theraconnect.test` | `password` | Family Therapy specialist |
+| Patient | `patient@theraconnect.test` | `password` | Jane Doe — mobile app only |
+| Patient | `michael@theraconnect.test` | `password` | Michael Torres — mobile app only |
+| Patient | `emily@theraconnect.test` | `password` | Emily Watson — mobile app only |
 
----
-
-## Immediate Next Steps
-
-### Phase 10 — Flutter Mobile App (est. 4 days)
-- Build all screens: login, register, dashboard, schedule, appointments, assignments, chatbot, notifications, profile
-- GoRouter with `StatefulShellRoute` for bottom navigation
-- Dio client with auth/error interceptors
-- Riverpod providers for state management
-- `flutter_secure_storage` for token persistence
-- Firebase Messaging integration for push notifications
-- **All 20+ API endpoints are ready and tested** — Flutter just needs to consume them
-
-### Phase 11 — Integration & API Wiring (est. 2 days)
-- End-to-end scenario testing: patient books on mobile → appears in dashboard → clinician approves → patient gets push → sees updated status
-- Resolve any contract mismatches between Flutter models and JsonResources
-
-### Phase 12 — System Testing & Usability (est. 3 days)
-- PHPUnit feature tests on all API + web actions
-- Postman collection for full API
-- ISO/IEC 25010 test matrix
-- System Usability Scale (SUS) evaluation with clinic staff
-
-### Phase 13 — Deployment (est. 2 days)
-- Nginx + PHP-FPM config for production VPS
-- SSL/HTTPS via Let's Encrypt
-- Supervisor for `queue:work`
-- Crontab entry for scheduler
-- Firebase production credentials
-- Signed Android APK + Play-ready AAB
-- Deploy runbook
+> Demo accounts use `password` — rotate before any real use. Patients use the Flutter mobile app;
+> admin/clinician use the web dashboard.
 
 ---
 
 ## How to Resume
 
-```powershell
-cd C:\projects\theraconnect-b
+```bash
+cd C:\projects\theraconnect-demo-main
 git pull
 
-# Start MySQL (if not running)
-C:\xampp\mysql\bin\mysqld.exe --defaults-file=C:\xampp\mysql\bin\my.ini
+# Start MySQL:
+#   Docker (DB only):  docker compose -f docker-compose.db.yml up -d   # MySQL on :3307
+#   Or host MySQL (XAMPP/Laragon) on :3306
 
-# Start the server
-php -d PHP_CLI_SERVER_WORKERS=4 artisan serve --port=8080
+# Start the backend
+php artisan serve --port=8080
+# (for phone access on LAN:  php artisan serve --host=0.0.0.0 --port=8080)
+
+# Run the test suite (no MySQL needed — in-memory SQLite)
+php artisan test
 ```
 
 Open `http://localhost:8080` — login with `admin@theraconnect.test` / `password`.

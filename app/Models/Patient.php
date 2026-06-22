@@ -11,9 +11,20 @@ class Patient extends Model
 {
     use SoftDeletes;
 
+    public const GENDERS = ['Male', 'Female', 'Other', 'Prefer not to say'];
+
+    public const EDUCATION_LEVELS = ['None', 'Elementary', 'High School', 'Vocational', 'College', 'Postgraduate'];
+
+    public const EMPLOYMENT_STATUSES = ['Employed', 'Self-employed', 'Unemployed', 'Student', 'Retired'];
+
     protected $fillable = [
         'user_id',
+        'assigned_clinician_id',
         'date_of_birth',
+        'gender',
+        'educational_attainment',
+        'employment_status',
+        'personal_issues',
         'contact_no',
         'address',
         'emergency_contact',
@@ -32,6 +43,11 @@ class Patient extends Model
         return $this->belongsTo(User::class);
     }
 
+    public function assignedClinician(): BelongsTo
+    {
+        return $this->belongsTo(Clinician::class, 'assigned_clinician_id');
+    }
+
     public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class);
@@ -45,5 +61,25 @@ class Patient extends Model
     public function submissions(): HasMany
     {
         return $this->hasMany(Submission::class);
+    }
+
+    public function clinicianNotes(): HasMany
+    {
+        return $this->hasMany(PatientNote::class);
+    }
+
+    public function assessments(): HasMany
+    {
+        return $this->hasMany(Assessment::class);
+    }
+
+    public function moodLogs(): HasMany
+    {
+        return $this->hasMany(MoodLog::class);
+    }
+
+    public function therapyGoals(): HasMany
+    {
+        return $this->hasMany(TherapyGoal::class);
     }
 }

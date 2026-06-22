@@ -139,4 +139,37 @@ class AuthFlowTest extends TestCase
             ->assertJsonPath('data.contact_no', '555-9999')
             ->assertJsonPath('data.address', '456 Updated St');
     }
+
+    /**
+     * The JSON API is the patient mobile-app surface — clinicians/admins must
+     * NOT be able to mint bearer tokens via /api/v1/login (mirrors the
+     * AuthenticatedSessionController which blocks patients from the web
+     * login). Prevents personal_access_tokens pollution and account
+     * enumeration via the API.
+     */
+    public function test_clinician_cannot_get_api_token_via_login(): void
+    {
+        $clinician = $this->createClinician();
+
+        $this->postJson('/api/v1/login', [
+            'email' => $clinician['user']->email,
+            'password' => 'password',
+        ])
+            ->assertStatus(403)
+            ->assertJsonPath('message', 'This account is not permitted to use the mobile app. Please use the web dashboard.');
+
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
+
+    public function test_admin_cannot_get_api_token_via_login(): void
+    {
+        $admin = $this->createAdmin();
+
+        $this->postJson('/api/v1/login', [
+            'email' => $admin->email,
+            'password' => 'password',
+        ])->assertStatus(403);
+
+        $this->assertDatabaseCount('personal_access_tokens', 0);
+    }
 }

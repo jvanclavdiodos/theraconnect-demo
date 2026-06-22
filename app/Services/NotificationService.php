@@ -51,6 +51,36 @@ class NotificationService
         );
     }
 
+    /**
+     * Sent to the assigned clinician when a patient books a new appointment
+     * that is waiting for their approval.
+     */
+    public function appointmentRequested(int $clinicianUserId, string $patientName, string $requestedAt): Notification
+    {
+        return $this->create(
+            $clinicianUserId,
+            'appointment_requested',
+            'New Appointment Request',
+            "{$patientName} requested an appointment for {$requestedAt}.",
+            null
+        );
+    }
+
+    /**
+     * Sent to the assigned clinician when their appointment is rescheduled
+     * (e.g. by an admin), so they know their schedule changed.
+     */
+    public function appointmentRescheduledForClinician(int $clinicianUserId, string $patientName, string $scheduledAt): Notification
+    {
+        return $this->create(
+            $clinicianUserId,
+            'appointment_rescheduled',
+            'Appointment Rescheduled',
+            "{$patientName}'s appointment is now set for {$scheduledAt}.",
+            null
+        );
+    }
+
     public function appointmentReminder(int $userId, int $appointmentId, string $time): Notification
     {
         return $this->create(
@@ -59,6 +89,35 @@ class NotificationService
             'Appointment Reminder',
             "Reminder: you have an appointment tomorrow at {$time}.",
             ['appointment_id' => $appointmentId]
+        );
+    }
+
+    /**
+     * Sent to the other participant when a new direct message arrives.
+     */
+    public function messageReceived(int $userId, string $senderName, string $snippet): Notification
+    {
+        return $this->create(
+            $userId,
+            'message_received',
+            "New message from {$senderName}",
+            $snippet,
+            null
+        );
+    }
+
+    /**
+     * Sent to the patient when their clinician assigns a standardized
+     * questionnaire (PHQ-9 / GAD-7) to complete in the app.
+     */
+    public function assessmentAssigned(int $userId, string $instrumentTitle): Notification
+    {
+        return $this->create(
+            $userId,
+            'assessment_assigned',
+            'New questionnaire to complete',
+            "Your clinician asked you to complete the {$instrumentTitle}.",
+            null
         );
     }
 

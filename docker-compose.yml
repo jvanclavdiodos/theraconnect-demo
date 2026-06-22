@@ -8,11 +8,12 @@ services:
     container_name: theraconnect-app
     restart: unless-stopped
     working_dir: /var/www
-    command: sh -c "php artisan storage:link --force && php artisan migrate --force && (php artisan db:seed --force || true) && php artisan serve --host=0.0.0.0 --port=8080"
+    # The Dockerfile CMD already runs storage:link -> wait-for-db -> migrate
+    # -> db:seed -> serve. Override here only if you need a different boot.
     volumes:
       - .:/var/www
       - /var/www/vendor
-      - ./.env.docker:/var/www/.env
+      - ./.env.docker:/var/www/.env:ro
       - /var/www/bootstrap/cache
     ports:
       - '8080:8080'
@@ -21,6 +22,7 @@ services:
         condition: service_healthy
     environment:
       APP_ENV: local
+      # Local-dev only — never set APP_DEBUG=true in staging/prod.
       APP_DEBUG: 'true'
       APP_KEY: ${APP_KEY:-}
       DB_CONNECTION: mysql
@@ -28,7 +30,7 @@ services:
       DB_PORT: 3306
       DB_DATABASE: theraconnect
       DB_USERNAME: root
-      DB_PASSWORD: password
+      DB_PASSWORD: ${DB_PASSWORD:-password}
       QUEUE_CONNECTION: database
       SESSION_DRIVER: file
       PHP_CLI_SERVER_WORKERS: 1
@@ -37,6 +39,18 @@ services:
       FCM_CREDENTIALS: ${FCM_CREDENTIALS:-}
       JITSI_BASE_URL: ${JITSI_BASE_URL:-https://meet.jit.si}
       JITSI_ROOM_PREFIX: ${JITSI_ROOM_PREFIX:-TheraConnect}
+      # AWS S3 (optional; falls back to local disk when AWS_BUCKET is empty)
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      AWS_BUCKET: ${AWS_BUCKET:-}
+      FILESYSTEM_DISK: ${FILESYSTEM_DISK:-local}
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:8080/api/v1/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
     networks:
       - theraconnect
 
@@ -45,7 +59,7 @@ services:
     container_name: theraconnect-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
       MYSQL_DATABASE: theraconnect
     ports:
       - '3307:3306'
@@ -66,14 +80,18 @@ services:
     container_name: theraconnect-queue
     restart: unless-stopped
     working_dir: /var/www
-    command: php artisan queue:work --tries=3 --sleep=1
+    # Override the Dockerfile's boot CMD: the worker just needs the DB ready
+    # (the app service ran migrations) and the queue:work command.
+    command: sh -c "until php artisan db:show > /dev/null 2>&1; do echo 'Waiting for database...'; sleep 2; done && php artisan queue:work --tries=3 --max-time=3600 --sleep=3"
     volumes:
       - .:/var/www
       - /var/www/vendor
-      - ./.env.docker:/var/www/.env
+      - ./.env.docker:/var/www/.env:ro
       - /var/www/bootstrap/cache
     depends_on:
       mysql:
+        condition: service_healthy
+      app:
         condition: service_healthy
     environment:
       APP_ENV: local
@@ -82,8 +100,13 @@ services:
       DB_PORT: 3306
       DB_DATABASE: theraconnect
       DB_USERNAME: root
-      DB_PASSWORD: password
+      DB_PASSWORD: ${DB_PASSWORD:-password}
       QUEUE_CONNECTION: database
+      FILESYSTEM_DISK: ${FILESYSTEM_DISK:-local}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      AWS_BUCKET: ${AWS_BUCKET:-}
     networks:
       - theraconnect
 
@@ -98,10 +121,12 @@ services:
     volumes:
       - .:/var/www
       - /var/www/vendor
-      - ./.env.docker:/var/www/.env
+      - ./.env.docker:/var/www/.env:ro
       - /var/www/bootstrap/cache
     depends_on:
       mysql:
+        condition: service_healthy
+      app:
         condition: service_healthy
     environment:
       APP_ENV: local
@@ -110,7 +135,7 @@ services:
       DB_PORT: 3306
       DB_DATABASE: theraconnect
       DB_USERNAME: root
-      DB_PASSWORD: password
+      DB_PASSWORD: ${DB_PASSWORD:-password}
     networks:
       - theraconnect
 

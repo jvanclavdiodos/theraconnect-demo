@@ -5,6 +5,8 @@ import 'package:open_filex/open_filex.dart';
 import '../../models/assignment.dart';
 import '../../models/api_response.dart';
 import '../../providers/assignment_provider.dart';
+import '../../providers/download_provider.dart';
+import 'submission_preview.dart';
 
 class AssignmentDetailScreen extends ConsumerStatefulWidget {
   final int assignmentId;
@@ -26,10 +28,20 @@ class _AssignmentDetailScreenState
       final fileName = (a.attachmentName == null || a.attachmentName!.isEmpty)
           ? 'worksheet'
           : a.attachmentName!;
-      final path = await ref
+      final downloaded = await ref
           .read(assignmentApiProvider)
-          .downloadWorksheet(a.id, fileName);
-      final result = await OpenFilex.open(path);
+          .downloadWorksheet(a.id, fileName, a.title);
+      // Reflect the new file in the in-app Downloads list immediately.
+      ref.read(downloadsProvider.notifier).refresh();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Saved to Downloads/TheraConnect'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      final result = await OpenFilex.open(downloaded.localPath);
       if (result.type != ResultType.done && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -66,7 +78,7 @@ class _AssignmentDetailScreenState
       ),
       error: (e, _) => Scaffold(
         appBar: AppBar(title: const Text('Assignment')),
-        body: Center(child: Text('$e')),
+        body: Center(child: Text(ApiError.fromException(e).userMessage)),
       ),
     );
   }
@@ -213,6 +225,10 @@ class _AssignmentDetailScreenState
               ),
             ),
           ),
+          if (assignment.submission != null) ...[
+            const SizedBox(height: 16),
+            SubmissionPreview(submission: assignment.submission!),
+          ],
           const SizedBox(height: 24),
           if (!assignment.isReviewed)
             FilledButton.icon(

@@ -53,6 +53,18 @@ class AuthController extends Controller
             ], 401);
         }
 
+        // The JSON API is the patient mobile-app surface — only patients are
+        // permitted to mint bearer tokens here. Clinicians/admins must use the
+        // session-authenticated web dashboard (`/login`). Mirrors
+        // AuthenticatedSessionController::store which blocks patients from the
+        // web login. Prevents personal_access_tokens pollution and account
+        // enumeration via the API by non-patient roles.
+        if ($user->role !== 'patient') {
+            return response()->json([
+                'message' => 'This account is not permitted to use the mobile app. Please use the web dashboard.',
+            ], 403);
+        }
+
         $token = $user->createToken('mobile')->plainTextToken;
 
         return response()->json([

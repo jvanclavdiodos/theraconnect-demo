@@ -157,4 +157,47 @@ class NotificationFlowTest extends TestCase
         $count = DeviceToken::where('token', 'fcm-reassign-token')->count();
         $this->assertEquals(1, $count);
     }
+
+    /**
+     * Two patients on a shared device (same FCM token) must each be able to
+     * register the same token without an HTTP 500. Under the legacy global
+     * UNIQUE on `token` alone, the second INSERT violated the constraint and
+     * crashed. With the composite UNIQUE on (user_id, token) the second
+     * user simply gets a new row referencing the same physical token.
+     */
+    public function test_shared_device_token_works_across_users(): void
+    {
+        $patientA = $this->createPatient('shared-a@test.com');
+        $patientB = $this->createPatient('shared-b@test.com');
+
+        $sharedToken = 'fcm-shared-device-xyz';
+
+        // Patient A registers the shared token.
+        $this->actingAs($patientA['user'], 'sanctum')
+            ->postJson('/api/v1/device-token', [
+                'token' => $sharedToken,
+                'platform' => 'android',
+            ])
+            ->assertStatus(201);
+
+        // Patient B registers the SAME shared token — must not 500.
+        $this->actingAs($patientB['user'], 'sanctum')
+            ->postJson('/api/v1/device-token', [
+                'token' => $sharedToken,
+                'platform' => 'android',
+            ])
+            ->assertStatus(201);
+
+        // Both users have their own row referencing the shared token.
+        $this->assertDatabaseHas('device_tokens', [
+            'user_id' => $patientA['user']->id,
+            'token' => $sharedToken,
+        ]);
+        $this->assertDatabaseHas('device_tokens', [
+            'user_id' => $patientB['user']->id,
+            'token' => $sharedToken,
+        ]);
+
+        $this->assertEquals(2, DeviceToken::where('token', $sharedToken)->count());
+    }
 }

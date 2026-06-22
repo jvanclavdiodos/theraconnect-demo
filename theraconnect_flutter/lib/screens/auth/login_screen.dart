@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/auth_provider.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -41,6 +42,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final l = AppLocalizations.of(context)!;
 
     ref.listen(authProvider, (_, next) {
       if (next.status == AuthState.authenticated && mounted) {
@@ -71,7 +73,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Sign in to your account',
+                    l.loginTitle,
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -95,14 +97,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
-                    decoration: const InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: Icon(Icons.email),
-                      border: OutlineInputBorder(),
+                    decoration: InputDecoration(
+                      labelText: l.loginEmailLabel,
+                      prefixIcon: const Icon(Icons.email),
+                      border: const OutlineInputBorder(),
                     ),
                     validator: (v) {
-                      if (v == null || v.trim().isEmpty) return 'Email is required';
-                      if (!v.contains('@')) return 'Enter a valid email';
+                      if (v == null || v.trim().isEmpty) return l.loginEmailRequired;
+                      if (!v.contains('@')) return l.loginEmailInvalid;
                       return null;
                     },
                   ),
@@ -112,7 +114,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.done,
                     decoration: InputDecoration(
-                      labelText: 'Password',
+                      labelText: l.loginPasswordLabel,
                       prefixIcon: const Icon(Icons.lock),
                       border: const OutlineInputBorder(),
                       suffixIcon: IconButton(
@@ -121,7 +123,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                     ),
                     validator: (v) {
-                      if (v == null || v.isEmpty) return 'Password is required';
+                      if (v == null || v.isEmpty) return l.loginPasswordRequired;
                       return null;
                     },
                     onFieldSubmitted: (_) => _login(),
@@ -138,12 +140,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             width: 20,
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           )
-                        : const Text('Sign In'),
+                        : Text(l.loginButton),
                   ),
                   const SizedBox(height: 16),
                   TextButton(
                     onPressed: () => context.go('/register'),
-                    child: const Text("Don't have an account? Sign Up"),
+                    child: Text(l.loginNoAccountPrompt),
                   ),
                 ],
               ),

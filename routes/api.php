@@ -46,9 +46,15 @@ Route::prefix('v1')->group(function () {
             // Profile
             Route::get('/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'show']);
             Route::put('/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'update']);
+            Route::post('/profile/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'updateAvatar']);
+            Route::get('/profile/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'avatar']);
+
+            // Clinicians (read-only list for clinician-first booking)
+            Route::get('/clinicians', [\App\Http\Controllers\Api\V1\ClinicianController::class, 'index']);
 
             // Appointments
             Route::get('/schedules', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'schedules']);
+            Route::get('/schedules/availability', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'availability']);
             Route::get('/appointments', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'index']);
             Route::post('/appointments', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'store']);
             Route::get('/appointments/{id}', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'show']);
@@ -60,6 +66,27 @@ Route::prefix('v1')->group(function () {
             Route::get('/assignments/{id}/worksheet', [\App\Http\Controllers\Api\V1\AssignmentController::class, 'downloadWorksheet']);
             Route::post('/assignments/{id}/submit', [\App\Http\Controllers\Api\V1\SubmissionController::class, 'store']);
             Route::get('/submissions/{id}/file', [\App\Http\Controllers\Api\V1\SubmissionController::class, 'downloadFile']);
+
+            // Notes shared by the clinician (read-only)
+            Route::get('/notes', [\App\Http\Controllers\Api\V1\PatientNoteController::class, 'index']);
+
+            // Therapy progress — standardized questionnaires (PHQ-9 / GAD-7)
+            Route::get('/assessments', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'index']);
+            Route::get('/assessments/{assessment}', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'show']);
+            Route::post('/assessments/{assessment}/submit', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'submit']);
+
+            // Therapy progress — quick mood check-ins (1–10)
+            Route::get('/mood-logs', [\App\Http\Controllers\Api\V1\MoodLogController::class, 'index']);
+            Route::post('/mood-logs', [\App\Http\Controllers\Api\V1\MoodLogController::class, 'store']);
+
+            // Therapy goals (read-only; clinician-authored, GAS-rated)
+            Route::get('/goals', [\App\Http\Controllers\Api\V1\GoalController::class, 'index']);
+
+            // Messaging (patient <-> assigned clinician)
+            Route::get('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'index']);
+            Route::post('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'store']);
+            Route::get('/conversations/{conversation}/messages', [\App\Http\Controllers\Api\V1\ConversationController::class, 'messages']);
+            Route::post('/conversations/{conversation}/messages', [\App\Http\Controllers\Api\V1\ConversationController::class, 'send']);
         });
 
         // Chatbot (separate throttle: 30/min/user)

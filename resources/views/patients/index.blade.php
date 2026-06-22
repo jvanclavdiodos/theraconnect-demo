@@ -7,10 +7,18 @@
 @endsection
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Patients</h2>
+@php
+    $initials = fn($n) => collect(explode(' ', trim($n)))->filter()->take(2)
+        ->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
+@endphp
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="tc-page-title">Patients</h1>
+        <p class="tc-page-sub mb-0">Manage patient records and profiles.</p>
+    </div>
     <a href="{{ route('patients.create') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> Add Patient
+        <i class="bi bi-plus-lg me-1"></i> Add Patient
     </a>
 </div>
 
@@ -25,10 +33,10 @@
     </div>
 </form>
 
-<div class="card shadow-sm">
+<div class="card">
     <div class="table-responsive">
         <table class="table table-hover mb-0">
-            <thead class="table-light">
+            <thead>
                 <tr>
                     <th>Name</th>
                     <th>Email</th>
@@ -40,7 +48,17 @@
             <tbody>
                 @forelse ($patients as $patient)
                     <tr>
-                        <td><a href="{{ route('patients.show', $patient) }}" class="text-decoration-none">{{ $patient->user->name }}</a></td>
+                        <td>
+                            <a href="{{ route('patients.show', $patient) }}" class="text-decoration-none d-flex align-items-center gap-2">
+                                <span class="tc-cell-avatar">{{ $initials($patient->user->name) }}</span>
+                                <span class="fw-semibold">{{ $patient->user->name }}</span>
+                                @if (!empty($atRisk[$patient->id]))
+                                    <span class="badge bg-danger" title="Consecutive no-shows — at risk of disengaging">
+                                        <i class="bi bi-exclamation-triangle"></i> At risk
+                                    </span>
+                                @endif
+                            </a>
+                        </td>
                         <td>{{ $patient->user->email }}</td>
                         <td>{{ $patient->contact_no ?? '—' }}</td>
                         <td>{{ $patient->date_of_birth ? $patient->date_of_birth->format('M d, Y') : '—' }}</td>
@@ -48,6 +66,7 @@
                             <a href="{{ route('patients.show', $patient) }}" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-eye"></i>
                             </a>
+                            @role('admin')
                             <a href="{{ route('patients.edit', $patient) }}" class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-pencil"></i>
                             </a>
@@ -56,16 +75,19 @@
                                 @csrf @method('DELETE')
                                 <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
                             </form>
+                            @endrole
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="text-center py-5">
-                            <i class="bi bi-people text-muted" style="font-size: 3rem;"></i>
-                            <p class="text-muted mt-2 mb-3">No patients found.</p>
-                            <a href="{{ route('patients.create') }}" class="btn btn-primary btn-sm">
-                                <i class="bi bi-plus-lg"></i> Add Your First Patient
-                            </a>
+                        <td colspan="5">
+                            <div class="tc-empty">
+                                <div class="tc-empty-icon"><i class="bi bi-people"></i></div>
+                                <div class="mb-3">No patients found.</div>
+                                <a href="{{ route('patients.create') }}" class="btn btn-primary btn-sm">
+                                    <i class="bi bi-plus-lg me-1"></i> Add Your First Patient
+                                </a>
+                            </div>
                         </td>
                     </tr>
                 @endforelse

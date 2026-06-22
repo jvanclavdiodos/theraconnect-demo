@@ -7,9 +7,9 @@
 
 ## 1. What this copy is
 
-- **Backend-only.** This local copy contains the **Laravel 11 backend** (PHP 8.2). The
-  `theraconnect_flutter/` Flutter app referenced in `CLAUDE.md`/`README.md` is **not present
-  here** — only the API + Blade dashboard exist in this checkout.
+- **Backend + Flutter.** This local copy contains the **Laravel 11 backend** (PHP 8.2) **and** the
+  Flutter mobile app in `theraconnect_flutter/` (built out in Phase 10; i18n scaffold added in
+  the Session 3 hardening pass — see `lib/l10n/`).
 - Three roles, two client surfaces, one service layer:
   - **Patients** → JSON API `/api/v1`, Sanctum **bearer tokens** (`auth:sanctum` + `role:patient`).
   - **Clinicians/Admins** → Blade dashboard, **session** auth (`role:admin,clinician`).
@@ -27,6 +27,10 @@ php artisan serve --port=8081     # APP_URL in .env is :8081
 
 - `.env` here points at `DB_PORT=3307`, `DB_DATABASE=theraconnect_local`, `APP_URL=http://localhost:8081`.
 - FCM disabled (`FCM_PROJECT_ID`/`FCM_CREDENTIALS` blank) → push no-ops; in-app notifications still write.
+- **S3 optional** — leave `FILESYSTEM_DISK=local` for host dev (uploads in `storage/app/`), or set
+  `FILESYSTEM_DISK=s3` + `AWS_*` for persistent uploads (see `.env.railway.example`).
+- **Queue** — `QUEUE_CONNECTION=database` in production; the host `.env` may use `sync` for
+  immediate dev feedback (no worker needed). To test the queue path locally: `php artisan queue:work`.
 - `vendor/` is installed; PHP 8.2.12 confirmed on PATH.
 
 ## 3. Data model (10 tables)
@@ -73,21 +77,12 @@ Admins have **no** profile row. Models: `app/Models/` (note `Submission` model =
 - Web surface: see `routes/web.php` (dashboard, patients CRUD, appointment status actions,
   clinicians CRUD [admin-only], assignments, chatbot content CRUD, notification logs).
 
-## 6. ⚠️ Known issue — stale test dates (found 2026-06-15)
+## 6. Stale test dates — RESOLVED (2026-06-15 → fixed 2026-06-18)
 
-**`php artisan test` currently reports 6 failures, all in `tests/Integration/AppointmentFlowTest.php`.**
-The README claims "43 passed"; that was true when authored.
-
-- **Root cause:** `StoreAppointmentRequest` validates `requested_at => after:now`. Six tests
-  hardcode `requested_at` of **`2026-06-10 ...`**, which is now in the **past** (today = 2026-06-15),
-  so booking fails with 422 and the assertions cascade.
-- **Not a code bug** — it's frozen fixture dates aging out. Evidence: the tests that use a
-  future date (`test_double_booking...` @ 2026-06-20) and the no-booking schedule test still pass.
-- **Failing tests:** `patient_can_book_appointment`, `patient_can_view_their_appointments`,
-  `patient_cannot_view_other_patients_appointments`, `patient_can_cancel_appointment`,
-  `double_cancel_returns_409`, `schedule_shows_booked_slot_as_unavailable`.
-- **Fix options (not yet applied):** make dates relative (e.g. `now()->addDays(5)`), or freeze
-  app time in the test with `Carbon::setTestNow()`. Relative dates are the durable fix.
+**Previously** `php artisan test` reported 6 failures in `tests/Integration/AppointmentFlowTest.php`
+because `StoreAppointmentRequest` validates `requested_at => after:now` and six tests hardcoded
+past dates. **Fixed** in the Session 3 hardening pass — fixtures now use relative dates
+(`now()->addDays(5)`). The full suite is green: **65 tests, 229 assertions**.
 
 ## 7. Feature: Jitsi video calls for online appointments (added 2026-06-15)
 
@@ -109,7 +104,7 @@ key/account; a meeting is just an unguessable room URL).
 - **Seed:** `DemoSeeder` creates one online **approved** appointment with a live link so the Join button
   shows right after `migrate:fresh --seed`.
 - **Tests:** `tests/Integration/MeetingLinkTest.php` (3 tests) — online→link, in_person→null, reschedule
-  keeps room. Full suite: **40 passed**, same 6 pre-existing stale-date failures (see §6).
+  keeps room. Full suite green: **65 tests, 229 assertions** (see §6 — stale-date failures fixed).
 - **Flutter↔backend wiring:** `api_config.dart` base URL now points at the LAN backend
   (`http://10.186.183.181:8080/api/v1`). Run backend as `php artisan serve --host=0.0.0.0 --port=8080`;
   phone on same Wi-Fi. The LAN IP is machine/network-specific — update it when the PC's Wi-Fi IP changes.
@@ -118,8 +113,9 @@ key/account; a meeting is just an unguessable room URL).
 
 ## 8. Running the full stack in Docker (gotchas hit 2026-06-15)
 
-Bringing up the full `docker-compose.yml` (app + mysql + queue + scheduler) surfaced several issues —
-all now fixed in-repo. Keep these in mind:
+The `Dockerfile` was **hardened in Session 3** (non-root `www-data`, DB-ready gate, `HEALTHCHECK`,
+no `|| true` seed swallow). The gotchas below are historical context — the build now accounts for
+them, but they're worth knowing if you tinker with the compose setup:
 
 - **`.dockerignore` is required.** Without it the build context was 1.33GB and Docker choked on the
   `public/storage` symlink (`invalid file request public/storage`) — it targets the absolute container
@@ -151,3 +147,25 @@ returns `meeting_link: https://meet.jit.si/TheraConnect-8-…` (seeded online-ap
 - MySQL-flavored migrations (ENUM columns) — don't assume SQLite/Postgres semantics.
 - Patient-private fields (`patients.notes`, `appointments.clinic_notes`) must never serialize to
   the patient API — gate them in Resources.
+
+## 10. Session 3 hardening pass (2026-06-18)
+
+A multi-lens code review + remediation. New files/changes to be aware of when adding features:
+
+- **`app/Exceptions/SlotUnavailableException.php`** — thrown by `AppointmentService::bookAppointment`
+  / `reschedule` inside `DB::transaction` + `lockForUpdate`. Maps to 409.
+- **`app/Http/Resources/NotificationResource.php`** — `NotificationController` now returns
+  `NotificationResource::collection(...)`; don't hand-roll `->map()` payloads.
+- **`database/migrations/2026_06_18_000000_make_device_token_unique_per_user.php`** — composite
+  unique on `(user_id, token)`.
+- **`config/cors.php`** — published; `CORS_ALLOWED_ORIGINS` env var (comma-separated).
+- **`railway.worker.json` / `railway.scheduler.json`** — queue worker + scheduler deploy targets.
+- **Policies expanded** — `AppointmentPolicy::delete` blocks `completed`/`rejected`;
+  `SubmissionPolicy` has `view`/`delete` (use `Gate::authorize('view', $submission)` in download routes).
+- **Web controller writes are transactional** — `WebAppointmentController::approve/reject/reschedule`
+  + `WebAssignmentController::store` wrap service + notification in `DB::transaction`.
+- **Deleting a `Patient`/`Clinician` soft-deletes the related `User`** in the same transaction.
+- **API `/login` refuses non-`patient` roles** (403), mirroring the web login blocking patients.
+- **S3 uploads** — `league/flysystem-aws-s3-v3`; `FILESYSTEM_DISK=s3` + `AWS_*` env. Bucket must be private.
+
+Full breakdown in `handoff.md` "Session 3".

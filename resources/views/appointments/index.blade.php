@@ -7,24 +7,33 @@
 @endsection
 
 @section('content')
-<h2>Appointments</h2>
+@php
+    $initials = fn($n) => collect(explode(' ', trim($n)))->filter()->take(2)
+        ->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
+    $filters = [
+        '' => 'All', 'pending' => 'Pending', 'approved' => 'Approved',
+        'rejected' => 'Rejected', 'completed' => 'Completed', 'cancelled' => 'Cancelled',
+        'no_show' => 'No-show',
+    ];
+@endphp
 
-{{-- Filter tabs --}}
-<div class="mb-3">
-    <div class="btn-group btn-group-sm">
-        <a href="{{ route('appointments.index') }}" class="btn btn-outline-secondary {{ !request('status') ? 'active' : '' }}">All</a>
-        <a href="{{ route('appointments.index', ['status' => 'pending']) }}" class="btn btn-outline-warning {{ request('status') === 'pending' ? 'active' : '' }}">Pending</a>
-        <a href="{{ route('appointments.index', ['status' => 'approved']) }}" class="btn btn-outline-success {{ request('status') === 'approved' ? 'active' : '' }}">Approved</a>
-        <a href="{{ route('appointments.index', ['status' => 'rejected']) }}" class="btn btn-outline-danger {{ request('status') === 'rejected' ? 'active' : '' }}">Rejected</a>
-        <a href="{{ route('appointments.index', ['status' => 'completed']) }}" class="btn btn-outline-info {{ request('status') === 'completed' ? 'active' : '' }}">Completed</a>
-        <a href="{{ route('appointments.index', ['status' => 'cancelled']) }}" class="btn btn-outline-dark {{ request('status') === 'cancelled' ? 'active' : '' }}">Cancelled</a>
-    </div>
+<div class="mb-4">
+    <h1 class="tc-page-title">Appointments</h1>
+    <p class="tc-page-sub">Review, approve, and manage appointment requests.</p>
 </div>
 
-<div class="card shadow-sm">
+{{-- Filter pills --}}
+<div class="tc-filters mb-4">
+    @foreach ($filters as $key => $label)
+        <a href="{{ $key ? route('appointments.index', ['status' => $key]) : route('appointments.index') }}"
+           class="tc-filter {{ (request('status') ?? '') === $key ? 'active' : '' }}">{{ $label }}</a>
+    @endforeach
+</div>
+
+<div class="card">
     <div class="table-responsive">
         <table class="table table-hover mb-0">
-            <thead class="table-light">
+            <thead>
                 <tr>
                     <th>Patient</th>
                     <th>Clinician</th>
@@ -37,25 +46,39 @@
             <tbody>
                 @forelse ($appointments as $appt)
                     <tr>
-                        <td>{{ $appt->patient->user->name }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="tc-cell-avatar">{{ $initials($appt->patient->user->name) }}</span>
+                                <span class="fw-semibold">{{ $appt->patient->user->name }}</span>
+                            </div>
+                        </td>
                         <td>{{ $appt->clinician?->user?->name ?? '—' }}</td>
                         <td>{{ $appt->requested_at->format('M d, Y h:i A') }}</td>
-                        <td>{{ ucfirst($appt->mode) }}</td>
+                        <td>
+                            <span class="tc-mode {{ $appt->mode === 'online' ? 'online' : 'in-person' }}">
+                                {{ $appt->mode === 'online' ? 'Online' : 'In-Person' }}
+                            </span>
+                        </td>
                         <td>
                             <span class="badge bg-{{ match($appt->status) {
                                 'approved' => 'success',
                                 'pending', 'rescheduled' => 'warning',
-                                'rejected', 'cancelled' => 'danger',
+                                'rejected', 'cancelled', 'no_show' => 'danger',
                                 'completed' => 'info',
                                 default => 'secondary'
-                            } }}">{{ ucfirst($appt->status) }}</span>
+                            } }}">{{ $appt->status === 'no_show' ? 'No-show' : ucfirst($appt->status) }}</span>
                         </td>
                         <td class="text-end">
-                            @if ($appt->mode === 'online' && $appt->meeting_link)
+                            @if ($appt->meetingLinkActive())
                                 <a href="{{ $appt->meeting_link }}" target="_blank" rel="noopener"
-                                   class="btn btn-sm btn-primary" title="Join video call">
+                                   class="btn btn-sm btn-primary" title="Join video call"
+                                   x-data @click="$dispatch('open-conclude', { id: {{ $appt->id }} })">
                                     <i class="bi bi-camera-video"></i>
                                 </a>
+                            @elseif ($appt->mode === 'online' && $appt->meeting_link && optional($appt->meetingLinkExpiresAt())->isPast())
+                                <span class="badge bg-secondary" title="Link expired {{ $appt->meetingLinkExpiresAt()->diffForHumans() }}">
+                                    <i class="bi bi-camera-video-off"></i> Link expired
+                                </span>
                             @endif
 
                             @if ($appt->status === 'pending')
@@ -80,14 +103,21 @@
                                         @click="$dispatch('open-reschedule', { id: {{ $appt->id }} })">
                                     <i class="bi bi-calendar2-week"></i>
                                 </button>
+                                <button class="btn btn-sm btn-outline-success" title="Conclude / close case"
+                                        x-data
+                                        @click="$dispatch('open-conclude', { id: {{ $appt->id }} })">
+                                    <i class="bi bi-clipboard-check"></i>
+                                </button>
                             @endif
                         </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center py-5">
-                            <i class="bi bi-calendar-check text-muted" style="font-size: 3rem;"></i>
-                            <p class="text-muted mt-2 mb-3">No appointments found.</p>
+                        <td colspan="6">
+                            <div class="tc-empty">
+                                <div class="tc-empty-icon"><i class="bi bi-calendar-check"></i></div>
+                                <div>No appointments match this filter.</div>
+                            </div>
                         </td>
                     </tr>
                 @endforelse
@@ -122,6 +152,48 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @click="open = false">Cancel</button>
                         <button type="submit" class="btn btn-primary">Reschedule</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{{-- Post-meeting wrap-up / session outcome (hidden by default) --}}
+<div x-data="{ open: false, apptId: null }"
+     x-on:open-conclude.window="open = true; apptId = $event.detail.id"
+     x-show="open"
+     x-cloak
+     style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050;">
+    <div class="modal d-block" tabindex="-1" style="display: block !important;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <form :action="'/appointments/' + apptId + '/complete'" method="POST">
+                    @csrf @method('PATCH')
+                    <div class="modal-header">
+                        <h5 class="modal-title">Conclude appointment</h5>
+                        <button type="button" class="btn-close" @click="open = false"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>How did this session go? This closes the case and records attendance for progress tracking.</p>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="outcome" id="outcome-attended" value="attended" checked>
+                            <label class="form-check-label" for="outcome-attended">
+                                <strong>Patient attended</strong> — mark completed
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="outcome" id="outcome-no-show" value="no_show">
+                            <label class="form-check-label" for="outcome-no-show">
+                                <strong>Patient no-showed</strong> — record as missed
+                            </label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" @click="open = false">Not yet</button>
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-lg"></i> Save &amp; close case
+                        </button>
                     </div>
                 </form>
             </div>

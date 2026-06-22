@@ -1,4 +1,4 @@
-# TheraConnect Quick Setup
+﻿# TheraConnect Quick Setup
 # Run this script in PowerShell to get the project running with demo data.
 #
 # Usage: .\setup.ps1
@@ -13,7 +13,8 @@ param(
     [string]$DBPort = "3306",
     [string]$DBName = "theraconnect",
     [string]$DBUser = "root",
-    [string]$DBPass = ""
+    [string]$DBPass = "",
+    [switch]$SkipLocalGuard  # Bypass the local-host check for migrate:fresh
 )
 
 $ErrorActionPreference = "Stop"
@@ -22,7 +23,7 @@ Set-Location $projectDir
 
 Write-Host ""
 Write-Host "========================================" -ForegroundColor Cyan
-Write-Host "  TheraConnect v1.0 — Quick Setup" -ForegroundColor Cyan
+Write-Host "  TheraConnect v1.0 - Quick Setup" -ForegroundColor Cyan
 Write-Host "========================================" -ForegroundColor Cyan
 Write-Host ""
 
@@ -105,14 +106,27 @@ if ($mysql) {
         }
         Write-Host "  Database '$DBName' ready." -ForegroundColor Green
     } catch {
-        Write-Host "  DB creation skipped — create '$DBName' manually." -ForegroundColor Yellow
+        Write-Host "  DB creation skipped - create '$DBName' manually." -ForegroundColor Yellow
     }
 } else {
-    Write-Host "  mysql.exe not found — create '$DBName' manually." -ForegroundColor Yellow
+    Write-Host "  mysql.exe not found - create '$DBName' manually." -ForegroundColor Yellow
 }
 
 # 7. Migrate + demo seed
 Write-Host "[7/8] Running migrations + demo data..." -ForegroundColor Yellow
+
+# Guard: `migrate:fresh` drops ALL tables before re-migrating. Refuse to run
+# against non-local DB hosts (anything other than localhost/127.x/::1) so this
+# script can never wipe a staging or production database if invoked with a bad
+# -DBHost argument. Override by passing -SkipLocalGuard at your own risk.
+$isLocalHost = $DBHost -match '^(127\.|localhost|::1)'
+if (-not $isLocalHost -and -not $SkipLocalGuard) {
+    Write-Host "  REFUSING to migrate:fresh against non-local database host '$DBHost'." -ForegroundColor Red
+    Write-Host "  migrate:fresh drops ALL tables - that would destroy real data." -ForegroundColor Red
+    Write-Host "  If you really intend this, re-run with: -SkipLocalGuard" -ForegroundColor Red
+    exit 1
+}
+
 $prevPref = $ErrorActionPreference; $ErrorActionPreference = "Continue"
 if ($php -is [string]) {
     & $php artisan migrate:fresh --seed --force 2>&1 | Out-Null
