@@ -16,8 +16,11 @@ import 'screens/appointments/appointment_detail_screen.dart';
 import 'screens/assignments/assignment_list_screen.dart';
 import 'screens/assignments/assignment_detail_screen.dart';
 import 'screens/assignments/submit_assignment_screen.dart';
+import 'screens/messages/inbox_screen.dart';
+import 'screens/messages/message_thread_screen.dart';
 import 'screens/chatbot/chatbot_screen.dart';
 import 'screens/notifications/notification_list_screen.dart';
+import 'screens/notes/notes_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/downloads/downloads_screen.dart';
@@ -144,6 +147,22 @@ final routerProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
+                path: '/messages',
+                builder: (context, state) => const InboxScreen(),
+              ),
+              GoRoute(
+                path: '/messages/:id',
+                builder: (context, state) {
+                  final id = int.parse(state.pathParameters['id']!);
+                  final title = state.extra is String ? state.extra as String : null;
+                  return MessageThreadScreen(conversationId: id, title: title);
+                },
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
                 path: '/chatbot',
                 builder: (context, state) => const ChatbotScreen(),
               ),
@@ -162,6 +181,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/notifications',
                 builder: (context, state) => const NotificationListScreen(),
+              ),
+              GoRoute(
+                path: '/notes',
+                builder: (context, state) => const NotesScreen(),
               ),
               GoRoute(
                 path: '/downloads',

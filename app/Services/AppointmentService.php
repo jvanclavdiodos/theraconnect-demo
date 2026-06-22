@@ -144,6 +144,14 @@ class AppointmentService
         return $appointment->fresh();
     }
 
+    /** Close the case: mark a held appointment as completed. */
+    public function complete(Appointment $appointment): Appointment
+    {
+        $appointment->update(['status' => 'completed']);
+
+        return $appointment->fresh();
+    }
+
     public function approve(Appointment $appointment, ?string $scheduledAt = null): Appointment
     {
         $appointment->update([

@@ -64,6 +64,15 @@ Route::prefix('v1')->group(function () {
             Route::get('/assignments/{id}/worksheet', [\App\Http\Controllers\Api\V1\AssignmentController::class, 'downloadWorksheet']);
             Route::post('/assignments/{id}/submit', [\App\Http\Controllers\Api\V1\SubmissionController::class, 'store']);
             Route::get('/submissions/{id}/file', [\App\Http\Controllers\Api\V1\SubmissionController::class, 'downloadFile']);
+
+            // Notes shared by the clinician (read-only)
+            Route::get('/notes', [\App\Http\Controllers\Api\V1\PatientNoteController::class, 'index']);
+
+            // Messaging (patient <-> assigned clinician)
+            Route::get('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'index']);
+            Route::post('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'store']);
+            Route::get('/conversations/{conversation}/messages', [\App\Http\Controllers\Api\V1\ConversationController::class, 'messages']);
+            Route::post('/conversations/{conversation}/messages', [\App\Http\Controllers\Api\V1\ConversationController::class, 'send']);
         });
 
         // Chatbot (separate throttle: 30/min/user)

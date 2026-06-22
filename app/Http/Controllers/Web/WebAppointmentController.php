@@ -79,6 +79,26 @@ class WebAppointmentController extends Controller
             ->with('status', 'Appointment rejected.');
     }
 
+    /**
+     * Close the case after a session: mark an approved/rescheduled appointment
+     * as completed. Triggered by the post-meeting wrap-up prompt.
+     */
+    public function complete(Appointment $appointment): RedirectResponse
+    {
+        Gate::authorize('manage', $appointment);
+
+        if (! in_array($appointment->status, ['approved', 'rescheduled'], true)) {
+            return back()->withErrors([
+                'status' => 'Only an approved appointment can be marked completed.',
+            ]);
+        }
+
+        $this->appointmentService->complete($appointment);
+
+        return redirect()->route('appointments.index')
+            ->with('status', 'Appointment marked as completed.');
+    }
+
     public function reschedule(Request $request, Appointment $appointment): RedirectResponse
     {
         Gate::authorize('manage', $appointment);

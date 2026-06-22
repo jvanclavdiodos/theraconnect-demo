@@ -19,6 +19,7 @@ return new class extends Migration
                 'appointment_reminder',
                 'assignment_created',
                 'assignment_deadline',
+                'message_received',
                 'generic',
             ]);
             $table->string('title');

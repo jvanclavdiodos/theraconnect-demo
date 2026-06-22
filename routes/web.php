@@ -5,8 +5,10 @@ use App\Http\Controllers\Web\ChatbotContentController;
 use App\Http\Controllers\Web\ClinicianAvailabilityController;
 use App\Http\Controllers\Web\ClinicianController;
 use App\Http\Controllers\Web\DashboardController;
+use App\Http\Controllers\Web\MessageController;
 use App\Http\Controllers\Web\NotificationLogController;
 use App\Http\Controllers\Web\PatientController;
+use App\Http\Controllers\Web\PatientNoteController;
 use App\Http\Controllers\Web\WebAppointmentController;
 use App\Http\Controllers\Web\WebAssignmentController;
 use Illuminate\Support\Facades\Route;
@@ -50,14 +52,25 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
         Route::get('/notifications/logs', [NotificationLogController::class, 'index'])->name('notifications.logs');
     });
 
-    // Clinician self-service availability (clinicians only; admins have no
-    // clinician profile). The controller always loads the current user's own
+    // Clinician availability calendar (JSON; powers the dashboard calendar).
+    // Clinicians only; the controller always loads the current user's own
     // clinician, so there is no cross-clinician access.
     Route::middleware('role:clinician')->group(function () {
-        Route::get('/my-availability', [ClinicianAvailabilityController::class, 'edit'])->name('availability.edit');
-        Route::put('/my-availability', [ClinicianAvailabilityController::class, 'update'])->name('availability.update');
-        Route::post('/my-availability/overrides', [ClinicianAvailabilityController::class, 'storeOverride'])->name('availability.overrides.store');
-        Route::delete('/my-availability/overrides/{override}', [ClinicianAvailabilityController::class, 'destroyOverride'])->name('availability.overrides.destroy');
+        Route::get('/availability/month', [ClinicianAvailabilityController::class, 'month'])->name('availability.month');
+        Route::get('/availability/day', [ClinicianAvailabilityController::class, 'day'])->name('availability.day');
+        Route::post('/availability/toggle-day', [ClinicianAvailabilityController::class, 'toggleDay'])->name('availability.toggleDay');
+        Route::post('/availability/toggle-hour', [ClinicianAvailabilityController::class, 'toggleHour'])->name('availability.toggleHour');
+
+        // Patient notes (clinician writes about a patient; manage own per Policy).
+        Route::post('/patients/{patient}/notes', [PatientNoteController::class, 'store'])->name('patient-notes.store');
+        Route::put('/patient-notes/{note}', [PatientNoteController::class, 'update'])->name('patient-notes.update');
+        Route::delete('/patient-notes/{note}', [PatientNoteController::class, 'destroy'])->name('patient-notes.destroy');
+
+        // Messaging (patient <-> assigned clinician). Participant-only per Policy.
+        Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
+        Route::post('/messages/open', [MessageController::class, 'open'])->name('messages.open');
+        Route::get('/messages/{conversation}', [MessageController::class, 'show'])->name('messages.show');
+        Route::post('/messages/{conversation}', [MessageController::class, 'store'])->name('messages.store');
     });
 
     // Appointments — list + status changes (Gate::authorize('manage') per row)
@@ -65,6 +78,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::patch('/appointments/{appointment}/approve', [WebAppointmentController::class, 'approve'])->name('appointments.approve');
     Route::patch('/appointments/{appointment}/reject', [WebAppointmentController::class, 'reject'])->name('appointments.reject');
     Route::patch('/appointments/{appointment}/reschedule', [WebAppointmentController::class, 'reschedule'])->name('appointments.reschedule');
+    Route::patch('/appointments/{appointment}/complete', [WebAppointmentController::class, 'complete'])->name('appointments.complete');
 
     // Assignments (Gate::authorize per assignment/submission)
     Route::get('/assignments', [WebAssignmentController::class, 'index'])->name('assignments.index');
@@ -73,5 +87,6 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/assignments/{assignment}/submissions', [WebAssignmentController::class, 'submissions'])->name('assignments.submissions');
     Route::get('/assignments/{assignment}/worksheet', [WebAssignmentController::class, 'downloadWorksheet'])->name('assignments.worksheet');
     Route::get('/submissions/{submission}/file', [WebAssignmentController::class, 'downloadSubmission'])->name('submissions.file');
+    Route::get('/submissions/{submission}/preview', [WebAssignmentController::class, 'previewSubmission'])->name('submissions.preview');
     Route::patch('/submissions/{submission}/review', [WebAssignmentController::class, 'review'])->name('submissions.review');
 });

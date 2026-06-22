@@ -33,6 +33,24 @@ class AssignmentResource extends JsonResource
                 $this->relationLoaded('submissions') && $this->submissions->isNotEmpty(),
                 fn() => $this->submissions->first()->submitted_at
             ),
+            // The patient's own submission (content + file), for in-app preview.
+            'submission' => $this->when(
+                $this->relationLoaded('submissions') && $this->submissions->isNotEmpty(),
+                function () {
+                    $s = $this->submissions->first();
+
+                    return [
+                        'id' => $s->id,
+                        'content' => $s->content,
+                        'original_name' => $s->original_name,
+                        'kind' => $s->previewKind(),
+                        // Authenticated download route (private disk + bearer token).
+                        'file_url' => $s->file_path
+                            ? url('/api/v1/submissions/' . $s->id . '/file')
+                            : null,
+                    ];
+                }
+            ),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
         ];

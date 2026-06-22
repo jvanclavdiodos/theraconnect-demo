@@ -92,6 +92,20 @@ class NotificationService
         );
     }
 
+    /**
+     * Sent to the other participant when a new direct message arrives.
+     */
+    public function messageReceived(int $userId, string $senderName, string $snippet): Notification
+    {
+        return $this->create(
+            $userId,
+            'message_received',
+            "New message from {$senderName}",
+            $snippet,
+            null
+        );
+    }
+
     public function assignmentCreated(int $userId, string $clinicianName, string $title): Notification
     {
         return $this->create(

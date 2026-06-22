@@ -7,6 +7,8 @@ class Appointment {
   final String? scheduledAt;
   final String mode;
   final String? meetingLink;
+  final bool meetingLinkActive;
+  final String? meetingLinkExpiresAt;
   final String status;
   final String? reason;
   final String? clinicNotes;
@@ -22,6 +24,8 @@ class Appointment {
     this.scheduledAt,
     required this.mode,
     this.meetingLink,
+    this.meetingLinkActive = false,
+    this.meetingLinkExpiresAt,
     required this.status,
     this.reason,
     this.clinicNotes,
@@ -39,6 +43,8 @@ class Appointment {
       scheduledAt: json['scheduled_at'] as String?,
       mode: json['mode'] as String? ?? 'in_person',
       meetingLink: json['meeting_link'] as String?,
+      meetingLinkActive: (json['meeting_link_active'] as bool?) ?? false,
+      meetingLinkExpiresAt: json['meeting_link_expires_at'] as String?,
       status: json['status'] as String? ?? 'pending',
       reason: json['reason'] as String?,
       clinicNotes: json['clinic_notes'] as String?,
@@ -57,12 +63,21 @@ class Appointment {
       'scheduled_at': scheduledAt,
       'mode': mode,
       'meeting_link': meetingLink,
+      'meeting_link_active': meetingLinkActive,
+      'meeting_link_expires_at': meetingLinkExpiresAt,
       'status': status,
       'reason': reason,
       'clinic_notes': clinicNotes,
       'created_at': createdAt,
       'updated_at': updatedAt,
     };
+  }
+
+  /// Online appointment whose meeting window has passed (link no longer offered).
+  bool get meetingLinkExpired {
+    if (mode != 'online' || meetingLinkExpiresAt == null) return false;
+    final expiry = DateTime.tryParse(meetingLinkExpiresAt!);
+    return !meetingLinkActive && expiry != null && expiry.isBefore(DateTime.now());
   }
 
   String get statusLabel {
