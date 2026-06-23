@@ -20,9 +20,11 @@
         <a href="{{ route('patients.progress', $patient) }}" class="btn btn-success btn-sm">
             <i class="bi bi-graph-up-arrow"></i> View progress
         </a>
+        @role('admin')
         <a href="{{ route('patients.edit', $patient) }}" class="btn btn-primary btn-sm">
             <i class="bi bi-pencil"></i> Edit
         </a>
+        @endrole
         <a href="{{ route('patients.index') }}" class="btn btn-outline-secondary btn-sm">Back to List</a>
     </div>
 </div>

@@ -1,7 +1,9 @@
 <nav class="navbar navbar-expand-lg navbar-light">
-    <button class="btn btn-outline-secondary d-md-none me-2" @click="sidebarOpen = !sidebarOpen">
-        <i class="bi bi-list"></i>
-    </button>
+    @auth
+        <button class="btn btn-outline-secondary d-md-none me-2" @click="sidebarOpen = !sidebarOpen">
+            <i class="bi bi-list"></i>
+        </button>
+    @endauth
 
     <span class="navbar-brand mb-0 h1 d-md-none">{{ config('app.name', 'TheraConnect') }}</span>
 

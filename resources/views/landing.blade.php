@@ -129,7 +129,10 @@
                 and stay connected with your clinic — all from one place.
             </p>
             <div class="d-flex flex-wrap justify-content-center gap-3">
-                <a href="#" class="btn btn-hero btn-lg"><i class="bi bi-download me-2"></i>Download the App</a>
+                <a href="{{ config('app.download_url') ?: '#patients' }}" class="btn btn-hero btn-lg"
+                   @if(config('app.download_url')) target="_blank" rel="noopener" @endif>
+                    <i class="bi bi-download me-2"></i>Download the App
+                </a>
                 <a href="{{ url('/login') }}" class="btn btn-hero-outline btn-lg">Clinician Sign In</a>
             </div>
         </div>
@@ -167,7 +170,7 @@
         </div>
     </section>
 
-    <section class="audience">
+    <section class="audience" id="patients">
         <div class="container">
             <div class="row g-4 align-items-center">
                 <div class="col-lg-6">

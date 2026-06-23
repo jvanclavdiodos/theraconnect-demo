@@ -44,11 +44,13 @@
 </head>
 <body x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false">
     <div class="d-flex" id="wrapper">
-        {{-- Sidebar overlay (mobile) --}}
-        <div id="sidebar-overlay" :class="{ 'show': sidebarOpen }" @click="sidebarOpen = false"></div>
+        @auth
+            {{-- Sidebar overlay (mobile) --}}
+            <div id="sidebar-overlay" :class="{ 'show': sidebarOpen }" @click="sidebarOpen = false"></div>
 
-        {{-- Sidebar --}}
-        @include('partials.sidebar')
+            {{-- Sidebar --}}
+            @include('partials.sidebar')
+        @endauth
 
         <div id="page-content-wrapper" class="flex-grow-1">
             {{-- Navbar --}}
