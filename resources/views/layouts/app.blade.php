@@ -20,8 +20,15 @@
         @media (max-width: 767.98px) {
             #sidebar-wrapper {
                 position: fixed;
+                /* Pin top AND bottom so the panel always fills the visible
+                   viewport — more reliable than min-height:100vh, which mobile
+                   browsers mis-measure as the address bar shows/hides. */
                 top: 0;
+                bottom: 0;
                 left: 0;
+                /* Let top/bottom govern height; don't let the base 100vh
+                   override it (100vh can exceed the visible area on mobile). */
+                min-height: 0;
                 margin-left: -240px;
             }
             #sidebar-wrapper.open {
