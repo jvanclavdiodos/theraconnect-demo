@@ -8,6 +8,7 @@ import '../../providers/appointment_provider.dart';
 import '../../providers/assignment_provider.dart';
 import '../../providers/assessment_provider.dart';
 import '../../providers/notification_provider.dart';
+import '../../utils/date_format.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -204,7 +205,7 @@ class DashboardScreen extends ConsumerWidget {
                     child: ListTile(
                       leading: const Icon(Icons.event),
                       title: Text(a.status == 'approved' ? l.dashboardStatusApproved : l.dashboardStatusPending),
-                      subtitle: Text(a.scheduledAt ?? a.requestedAt ?? l.dashboardNoDate),
+                      subtitle: Text(formatApptDateTime(a.scheduledAt ?? a.requestedAt, fallback: l.dashboardNoDate)),
                       trailing: a.mode == 'online'
                           ? const Icon(Icons.videocam)
                           : const Icon(Icons.person),

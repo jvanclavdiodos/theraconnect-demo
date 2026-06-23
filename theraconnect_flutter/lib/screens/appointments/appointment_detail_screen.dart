@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../models/api_response.dart';
 import '../../models/appointment.dart';
 import '../../providers/appointment_provider.dart';
+import '../../utils/date_format.dart';
 
 class AppointmentDetailScreen extends ConsumerWidget {
   final int appointmentId;
@@ -57,7 +58,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
                   Chip(label: Text(appointment.statusLabel)),
                   const SizedBox(height: 8),
                   Text(
-                    appointment.scheduledAt ?? appointment.requestedAt ?? 'No date',
+                    formatApptDateTime(appointment.scheduledAt ?? appointment.requestedAt),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 4),
