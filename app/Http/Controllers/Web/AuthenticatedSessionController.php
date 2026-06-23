@@ -28,15 +28,12 @@ class AuthenticatedSessionController extends Controller
                 ->onlyInput('email');
         }
 
-        if (! in_array(Auth::user()->role, ['admin', 'clinician'])) {
-            Auth::logout();
-
-            return back()->withErrors([
-                'email' => 'Patients must use the mobile app. This login is for clinic staff only.',
-            ]);
-        }
-
         $request->session()->regenerate();
+
+        // Patients use the browser portal; clinicians/admins use the dashboard.
+        if (Auth::user()->role === 'patient') {
+            return redirect()->intended(route('portal.dashboard'));
+        }
 
         return redirect()->intended('/dashboard');
     }

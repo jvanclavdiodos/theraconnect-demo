@@ -133,7 +133,7 @@
                    @if(config('app.download_url')) target="_blank" rel="noopener" @endif>
                     <i class="bi bi-download me-2"></i>Download the App
                 </a>
-                <a href="{{ url('/login') }}" class="btn btn-hero-outline btn-lg">Clinician Sign In</a>
+                <a href="{{ url('/login') }}" class="btn btn-hero-outline btn-lg">Sign In</a>
             </div>
         </div>
     </section>
