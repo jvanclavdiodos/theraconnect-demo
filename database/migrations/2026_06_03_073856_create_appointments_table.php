@@ -16,7 +16,7 @@ return new class extends Migration
             $table->dateTime('scheduled_at')->nullable();
             $table->enum('mode', ['in_person', 'online'])->default('in_person');
             $table->string('meeting_link', 512)->nullable();
-            $table->enum('status', ['pending', 'approved', 'rejected', 'rescheduled', 'completed', 'cancelled'])->default('pending');
+            $table->enum('status', ['pending', 'approved', 'rejected', 'rescheduled', 'completed', 'cancelled', 'no_show'])->default('pending');
             $table->string('reason', 500)->nullable();
             $table->text('clinic_notes')->nullable();
             $table->timestamps();

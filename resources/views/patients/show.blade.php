@@ -9,8 +9,17 @@
 
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>{{ $patient->user->name }}</h2>
+    <div class="d-flex align-items-center gap-3">
+        @if ($patient->user->hasAvatar())
+            <img src="{{ route('avatars.show', $patient->user) }}" alt="avatar"
+                 style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:1px solid #dee2e6;">
+        @endif
+        <h2 class="mb-0">{{ $patient->user->name }}</h2>
+    </div>
     <div>
+        <a href="{{ route('patients.progress', $patient) }}" class="btn btn-success btn-sm">
+            <i class="bi bi-graph-up-arrow"></i> View progress
+        </a>
         <a href="{{ route('patients.edit', $patient) }}" class="btn btn-primary btn-sm">
             <i class="bi bi-pencil"></i> Edit
         </a>
@@ -29,6 +38,18 @@
 
                     <dt class="col-sm-5">Date of Birth</dt>
                     <dd class="col-sm-7">{{ $patient->date_of_birth ? $patient->date_of_birth->format('M d, Y') : '—' }}</dd>
+
+                    <dt class="col-sm-5">Gender</dt>
+                    <dd class="col-sm-7">{{ $patient->gender ?? '—' }}</dd>
+
+                    <dt class="col-sm-5">Educational Attainment</dt>
+                    <dd class="col-sm-7">{{ $patient->educational_attainment ?? '—' }}</dd>
+
+                    <dt class="col-sm-5">Employment Status</dt>
+                    <dd class="col-sm-7">{{ $patient->employment_status ?? '—' }}</dd>
+
+                    <dt class="col-sm-5">Personal Issues</dt>
+                    <dd class="col-sm-7" style="white-space: pre-wrap;">{{ $patient->personal_issues ?? '—' }}</dd>
 
                     <dt class="col-sm-5">Contact No.</dt>
                     <dd class="col-sm-7">{{ $patient->contact_no ?? '—' }}</dd>

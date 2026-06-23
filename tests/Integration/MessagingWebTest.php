@@ -64,8 +64,11 @@ class MessagingWebTest extends TestCase
         $this->assertDatabaseHas('messages', [
             'conversation_id' => $conversation->id,
             'sender_id' => $clinician['user']->id,
-            'body' => 'Hello from your clinician',
         ]);
+        $this->assertSame(
+            'Hello from your clinician',
+            \App\Models\Message::where('conversation_id', $conversation->id)->first()->body
+        );
         // Patient was notified.
         $this->assertDatabaseHas('notifications', [
             'user_id' => $patient['user']->id,

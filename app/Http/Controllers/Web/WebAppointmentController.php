@@ -32,8 +32,12 @@ class WebAppointmentController extends Controller
             $query->where('clinician_id', $user->clinician->id);
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        $validStatus = $request->validate([
+            'status' => ['nullable', 'in:pending,approved,rejected,completed,cancelled,rescheduled,no_show'],
+        ])['status'] ?? null;
+
+        if ($validStatus) {
+            $query->where('status', $validStatus);
         }
 
         $appointments = $query->paginate(20);
@@ -80,17 +84,28 @@ class WebAppointmentController extends Controller
     }
 
     /**
-     * Close the case after a session: mark an approved/rescheduled appointment
-     * as completed. Triggered by the post-meeting wrap-up prompt.
+     * Record the session outcome from the post-meeting wrap-up prompt:
+     * 'attended' closes the case (completed), 'no_show' records that the patient
+     * missed it (feeds attendance / engagement tracking).
      */
-    public function complete(Appointment $appointment): RedirectResponse
+    public function complete(Request $request, Appointment $appointment): RedirectResponse
     {
         Gate::authorize('manage', $appointment);
 
         if (! in_array($appointment->status, ['approved', 'rescheduled'], true)) {
             return back()->withErrors([
-                'status' => 'Only an approved appointment can be marked completed.',
+                'status' => 'Only an approved appointment can be concluded.',
             ]);
+        }
+
+        // Default to 'attended' so the existing one-click "close case" still works.
+        $outcome = $request->input('outcome', 'attended');
+
+        if ($outcome === 'no_show') {
+            $this->appointmentService->markNoShow($appointment);
+
+            return redirect()->route('appointments.index')
+                ->with('status', 'Appointment recorded as a no-show.');
         }
 
         $this->appointmentService->complete($appointment);

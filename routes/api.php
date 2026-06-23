@@ -46,6 +46,8 @@ Route::prefix('v1')->group(function () {
             // Profile
             Route::get('/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'show']);
             Route::put('/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'update']);
+            Route::post('/profile/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'updateAvatar'])->middleware('throttle:10,1');
+            Route::get('/profile/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'avatar']);
 
             // Clinicians (read-only list for clinician-first booking)
             Route::get('/clinicians', [\App\Http\Controllers\Api\V1\ClinicianController::class, 'index']);
@@ -67,6 +69,18 @@ Route::prefix('v1')->group(function () {
 
             // Notes shared by the clinician (read-only)
             Route::get('/notes', [\App\Http\Controllers\Api\V1\PatientNoteController::class, 'index']);
+
+            // Therapy progress — standardized questionnaires (PHQ-9 / GAD-7)
+            Route::get('/assessments', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'index']);
+            Route::get('/assessments/{assessment}', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'show']);
+            Route::post('/assessments/{assessment}/submit', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'submit']);
+
+            // Therapy progress — quick mood check-ins (1–10)
+            Route::get('/mood-logs', [\App\Http\Controllers\Api\V1\MoodLogController::class, 'index']);
+            Route::post('/mood-logs', [\App\Http\Controllers\Api\V1\MoodLogController::class, 'store']);
+
+            // Therapy goals (read-only; clinician-authored, GAS-rated)
+            Route::get('/goals', [\App\Http\Controllers\Api\V1\GoalController::class, 'index']);
 
             // Messaging (patient <-> assigned clinician)
             Route::get('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'index']);

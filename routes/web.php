@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Web\AccountController;
+use App\Http\Controllers\Web\ActivityLogController;
 use App\Http\Controllers\Web\AuthenticatedSessionController;
 use App\Http\Controllers\Web\ChatbotContentController;
 use App\Http\Controllers\Web\ClinicianAvailabilityController;
@@ -9,6 +11,7 @@ use App\Http\Controllers\Web\MessageController;
 use App\Http\Controllers\Web\NotificationLogController;
 use App\Http\Controllers\Web\PatientController;
 use App\Http\Controllers\Web\PatientNoteController;
+use App\Http\Controllers\Web\ProgressController;
 use App\Http\Controllers\Web\WebAppointmentController;
 use App\Http\Controllers\Web\WebAssignmentController;
 use Illuminate\Support\Facades\Route;
@@ -26,6 +29,12 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
+    // Account / profile picture (any staff user manages their own).
+    Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
+    Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->middleware('throttle:10,1')->name('account.avatar.update');
+    Route::delete('/account/avatar', [AccountController::class, 'destroyAvatar'])->name('account.avatar.destroy');
+    Route::get('/avatars/{user}', [AccountController::class, 'showAvatar'])->name('avatars.show');
+
     // ── Patients ─────────────────────────────────────────────────────────
     // index/show/create/store are admin + clinician (clinician queries are
     // scoped to their caseload; a clinician-created patient is auto-assigned to
@@ -35,6 +44,9 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
     Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
     Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
+
+    // Patient therapy-progress view (attendance + assessments + mood + goals).
+    Route::get('/patients/{patient}/progress', [ProgressController::class, 'show'])->name('patients.progress');
 
     // ── Admin-only management ────────────────────────────────────────────
     Route::middleware('role:admin')->group(function () {
@@ -50,6 +62,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
             ->except(['show'])
             ->parameters(['chatbot-content' => 'intent']);
         Route::get('/notifications/logs', [NotificationLogController::class, 'index'])->name('notifications.logs');
+        Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     });
 
     // Clinician availability calendar (JSON; powers the dashboard calendar).
@@ -65,6 +78,12 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
         Route::post('/patients/{patient}/notes', [PatientNoteController::class, 'store'])->name('patient-notes.store');
         Route::put('/patient-notes/{note}', [PatientNoteController::class, 'update'])->name('patient-notes.update');
         Route::delete('/patient-notes/{note}', [PatientNoteController::class, 'destroy'])->name('patient-notes.destroy');
+
+        // Therapy progress: assign questionnaires + manage goals (caseload-gated).
+        Route::post('/patients/{patient}/assessments', [ProgressController::class, 'assignAssessment'])->name('progress.assessments.assign');
+        Route::post('/patients/{patient}/goals', [ProgressController::class, 'storeGoal'])->name('progress.goals.store');
+        Route::post('/goals/{goal}/ratings', [ProgressController::class, 'rateGoal'])->name('progress.goals.rate');
+        Route::patch('/goals/{goal}/status', [ProgressController::class, 'updateGoalStatus'])->name('progress.goals.status');
 
         // Messaging (patient <-> assigned clinician). Participant-only per Policy.
         Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');

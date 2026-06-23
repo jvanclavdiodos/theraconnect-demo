@@ -49,6 +49,8 @@
                         @endforeach
                     </select>
                 </div>
+                @include('patients._profile_fields', ['patient' => $patient])
+
                 <div class="col-12">
                     <label for="address" class="form-label">Address</label>
                     <textarea id="address" name="address" class="form-control" rows="2">{{ old('address', $patient->address) }}</textarea>

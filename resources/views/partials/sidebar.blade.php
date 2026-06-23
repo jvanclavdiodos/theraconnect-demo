@@ -85,6 +85,10 @@
                             <i class="bi bi-bell"></i> <span>Notification Logs</span>
                             <i class="bi bi-chevron-right tc-nav-chevron"></i>
                         </a>
+                        <a href="{{ route('activity-logs.index') }}" class="tc-nav-item {{ $isActive('activity-logs.*') }}">
+                            <i class="bi bi-journal-text"></i> <span>Activity Audit</span>
+                            <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                        </a>
                     </div>
                 @endif
             @endif
@@ -93,13 +97,18 @@
 
     @auth
         <div class="tc-sidebar-footer">
-            <div class="tc-user-chip">
-                <span class="tc-avatar">{{ $initials ?: 'U' }}</span>
+            <a href="{{ route('account.edit') }}" class="tc-user-chip text-decoration-none text-reset" title="My account">
+                @if(auth()->user()->hasAvatar())
+                    <img src="{{ route('avatars.show', auth()->user()) }}" alt="avatar" class="tc-avatar"
+                         style="object-fit:cover;padding:0;">
+                @else
+                    <span class="tc-avatar">{{ $initials ?: 'U' }}</span>
+                @endif
                 <div class="overflow-hidden">
                     <div class="tc-user-name text-truncate">{{ $name }}</div>
                     <div class="tc-user-role">{{ $roleLabel }}</div>
                 </div>
-            </div>
+            </a>
         </div>
     @endauth
 </aside>

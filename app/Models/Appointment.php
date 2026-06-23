@@ -31,6 +31,8 @@ class Appointment extends Model
         return [
             'requested_at' => 'datetime',
             'scheduled_at' => 'datetime',
+            'reason'       => 'encrypted',
+            'clinic_notes' => 'encrypted',
         ];
     }
 

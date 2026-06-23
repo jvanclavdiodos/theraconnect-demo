@@ -61,6 +61,8 @@
                     <p class="text-muted mb-2"><i class="bi bi-person-check me-1"></i> This patient will be added to your caseload.</p>
                 </div>
                 @endrole
+                @include('patients._profile_fields', ['patient' => null])
+
                 <div class="col-12">
                     <label for="address" class="form-label">Address</label>
                     <textarea id="address" name="address" class="form-control" rows="2">{{ old('address') }}</textarea>

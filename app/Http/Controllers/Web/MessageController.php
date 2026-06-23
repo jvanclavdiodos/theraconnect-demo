@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Clinician;
 use App\Models\Conversation;
 use App\Models\Patient;
+use App\Services\ActivityLogService;
 use App\Services\MessageService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -52,6 +53,8 @@ class MessageController extends Controller
     {
         Gate::authorize('participate', $conversation);
 
+        app(ActivityLogService::class)->log($request->user(), 'message.thread_opened', $conversation);
+
         $conversation->load(['patient.user', 'clinician.user', 'messages.sender']);
         $this->messages->markRead($conversation, $request->user());
 
@@ -63,7 +66,9 @@ class MessageController extends Controller
         Gate::authorize('participate', $conversation);
 
         $validated = $request->validate(['body' => ['required', 'string', 'max:5000']]);
-        $this->messages->send($conversation, $request->user(), $validated['body']);
+        $message = $this->messages->send($conversation, $request->user(), $validated['body']);
+
+        app(ActivityLogService::class)->log($request->user(), 'message.sent', $message);
 
         return redirect()->route('messages.show', $conversation);
     }
