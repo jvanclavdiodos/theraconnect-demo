@@ -112,7 +112,11 @@ class AuthNotifier
 
   Future<String?> register(String name, String email, String password,
       String passwordConfirmation,
-      {String? contactNo}) async {
+      {String? contactNo,
+      String? gender,
+      String? educationalAttainment,
+      String? employmentStatus,
+      String? personalIssues}) async {
     state = (status: AuthState.loading, user: null, patient: null, error: null);
     try {
       final result = await _authApi.register(
@@ -121,6 +125,10 @@ class AuthNotifier
         password: password,
         passwordConfirmation: passwordConfirmation,
         contactNo: contactNo,
+        gender: gender,
+        educationalAttainment: educationalAttainment,
+        employmentStatus: employmentStatus,
+        personalIssues: personalIssues,
       );
       await _authService.saveToken(result.token);
 

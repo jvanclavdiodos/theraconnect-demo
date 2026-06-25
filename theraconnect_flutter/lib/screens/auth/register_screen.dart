@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/patient.dart';
 import '../../providers/auth_provider.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -17,6 +18,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _contactController = TextEditingController();
+  final _personalIssuesController = TextEditingController();
+  String? _gender;
+  String? _education;
+  String? _employment;
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
 
@@ -27,8 +32,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _contactController.dispose();
+    _personalIssuesController.dispose();
     super.dispose();
   }
+
+  DropdownMenuItem<String> _item(String v) => DropdownMenuItem(value: v, child: Text(v));
+
+  String? _trimOrNull(TextEditingController c) =>
+      c.text.trim().isEmpty ? null : c.text.trim();
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
@@ -38,9 +49,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           _emailController.text.trim(),
           _passwordController.text,
           _confirmPasswordController.text,
-          contactNo: _contactController.text.trim().isEmpty
-              ? null
-              : _contactController.text.trim(),
+          contactNo: _trimOrNull(_contactController),
+          gender: _gender,
+          educationalAttainment: _education,
+          employmentStatus: _employment,
+          personalIssues: _trimOrNull(_personalIssuesController),
         );
 
     if (error != null && mounted) {
@@ -128,6 +141,62 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Contact Number (optional)',
                       prefixIcon: Icon(Icons.phone),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('About you (optional)',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            )),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: _gender,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Gender',
+                      prefixIcon: Icon(Icons.wc),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: Patient.genders.map(_item).toList(),
+                    onChanged: (v) => setState(() => _gender = v),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _education,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Educational Attainment',
+                      prefixIcon: Icon(Icons.school),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: Patient.educationLevels.map(_item).toList(),
+                    onChanged: (v) => setState(() => _education = v),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _employment,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Employment Status',
+                      prefixIcon: Icon(Icons.work_outline),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: Patient.employmentStatuses.map(_item).toList(),
+                    onChanged: (v) => setState(() => _employment = v),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _personalIssuesController,
+                    maxLines: 3,
+                    maxLength: 2000,
+                    textInputAction: TextInputAction.newline,
+                    decoration: const InputDecoration(
+                      labelText: 'What brings you here? (optional)',
+                      prefixIcon: Icon(Icons.favorite_border),
                       border: OutlineInputBorder(),
                     ),
                   ),

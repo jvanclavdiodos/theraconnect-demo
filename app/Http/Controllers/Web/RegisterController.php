@@ -9,6 +9,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /**
@@ -25,10 +26,16 @@ class RegisterController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
+            // Critical fields — required.
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+            // Optional patient profile fields captured at sign-up.
             'contact_no' => ['nullable', 'string', 'max:20'],
+            'gender' => ['nullable', 'string', Rule::in(Patient::GENDERS)],
+            'educational_attainment' => ['nullable', 'string', Rule::in(Patient::EDUCATION_LEVELS)],
+            'employment_status' => ['nullable', 'string', Rule::in(Patient::EMPLOYMENT_STATUSES)],
+            'personal_issues' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $user = DB::transaction(function () use ($validated) {
@@ -42,6 +49,10 @@ class RegisterController extends Controller
             Patient::create([
                 'user_id' => $user->id,
                 'contact_no' => $validated['contact_no'] ?? null,
+                'gender' => $validated['gender'] ?? null,
+                'educational_attainment' => $validated['educational_attainment'] ?? null,
+                'employment_status' => $validated['employment_status'] ?? null,
+                'personal_issues' => $validated['personal_issues'] ?? null,
             ]);
 
             return $user;

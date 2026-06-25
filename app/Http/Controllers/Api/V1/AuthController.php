@@ -28,6 +28,10 @@ class AuthController extends Controller
             Patient::create([
                 'user_id' => $user->id,
                 'contact_no' => $request->contact_no,
+                'gender' => $request->gender,
+                'educational_attainment' => $request->educational_attainment,
+                'employment_status' => $request->employment_status,
+                'personal_issues' => $request->personal_issues,
             ]);
 
             return $user;

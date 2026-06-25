@@ -31,6 +31,49 @@ class AuthFlowTest extends TestCase
         ]);
     }
 
+    public function test_patient_registration_captures_profile_fields(): void
+    {
+        $response = $this->postJson('/api/v1/register', [
+            'name' => 'Profile Patient',
+            'email' => 'profile@test.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'gender' => 'Female',
+            'educational_attainment' => 'College',
+            'employment_status' => 'Student',
+            'personal_issues' => 'Exam stress and poor sleep.',
+        ]);
+
+        $response->assertStatus(201);
+
+        $this->assertDatabaseHas('patients', [
+            'gender' => 'Female',
+            'educational_attainment' => 'College',
+            'employment_status' => 'Student',
+        ]);
+        // personal_issues is encrypted at rest — verify via the model.
+        $patient = \App\Models\User::where('email', 'profile@test.com')->first()->patient;
+        $this->assertSame('Exam stress and poor sleep.', $patient->personal_issues);
+    }
+
+    public function test_registration_rejects_invalid_profile_option(): void
+    {
+        $this->postJson('/api/v1/register', [
+            'name' => 'Bad Option',
+            'email' => 'bad@test.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'employment_status' => 'Astronaut',
+        ])->assertStatus(422)->assertJsonValidationErrors('employment_status');
+    }
+
+    public function test_registration_requires_critical_fields(): void
+    {
+        $this->postJson('/api/v1/register', [])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['name', 'email', 'password']);
+    }
+
     public function test_patient_login_returns_token(): void
     {
         $patient = $this->createPatient('login@test.com');

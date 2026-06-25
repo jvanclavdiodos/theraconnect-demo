@@ -70,4 +70,33 @@ class PortalAccessTest extends TestCase
         $this->assertSame('patient', $user->role);
         $this->assertNotNull($user->patient);
     }
+
+    public function test_web_registration_captures_profile_fields(): void
+    {
+        $this->post('/register', [
+            'name' => 'Web Profile Patient',
+            'email' => 'webprofile@test.com',
+            'password' => 'password123',
+            'password_confirmation' => 'password123',
+            'gender' => 'Male',
+            'educational_attainment' => 'Postgraduate',
+            'employment_status' => 'Employed',
+            'personal_issues' => 'Work-related anxiety.',
+        ])->assertRedirect(route('portal.dashboard'));
+
+        $this->assertDatabaseHas('patients', [
+            'gender' => 'Male',
+            'educational_attainment' => 'Postgraduate',
+            'employment_status' => 'Employed',
+        ]);
+        $patient = User::where('email', 'webprofile@test.com')->first()->patient;
+        $this->assertSame('Work-related anxiety.', $patient->personal_issues);
+    }
+
+    public function test_web_registration_requires_critical_fields(): void
+    {
+        $this->from('/register')->post('/register', [])
+            ->assertRedirect('/register')
+            ->assertSessionHasErrors(['name', 'email', 'password']);
+    }
 }
