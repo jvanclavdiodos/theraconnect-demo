@@ -80,7 +80,14 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
         notificationApi: ref.read(notificationApiProvider),
         authService: ref.read(authServiceProvider),
       );
-      await fcmService.initialize();
+      final router = ref.read(routerProvider);
+      await fcmService.initialize(
+        // Tapping a push deep-links to the relevant screen.
+        onNavigate: (route) => router.go(route),
+        // A push arriving in the foreground refreshes the in-app list.
+        onForegroundRefresh: () async =>
+            ref.read(notificationsProvider.notifier).loadNotifications(),
+      );
     } catch (e) {
       debugPrint('FCM init failed: $e');
     }

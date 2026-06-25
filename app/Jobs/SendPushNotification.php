@@ -27,8 +27,18 @@ class SendPushNotification implements ShouldQueue
         $tokens = DeviceToken::where('user_id', $notification->user_id)->pluck('token');
         $sent = false;
 
+        // Carry the notification type + id in the data payload so the app can
+        // deep-link to the right screen when the user taps the push.
+        $data = array_merge(
+            [
+                'type' => $notification->type,
+                'notification_id' => $notification->id,
+            ],
+            $notification->data ?? []
+        );
+
         foreach ($tokens as $token) {
-            if ($fcm->send($token, $notification->title, $notification->body, $notification->data)) {
+            if ($fcm->send($token, $notification->title, $notification->body, $data)) {
                 $sent = true;
             }
         }
