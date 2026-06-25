@@ -26,6 +26,7 @@ import 'screens/progress/assessments_screen.dart';
 import 'screens/progress/assessment_fill_screen.dart';
 import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
+import 'screens/profile/change_password_screen.dart';
 import 'screens/downloads/downloads_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
@@ -180,6 +181,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/profile/edit',
                 builder: (context, state) => const EditProfileScreen(),
+              ),
+              GoRoute(
+                path: '/profile/password',
+                builder: (context, state) => const ChangePasswordScreen(),
               ),
               GoRoute(
                 path: '/notifications',

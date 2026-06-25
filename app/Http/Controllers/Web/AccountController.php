@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Rules\StrongPassword;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -17,6 +18,24 @@ class AccountController extends Controller
     public function edit(Request $request): View
     {
         return view('account.edit', ['user' => $request->user()]);
+    }
+
+    /** Change the current staff user's password (current-password verified). */
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'confirmed', 'different:current_password', new StrongPassword],
+        ], [
+            'current_password.current_password' => 'Your current password is incorrect.',
+            'password.different' => 'The new password must be different from your current password.',
+        ]);
+
+        $user = $request->user();
+        $user->password = $request->password;
+        $user->save();
+
+        return back()->with('status', 'Password updated.');
     }
 
     public function updateAvatar(Request $request): RedirectResponse

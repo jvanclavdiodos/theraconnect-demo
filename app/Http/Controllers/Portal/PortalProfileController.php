@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
 use App\Models\Patient;
+use App\Rules\StrongPassword;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -52,6 +53,26 @@ class PortalProfileController extends Controller
         return redirect()
             ->route('portal.profile.show')
             ->with('status', 'Profile updated.');
+    }
+
+    /** Change the patient's own password (current-password verified). */
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'current_password' => ['required', 'current_password'],
+            'password' => ['required', 'string', 'confirmed', 'different:current_password', new StrongPassword],
+        ], [
+            'current_password.current_password' => 'Your current password is incorrect.',
+            'password.different' => 'The new password must be different from your current password.',
+        ]);
+
+        $user = $request->user();
+        $user->password = $request->password;
+        $user->save();
+
+        return redirect()
+            ->route('portal.profile.show')
+            ->with('status', 'Password updated.');
     }
 
     public function updateAvatar(Request $request): RedirectResponse

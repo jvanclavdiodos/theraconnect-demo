@@ -48,4 +48,28 @@
         @endif
     </div>
 </div>
+
+<div class="card shadow-sm mt-3" style="max-width: 540px;" x-data="passwordField({ requireConfirm: true })">
+    <div class="card-header bg-white"><strong>Change password</strong></div>
+    <div class="card-body">
+        <form action="{{ route('account.password.update') }}" method="POST">
+            @csrf @method('PUT')
+            <div class="mb-3">
+                <label for="current_password" class="form-label">Current password</label>
+                <input type="password" id="current_password" name="current_password"
+                       class="form-control @error('current_password') is-invalid @enderror"
+                       autocomplete="current-password" required>
+                @error('current_password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+
+            @include('partials.password-strength', [
+                'label' => 'New password',
+                'confirm' => true,
+                'confirmLabel' => 'Confirm new password',
+            ])
+
+            <button type="submit" class="btn btn-primary btn-sm" :disabled="!canSubmit">Update password</button>
+        </form>
+    </div>
+</div>
 @endsection

@@ -55,6 +55,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
 
     // Account / profile picture (any staff user manages their own).
     Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
+    Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
     Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->middleware('throttle:10,1')->name('account.avatar.update');
     Route::delete('/account/avatar', [AccountController::class, 'destroyAvatar'])->name('account.avatar.destroy');
     Route::get('/avatars/{user}', [AccountController::class, 'showAvatar'])->name('avatars.show');
@@ -185,6 +186,7 @@ Route::middleware(['auth', 'role:patient'])->prefix('portal')->name('portal.')->
     Route::get('/profile', [PortalProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/edit', [PortalProfileController::class, 'edit'])->name('profile.edit');
     Route::match(['put', 'patch'], '/profile', [PortalProfileController::class, 'update'])->name('profile.update');
+    Route::put('/profile/password', [PortalProfileController::class, 'updatePassword'])->name('profile.password.update');
     Route::post('/profile/avatar', [PortalProfileController::class, 'updateAvatar'])->middleware('throttle:10,1')->name('profile.avatar.update');
     Route::delete('/profile/avatar', [PortalProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
     Route::get('/profile/avatar', [PortalProfileController::class, 'avatar'])->name('profile.avatar');

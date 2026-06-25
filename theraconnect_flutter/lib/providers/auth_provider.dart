@@ -157,6 +157,24 @@ class AuthNotifier
     }
   }
 
+  /// Change the signed-in patient's password. Returns null on success, or a
+  /// user-facing error message (wrong current password, weak new password, …).
+  Future<String?> changePassword(
+      String currentPassword, String newPassword, String newPasswordConfirmation) async {
+    try {
+      await _authApi.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        newPasswordConfirmation: newPasswordConfirmation,
+      );
+      return null;
+    } on ApiError catch (e) {
+      return e.userMessage;
+    } catch (e) {
+      return 'Unexpected error: $e';
+    }
+  }
+
   Future<void> logout() async {
     try {
       await _authApi.logout();

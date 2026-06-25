@@ -51,6 +51,12 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push('/profile/edit'),
                 ),
                 ListTile(
+                  leading: const Icon(Icons.lock_outline),
+                  title: const Text('Change Password'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/profile/password'),
+                ),
+                ListTile(
                   leading: const Icon(Icons.notifications),
                   title: const Text('Notifications'),
                   trailing: const Icon(Icons.chevron_right),

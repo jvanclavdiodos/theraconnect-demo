@@ -10,7 +10,7 @@
                 <h4 class="card-title text-center mb-1">Create your account</h4>
                 <p class="text-center text-muted small mb-4">For patients of the clinic.</p>
 
-                <form method="POST" action="{{ route('register') }}">
+                <form method="POST" action="{{ route('register') }}" x-data="passwordField({ requireConfirm: true })">
                     @csrf
 
                     <div class="mb-3">
@@ -80,18 +80,9 @@
 
                     <hr>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
-                        @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
+                    @include('partials.password-strength', ['confirm' => true])
 
-                    <div class="mb-3">
-                        <label for="password_confirmation" class="form-label">Confirm password</label>
-                        <input type="password" id="password_confirmation" name="password_confirmation" class="form-control" required>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100">Create account</button>
+                    <button type="submit" class="btn btn-primary w-100" :disabled="!canSubmit">Create account</button>
                 </form>
 
                 <p class="text-center text-muted small mt-3 mb-0">

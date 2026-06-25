@@ -14,7 +14,7 @@ class PatientProfileFieldsTest extends TestCase
             ->post('/patients', [
                 'name' => 'New Patient',
                 'email' => 'newp@test.com',
-                'password' => 'password123',
+                'password' => 'Password123',
                 'gender' => 'Female',
                 'educational_attainment' => 'College',
                 'employment_status' => 'Student',
@@ -42,7 +42,7 @@ class PatientProfileFieldsTest extends TestCase
             ->post('/patients', [
                 'name' => 'Bad',
                 'email' => 'bad@test.com',
-                'password' => 'password123',
+                'password' => 'Password123',
                 'gender' => 'Martian',
             ])
             ->assertSessionHasErrors('gender');

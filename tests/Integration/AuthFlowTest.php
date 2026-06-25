@@ -2,6 +2,7 @@
 
 namespace Tests\Integration;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class AuthFlowTest extends TestCase
@@ -11,8 +12,8 @@ class AuthFlowTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'name' => 'New Patient',
             'email' => 'new@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'contact_no' => '555-1111',
         ]);
 
@@ -36,8 +37,8 @@ class AuthFlowTest extends TestCase
         $response = $this->postJson('/api/v1/register', [
             'name' => 'Profile Patient',
             'email' => 'profile@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'gender' => 'Female',
             'educational_attainment' => 'College',
             'employment_status' => 'Student',
@@ -61,8 +62,8 @@ class AuthFlowTest extends TestCase
         $this->postJson('/api/v1/register', [
             'name' => 'Bad Option',
             'email' => 'bad@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'employment_status' => 'Astronaut',
         ])->assertStatus(422)->assertJsonValidationErrors('employment_status');
     }
@@ -72,6 +73,61 @@ class AuthFlowTest extends TestCase
         $this->postJson('/api/v1/register', [])
             ->assertStatus(422)
             ->assertJsonValidationErrors(['name', 'email', 'password']);
+    }
+
+    #[DataProvider('weakPasswords')]
+    public function test_registration_rejects_weak_passwords(string $password): void
+    {
+        $this->postJson('/api/v1/register', [
+            'name' => 'Weak',
+            'email' => 'weak@test.com',
+            'password' => $password,
+            'password_confirmation' => $password,
+        ])->assertStatus(422)->assertJsonValidationErrors('password');
+    }
+
+    public static function weakPasswords(): array
+    {
+        return [
+            'too short' => ['Ab1'],
+            'too long (>20)' => ['Abcdefghijklmnop12345'], // 21 chars
+            'no uppercase' => ['password123'],
+            'no digit' => ['PasswordOnly'],
+            'contains space' => ['Pass word1'],
+        ];
+    }
+
+    public function test_registration_accepts_strong_password(): void
+    {
+        $this->postJson('/api/v1/register', [
+            'name' => 'Strong',
+            'email' => 'strong@test.com',
+            'password' => 'Str0ngPass',
+            'password_confirmation' => 'Str0ngPass',
+        ])->assertStatus(201);
+    }
+
+    /** Regression: the length message must interpolate :min/:max, not leak the literal placeholders. */
+    public function test_password_length_message_is_interpolated(): void
+    {
+        $this->postJson('/api/v1/register', [
+            'name' => 'Short',
+            'email' => 'short@test.com',
+            'password' => 'Ab1',
+            'password_confirmation' => 'Ab1',
+        ])->assertStatus(422)
+            ->assertJsonFragment(['The password must be between 8 and 20 characters.']);
+    }
+
+    /** Regression: a non-numeric {id} must 404 cleanly, not 500 on a TypeError. */
+    public function test_non_numeric_resource_id_returns_404(): void
+    {
+        $patient = $this->createPatient('idcheck@test.com');
+        $token = $this->getApiToken($patient['user']);
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->getJson('/api/v1/appointments/abc')
+            ->assertStatus(404);
     }
 
     public function test_patient_login_returns_token(): void

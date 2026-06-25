@@ -151,10 +151,13 @@ class AppointmentFlowTest extends TestCase
         $patientA = $this->createPatient('dbl-a@test.com');
         $patientB = $this->createPatient('dbl-b@test.com');
 
+        // A future whole-hour slot (relative, so the test never rots).
+        $slot = now()->addDays(7)->setTime(9, 0)->format('Y-m-d H:i:s');
+
         // Patient A books the 09:00 slot
         $this->withHeaders($this->apiHeaders($this->getApiToken($patientA['user'])))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-06-20 09:00:00',
+                'requested_at' => $slot,
                 'mode' => 'in_person',
                 'clinician_id' => $clinician['clinician']->id,
             ])
@@ -163,7 +166,7 @@ class AppointmentFlowTest extends TestCase
         // Patient B attempts the same clinician + slot
         $this->withHeaders($this->apiHeaders($this->getApiToken($patientB['user'])))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-06-20 09:00:00',
+                'requested_at' => $slot,
                 'mode' => 'in_person',
                 'clinician_id' => $clinician['clinician']->id,
             ])
@@ -331,12 +334,15 @@ class AppointmentFlowTest extends TestCase
         $patientA = $this->createPatient('rsched-a@test.com');
         $patientB = $this->createPatient('rsched-b@test.com');
 
-        // Patient A holds an approved booking at 14:00 on 2026-07-01.
+        // A future day (relative, so the test never rots).
+        $day = now()->addDays(7)->format('Y-m-d');
+
+        // Patient A holds an approved booking at 14:00.
         Appointment::create([
             'patient_id' => $patientA['patient']->id,
             'clinician_id' => $clinician['clinician']->id,
-            'requested_at' => '2026-07-01 14:00:00',
-            'scheduled_at' => '2026-07-01 14:00:00',
+            'requested_at' => "$day 14:00:00",
+            'scheduled_at' => "$day 14:00:00",
             'mode' => 'in_person',
             'status' => 'approved',
         ]);
@@ -345,14 +351,14 @@ class AppointmentFlowTest extends TestCase
         $b = Appointment::create([
             'patient_id' => $patientB['patient']->id,
             'clinician_id' => $clinician['clinician']->id,
-            'requested_at' => '2026-07-01 10:00:00',
-            'scheduled_at' => '2026-07-01 10:00:00',
+            'requested_at' => "$day 10:00:00",
+            'scheduled_at' => "$day 10:00:00",
             'mode' => 'in_person',
             'status' => 'approved',
         ]);
 
         $this->expectException(\App\Exceptions\SlotUnavailableException::class);
-        app(AppointmentService::class)->reschedule($b, '2026-07-01 14:00:00');
+        app(AppointmentService::class)->reschedule($b, "$day 14:00:00");
     }
 
     /**

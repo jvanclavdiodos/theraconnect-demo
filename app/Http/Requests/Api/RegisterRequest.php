@@ -3,6 +3,7 @@
 namespace App\Http\Requests\Api;
 
 use App\Models\Patient;
+use App\Rules\StrongPassword;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -19,7 +20,7 @@ class RegisterRequest extends FormRequest
             // Critical fields — required.
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'password' => ['required', 'string', 'confirmed', new StrongPassword],
             // Optional patient profile fields captured at sign-up.
             'contact_no' => ['nullable', 'string', 'max:20'],
             'gender' => ['nullable', 'string', Rule::in(Patient::GENDERS)],

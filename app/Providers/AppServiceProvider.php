@@ -15,6 +15,7 @@ use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -27,6 +28,12 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Paginator::useBootstrapFive();
+
+        // `{id}` route params are always numeric DB keys. Without this, a
+        // non-numeric id (e.g. /api/v1/appointments/abc) reaches a controller
+        // method type-hinted `int $id` and throws a 500 TypeError instead of a
+        // clean 404. (Route-model-bound params like {appointment} 404 already.)
+        Route::pattern('id', '[0-9]+');
 
         RateLimiter::for('auth', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());

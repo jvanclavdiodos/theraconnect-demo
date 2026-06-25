@@ -61,8 +61,8 @@ class PortalAccessTest extends TestCase
         $this->post('/register', [
             'name' => 'New Browser Patient',
             'email' => 'browser@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
         ])->assertRedirect(route('portal.dashboard'));
 
         $user = User::where('email', 'browser@test.com')->first();
@@ -76,8 +76,8 @@ class PortalAccessTest extends TestCase
         $this->post('/register', [
             'name' => 'Web Profile Patient',
             'email' => 'webprofile@test.com',
-            'password' => 'password123',
-            'password_confirmation' => 'password123',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
             'gender' => 'Male',
             'educational_attainment' => 'Postgraduate',
             'employment_status' => 'Employed',
@@ -98,5 +98,18 @@ class PortalAccessTest extends TestCase
         $this->from('/register')->post('/register', [])
             ->assertRedirect('/register')
             ->assertSessionHasErrors(['name', 'email', 'password']);
+    }
+
+    public function test_web_registration_rejects_weak_password(): void
+    {
+        // No uppercase, no digit — fails the StrongPassword rule.
+        $this->from('/register')->post('/register', [
+            'name' => 'Weak Web',
+            'email' => 'weakweb@test.com',
+            'password' => 'weakpassword',
+            'password_confirmation' => 'weakpassword',
+        ])->assertRedirect('/register')->assertSessionHasErrors('password');
+
+        $this->assertDatabaseMissing('users', ['email' => 'weakweb@test.com']);
     }
 }

@@ -33,6 +33,7 @@ Route::prefix('v1')->group(function () {
         // Profile
         Route::post('/logout', [\App\Http\Controllers\Api\V1\AuthController::class, 'logout']);
         Route::get('/me', [\App\Http\Controllers\Api\V1\AuthController::class, 'me']);
+        Route::put('/auth/password', [\App\Http\Controllers\Api\V1\PasswordController::class, 'update']);
 
         // Notifications
         Route::middleware('throttle:api')->group(function () {

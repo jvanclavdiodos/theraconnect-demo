@@ -7,6 +7,7 @@ use App\Models\Appointment;
 use App\Models\Clinician;
 use App\Models\Patient;
 use App\Models\User;
+use App\Rules\StrongPassword;
 use App\Services\ActivityLogService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -60,7 +61,7 @@ class PatientController extends Controller
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8'],
+            'password' => ['required', 'string', new StrongPassword],
             'date_of_birth' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', Rule::in(Patient::GENDERS)],
             'educational_attainment' => ['nullable', 'string', Rule::in(Patient::EDUCATION_LEVELS)],

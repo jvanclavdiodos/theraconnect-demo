@@ -12,7 +12,7 @@
 
 <div class="card shadow-sm mt-3">
     <div class="card-body">
-        <form action="{{ route('clinicians.store') }}" method="POST">
+        <form action="{{ route('clinicians.store') }}" method="POST" x-data="passwordField()">
             @csrf
 
             <div class="row g-3">
@@ -27,9 +27,7 @@
                     @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                 </div>
                 <div class="col-md-6">
-                    <label for="password" class="form-label">Password</label>
-                    <input type="password" id="password" name="password" class="form-control @error('password') is-invalid @enderror" required>
-                    @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    @include('partials.password-strength')
                 </div>
                 <div class="col-md-6">
                     <label for="license_no" class="form-label">License No.</label>
@@ -46,7 +44,7 @@
             </div>
 
             <div class="mt-4">
-                <button type="submit" class="btn btn-primary">Create Clinician</button>
+                <button type="submit" class="btn btn-primary" :disabled="!canSubmit">Create Clinician</button>
                 <a href="{{ route('clinicians.index') }}" class="btn btn-outline-secondary">Cancel</a>
             </div>
         </form>

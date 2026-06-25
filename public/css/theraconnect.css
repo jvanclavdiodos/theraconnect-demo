@@ -366,3 +366,13 @@ a:hover { color: var(--tc-teal-dark); }
 /* Page title helper */
 .tc-page-title { font-size: 1.5rem; font-weight: 700; color: var(--tc-slate); letter-spacing: -0.02em; }
 .tc-page-sub { color: var(--tc-slate-light); font-size: 0.9rem; margin-top: 0.15rem; }
+
+/* Alpine: keep reactive blocks hidden until Alpine initializes */
+[x-cloak] { display: none !important; }
+
+/* Password strength meter + requirements checklist */
+.pw-reqs { display: flex; flex-direction: column; gap: 0.15rem; }
+.pw-req { display: flex; align-items: center; gap: 0.4rem; }
+.pw-req .bi { font-size: 0.85rem; }
+.pw-req.ok { color: var(--tc-green); }
+.pw-req.bad { color: var(--tc-red); }

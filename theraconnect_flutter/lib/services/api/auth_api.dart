@@ -62,6 +62,22 @@ class AuthApi {
     }
   }
 
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String newPasswordConfirmation,
+  }) async {
+    try {
+      await _client.put('/auth/password', data: {
+        'current_password': currentPassword,
+        'password': newPassword,
+        'password_confirmation': newPasswordConfirmation,
+      });
+    } on DioException catch (e) {
+      throw handleDioError(e);
+    }
+  }
+
   Future<void> logout() async {
     try {
       await _client.post(ApiConfig.logoutEndpoint);
