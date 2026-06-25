@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\ClinicianAvailabilityController;
 use App\Http\Controllers\Web\ClinicianController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MessageController;
+use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\NotificationLogController;
 use App\Http\Controllers\Web\PatientController;
 use App\Http\Controllers\Web\PatientNoteController;
@@ -46,6 +47,11 @@ Route::middleware('auth')->post('/logout', [AuthenticatedSessionController::clas
 
 Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Staff member's own notifications inbox (bookings, messages, reschedules).
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
     // Account / profile picture (any staff user manages their own).
     Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');

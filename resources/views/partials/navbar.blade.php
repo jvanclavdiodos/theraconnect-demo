@@ -9,6 +9,18 @@
 
     <div class="ms-auto d-flex align-items-center gap-3">
         @auth
+            @php
+                $navUnread = \App\Models\Notification::where('user_id', auth()->id())
+                    ->whereNull('read_at')->count();
+            @endphp
+            <a href="{{ route('notifications.index') }}" class="btn btn-outline-secondary btn-sm position-relative" title="Notifications">
+                <i class="bi bi-bell"></i>
+                @if($navUnread > 0)
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ $navUnread > 9 ? '9+' : $navUnread }}
+                    </span>
+                @endif
+            </a>
             <span class="tc-user-pill d-none d-sm-inline-flex">
                 <i class="bi bi-person-circle"></i>
                 {{ auth()->user()->name }}
