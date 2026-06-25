@@ -57,19 +57,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dashboardNoDate => 'No date';
 
   @override
-  String get chatbotTitle => 'Chatbot';
+  String get chatbotTitle => 'Joy';
 
   @override
   String get chatbotClearTooltip => 'Clear chat';
 
   @override
-  String get chatbotEmptyPrompt => 'Ask me anything about the clinic';
+  String get chatbotEmptyPrompt => 'Hi, I\'m Joy!';
 
   @override
-  String get chatbotEmptyHint => 'Hours, location, appointments, and more';
+  String get chatbotEmptyHint =>
+      'Your TheraConnect assistant — ask me about appointments, assignments, and clinic info.';
 
   @override
-  String get chatbotInputHint => 'Type a message...';
+  String get chatbotInputHint => 'Message Joy...';
 
   @override
   String get errorGeneric => 'Something went wrong. Please try again.';

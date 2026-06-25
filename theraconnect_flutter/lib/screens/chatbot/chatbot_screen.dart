@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/chatbot_message.dart';
 import '../../providers/chatbot_provider.dart';
+import '../../widgets/joy_avatar.dart';
 
 class ChatbotScreen extends ConsumerStatefulWidget {
   const ChatbotScreen({super.key});
@@ -91,12 +92,11 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.chat,
-                            size: 64,
-                            color: Theme.of(context).colorScheme.primary.withOpacity(0.4)),
+                        const JoyAvatar(size: 72),
                         const SizedBox(height: 16),
                         Text(l.chatbotEmptyPrompt,
-                            style: Theme.of(context).textTheme.bodyLarge),
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
                         Text(l.chatbotEmptyHint,
                             style: Theme.of(context).textTheme.bodyMedium?.copyWith(

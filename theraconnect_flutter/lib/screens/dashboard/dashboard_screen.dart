@@ -164,8 +164,8 @@ class DashboardScreen extends ConsumerWidget {
                 Expanded(
                   child: _StatCard(
                     icon: Icons.chat,
-                    label: 'Chatbot',
-                    value: 'Help',
+                    label: 'Joy',
+                    value: 'Ask',
                     color: Theme.of(context).colorScheme.primary,
                     onTap: () => context.go('/chatbot'),
                   ),

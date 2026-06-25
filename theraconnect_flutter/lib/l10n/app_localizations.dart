@@ -193,7 +193,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatbotTitle.
   ///
   /// In en, this message translates to:
-  /// **'Chatbot'**
+  /// **'Joy'**
   String get chatbotTitle;
 
   /// No description provided for @chatbotClearTooltip.
@@ -205,19 +205,19 @@ abstract class AppLocalizations {
   /// No description provided for @chatbotEmptyPrompt.
   ///
   /// In en, this message translates to:
-  /// **'Ask me anything about the clinic'**
+  /// **'Hi, I\'m Joy!'**
   String get chatbotEmptyPrompt;
 
   /// No description provided for @chatbotEmptyHint.
   ///
   /// In en, this message translates to:
-  /// **'Hours, location, appointments, and more'**
+  /// **'Your TheraConnect assistant — ask me about appointments, assignments, and clinic info.'**
   String get chatbotEmptyHint;
 
   /// No description provided for @chatbotInputHint.
   ///
   /// In en, this message translates to:
-  /// **'Type a message...'**
+  /// **'Message Joy...'**
   String get chatbotInputHint;
 
   /// Generic patient-facing error fallback — never leaks backend stack traces or paths.

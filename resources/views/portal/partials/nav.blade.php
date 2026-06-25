@@ -56,7 +56,7 @@
                 @endif
             </a>
             <a href="{{ route('portal.chatbot.index') }}" class="tc-nav-item {{ $isActive('portal.chatbot.*') }}">
-                <i class="bi bi-robot"></i> <span>Help Assistant</span>
+                <img src="{{ asset('img/joy-avatar.svg') }}" alt="" width="18" height="18" style="border-radius:5px;"> <span>Joy</span>
                 <i class="bi bi-chevron-right tc-nav-chevron"></i>
             </a>
         </div>
