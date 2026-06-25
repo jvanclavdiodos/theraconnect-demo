@@ -114,6 +114,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/appointments', [WebAppointmentController::class, 'index'])->name('appointments.index');
     Route::patch('/appointments/{appointment}/approve', [WebAppointmentController::class, 'approve'])->name('appointments.approve');
     Route::patch('/appointments/{appointment}/reject', [WebAppointmentController::class, 'reject'])->name('appointments.reject');
+    Route::get('/appointments/{appointment}/reschedule-slots', [WebAppointmentController::class, 'rescheduleSlots'])->name('appointments.reschedule-slots');
     Route::patch('/appointments/{appointment}/reschedule', [WebAppointmentController::class, 'reschedule'])->name('appointments.reschedule');
     Route::patch('/appointments/{appointment}/complete', [WebAppointmentController::class, 'complete'])->name('appointments.complete');
 

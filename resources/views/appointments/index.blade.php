@@ -130,9 +130,23 @@
     {{ $appointments->links() }}
 </div>
 
-{{-- Reschedule modal (hidden by default) --}}
-<div x-data="{ open: false, apptId: null, date: '' }"
-     x-on:open-reschedule.window="open = true; apptId = $event.detail.id"
+{{-- Reschedule modal (hidden by default) — pick a date, then an OPEN slot. --}}
+<div x-data="{
+        open: false, apptId: null, date: '', slots: [], slot: '', loading: false,
+        reset() { this.date = ''; this.slots = []; this.slot = ''; this.loading = false; },
+        fetchSlots() {
+            this.slot = '';
+            if (!this.date) { this.slots = []; return; }
+            this.loading = true;
+            fetch('/appointments/' + this.apptId + '/reschedule-slots?date=' + this.date, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(d => { this.slots = d.slots || []; })
+                .catch(() => { this.slots = []; })
+                .finally(() => { this.loading = false; });
+        },
+        fmt(s) { const [h, m] = s.split(':'); const hh = +h; const ap = hh < 12 ? 'AM' : 'PM'; const h12 = (hh % 12) || 12; return h12 + ':' + m + ' ' + ap; }
+     }"
+     x-on:open-reschedule.window="open = true; apptId = $event.detail.id; reset()"
      x-show="open"
      x-cloak
      style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050;">
@@ -141,17 +155,33 @@
             <div class="modal-content">
                 <form :action="'/appointments/' + apptId + '/reschedule'" method="POST">
                     @csrf @method('PATCH')
+                    <input type="hidden" name="scheduled_at" :value="date && slot ? date + ' ' + slot + ':00' : ''">
                     <div class="modal-header">
                         <h5 class="modal-title">Reschedule Appointment</h5>
                         <button type="button" class="btn-close" @click="open = false"></button>
                     </div>
                     <div class="modal-body">
-                        <label for="scheduled_at" class="form-label">New Date &amp; Time</label>
-                        <input type="datetime-local" id="scheduled_at" name="scheduled_at" class="form-control" required>
+                        <label for="reschedule_date" class="form-label">New date</label>
+                        <input type="date" id="reschedule_date" class="form-control mb-3"
+                               min="{{ now()->format('Y-m-d') }}" x-model="date" @change="fetchSlots()">
+
+                        <label class="form-label">Available time</label>
+                        <div x-show="loading" class="text-muted small py-2">Loading times…</div>
+                        <div x-show="!loading && date && slots.length === 0" class="text-muted small py-2">
+                            No open times for this date. Try another day.
+                        </div>
+                        <div x-show="!date" class="text-muted small py-2">Pick a date to see open times.</div>
+                        <div class="d-flex flex-wrap gap-2" x-show="!loading && slots.length">
+                            <template x-for="s in slots" :key="s">
+                                <button type="button" class="btn btn-sm"
+                                        :class="slot === s ? 'btn-primary' : 'btn-outline-secondary'"
+                                        @click="slot = s" x-text="fmt(s)"></button>
+                            </template>
+                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" @click="open = false">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Reschedule</button>
+                        <button type="submit" class="btn btn-primary" :disabled="!date || !slot">Reschedule</button>
                     </div>
                 </form>
             </div>
