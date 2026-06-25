@@ -39,6 +39,18 @@
                     <i class="bi bi-grid-1x2"></i> <span>Dashboard</span>
                     <i class="bi bi-chevron-right tc-nav-chevron"></i>
                 </a>
+                @php
+                    $notifUnread = \App\Models\Notification::where('user_id', auth()->id())
+                        ->whereNull('read_at')->count();
+                @endphp
+                <a href="{{ route('notifications.index') }}" class="tc-nav-item {{ $isActive('notifications.index') }}">
+                    <i class="bi bi-bell"></i> <span>Notifications</span>
+                    @if($notifUnread > 0)
+                        <span class="badge bg-primary rounded-pill ms-auto">{{ $notifUnread }}</span>
+                    @else
+                        <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                    @endif
+                </a>
             </div>
 
             @if(in_array($role, ['admin', 'clinician']))
@@ -81,7 +93,7 @@
                             <i class="bi bi-robot"></i> <span>Chatbot Content</span>
                             <i class="bi bi-chevron-right tc-nav-chevron"></i>
                         </a>
-                        <a href="{{ route('notifications.logs') }}" class="tc-nav-item {{ $isActive('notifications.*') }}">
+                        <a href="{{ route('notifications.logs') }}" class="tc-nav-item {{ $isActive('notifications.logs') }}">
                             <i class="bi bi-bell"></i> <span>Notification Logs</span>
                             <i class="bi bi-chevron-right tc-nav-chevron"></i>
                         </a>

@@ -209,6 +209,34 @@ class AppointmentService
     }
 
     /**
+     * Open, conflict-free, future whole-hour slots ("HH:00") for the
+     * appointment's clinician on $date — used to populate the staff reschedule
+     * picker so only a valid time can be chosen. Excludes the appointment being
+     * moved from conflict detection, and drops past times when $date is today.
+     *
+     * @return array<int, string>
+     */
+    public function availableSlotsForReschedule(Appointment $appointment, string $date): array
+    {
+        $clinician = $appointment->clinician()
+            ->with(['weeklyAvailabilities', 'dateOverrides'])
+            ->first();
+
+        if (! $clinician) {
+            return [];
+        }
+
+        $day = Carbon::parse($date);
+
+        return array_values(array_filter(
+            $this->availability->availableSlots($clinician, $day),
+            fn ($slot) =>
+                Carbon::parse("$date $slot")->isFuture()
+                && $this->isSlotAvailable($clinician->id, "$date $slot:00", $appointment->id)
+        ));
+    }
+
+    /**
      * Online appointments get a Jitsi room, generated once and kept stable
      * across reschedules. In-person appointments never get a link.
      */

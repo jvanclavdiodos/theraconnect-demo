@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../models/api_response.dart';
 import '../../models/appointment.dart';
 import '../../providers/appointment_provider.dart';
+import '../../utils/date_format.dart';
 
 class AppointmentListScreen extends ConsumerWidget {
   const AppointmentListScreen({super.key});
@@ -66,7 +67,7 @@ class AppointmentListScreen extends ConsumerWidget {
                       backgroundColor: _statusColor(a, Theme.of(context)).withOpacity(0.15),
                       child: Icon(Icons.event, color: _statusColor(a, Theme.of(context))),
                     ),
-                    title: Text(a.scheduledAt ?? a.requestedAt ?? 'No date'),
+                    title: Text(formatApptDateTime(a.scheduledAt ?? a.requestedAt)),
                     subtitle: Text(a.clinicianName ?? 'Unassigned'),
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,

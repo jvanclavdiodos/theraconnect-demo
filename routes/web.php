@@ -8,12 +8,25 @@ use App\Http\Controllers\Web\ClinicianAvailabilityController;
 use App\Http\Controllers\Web\ClinicianController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\MessageController;
+use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\NotificationLogController;
 use App\Http\Controllers\Web\PatientController;
 use App\Http\Controllers\Web\PatientNoteController;
 use App\Http\Controllers\Web\ProgressController;
+use App\Http\Controllers\Web\RegisterController;
 use App\Http\Controllers\Web\WebAppointmentController;
 use App\Http\Controllers\Web\WebAssignmentController;
+use App\Http\Controllers\Portal\PortalAppointmentController;
+use App\Http\Controllers\Portal\PortalAssessmentController;
+use App\Http\Controllers\Portal\PortalAssignmentController;
+use App\Http\Controllers\Portal\PortalChatbotController;
+use App\Http\Controllers\Portal\PortalDashboardController;
+use App\Http\Controllers\Portal\PortalGoalController;
+use App\Http\Controllers\Portal\PortalMessageController;
+use App\Http\Controllers\Portal\PortalMoodLogController;
+use App\Http\Controllers\Portal\PortalNoteController;
+use App\Http\Controllers\Portal\PortalNotificationController;
+use App\Http\Controllers\Portal\PortalProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -23,11 +36,22 @@ Route::get('/', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:auth');
+
+    // Patient self-registration (parity with the mobile register screen).
+    Route::get('/register', [RegisterController::class, 'create'])->name('register');
+    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:auth');
 });
 
+// Logout is shared by all authenticated roles (staff dashboard + patient portal).
+Route::middleware('auth')->post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+
 Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // Staff member's own notifications inbox (bookings, messages, reschedules).
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
     // Account / profile picture (any staff user manages their own).
     Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
@@ -96,6 +120,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/appointments', [WebAppointmentController::class, 'index'])->name('appointments.index');
     Route::patch('/appointments/{appointment}/approve', [WebAppointmentController::class, 'approve'])->name('appointments.approve');
     Route::patch('/appointments/{appointment}/reject', [WebAppointmentController::class, 'reject'])->name('appointments.reject');
+    Route::get('/appointments/{appointment}/reschedule-slots', [WebAppointmentController::class, 'rescheduleSlots'])->name('appointments.reschedule-slots');
     Route::patch('/appointments/{appointment}/reschedule', [WebAppointmentController::class, 'reschedule'])->name('appointments.reschedule');
     Route::patch('/appointments/{appointment}/complete', [WebAppointmentController::class, 'complete'])->name('appointments.complete');
 
@@ -108,4 +133,63 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/submissions/{submission}/file', [WebAssignmentController::class, 'downloadSubmission'])->name('submissions.file');
     Route::get('/submissions/{submission}/preview', [WebAssignmentController::class, 'previewSubmission'])->name('submissions.preview');
     Route::patch('/submissions/{submission}/review', [WebAssignmentController::class, 'review'])->name('submissions.review');
+});
+
+/*
+|--------------------------------------------------------------------------
+| Patient browser portal (session auth, role:patient)
+|--------------------------------------------------------------------------
+| Full feature parity with the Flutter app. Thin controllers reuse the same
+| Services + Policies as the API. Patients land here after login.
+*/
+Route::middleware(['auth', 'role:patient'])->prefix('portal')->name('portal.')->group(function () {
+    Route::get('/', [PortalDashboardController::class, 'index'])->name('dashboard');
+
+    // Appointments + clinician-first booking
+    Route::get('/appointments', [PortalAppointmentController::class, 'index'])->name('appointments.index');
+    Route::get('/appointments/book', [PortalAppointmentController::class, 'book'])->name('appointments.book');
+    Route::post('/appointments', [PortalAppointmentController::class, 'store'])->name('appointments.store');
+    Route::get('/appointments/{appointment}', [PortalAppointmentController::class, 'show'])->name('appointments.show');
+    Route::delete('/appointments/{appointment}', [PortalAppointmentController::class, 'destroy'])->name('appointments.destroy');
+
+    // Assignments + submissions
+    Route::get('/assignments', [PortalAssignmentController::class, 'index'])->name('assignments.index');
+    Route::get('/assignments/{assignment}', [PortalAssignmentController::class, 'show'])->name('assignments.show');
+    Route::get('/assignments/{assignment}/worksheet', [PortalAssignmentController::class, 'downloadWorksheet'])->name('assignments.worksheet');
+    Route::post('/assignments/{assignment}/submit', [PortalAssignmentController::class, 'submit'])->name('assignments.submit');
+    Route::get('/submissions/{submission}/file', [PortalAssignmentController::class, 'downloadSubmission'])->name('submissions.file');
+
+    // Messaging (single thread with the assigned clinician)
+    Route::get('/messages', [PortalMessageController::class, 'index'])->name('messages.index');
+    Route::post('/messages/{conversation}', [PortalMessageController::class, 'send'])->name('messages.send');
+
+    // Questionnaires (PHQ-9 / GAD-7)
+    Route::get('/assessments', [PortalAssessmentController::class, 'index'])->name('assessments.index');
+    Route::get('/assessments/{assessment}', [PortalAssessmentController::class, 'show'])->name('assessments.show');
+    Route::post('/assessments/{assessment}/submit', [PortalAssessmentController::class, 'submit'])->name('assessments.submit');
+
+    // Mood check-ins
+    Route::get('/mood', [PortalMoodLogController::class, 'index'])->name('mood.index');
+    Route::post('/mood', [PortalMoodLogController::class, 'store'])->name('mood.store');
+
+    // Goals + shared notes (read-only)
+    Route::get('/goals', [PortalGoalController::class, 'index'])->name('goals.index');
+    Route::get('/notes', [PortalNoteController::class, 'index'])->name('notes.index');
+
+    // Notifications
+    Route::get('/notifications', [PortalNotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [PortalNotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [PortalNotificationController::class, 'markAllRead'])->name('notifications.readAll');
+
+    // Profile + avatar
+    Route::get('/profile', [PortalProfileController::class, 'show'])->name('profile.show');
+    Route::get('/profile/edit', [PortalProfileController::class, 'edit'])->name('profile.edit');
+    Route::match(['put', 'patch'], '/profile', [PortalProfileController::class, 'update'])->name('profile.update');
+    Route::post('/profile/avatar', [PortalProfileController::class, 'updateAvatar'])->middleware('throttle:10,1')->name('profile.avatar.update');
+    Route::delete('/profile/avatar', [PortalProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
+    Route::get('/profile/avatar', [PortalProfileController::class, 'avatar'])->name('profile.avatar');
+
+    // Help assistant (chatbot)
+    Route::get('/chatbot', [PortalChatbotController::class, 'index'])->name('chatbot.index');
+    Route::post('/chatbot', [PortalChatbotController::class, 'message'])->middleware('throttle:30,1')->name('chatbot.message');
 });

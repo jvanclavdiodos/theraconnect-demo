@@ -2,6 +2,8 @@
     package="com.theraconnect.app">
 
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Push notifications: runtime-prompted on Android 13+ (API 33). -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Saving worksheets into the public Downloads/TheraConnect folder. Only
          needed on Android <= 9; API 29+ writes to Downloads via MediaStore with
          no permission. -->
@@ -34,6 +36,12 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2"/>
+
+        <!-- Channel that FCM tray notifications (app backgrounded/killed) post to;
+             must match the channel the app creates in FcmService. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="theraconnect_default"/>
     </application>
 
     <queries>

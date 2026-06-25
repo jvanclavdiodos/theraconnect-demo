@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/notification_provider.dart';
+import '../../widgets/joy_avatar.dart';
 
 class HomeShell extends ConsumerWidget {
   final StatefulNavigationShell navigationShell;
@@ -44,9 +45,9 @@ class HomeShell extends ConsumerWidget {
             label: 'Messages',
           ),
           const NavigationDestination(
-            icon: Icon(Icons.chat),
-            selectedIcon: Icon(Icons.chat),
-            label: 'Chatbot',
+            icon: JoyAvatar(size: 24),
+            selectedIcon: JoyAvatar(size: 24),
+            label: 'Joy',
           ),
           NavigationDestination(
             icon: unread > 0

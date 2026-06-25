@@ -8,6 +8,7 @@ use App\Jobs\SendPushNotification;
 use App\Models\Appointment;
 use App\Services\AppointmentService;
 use App\Services\NotificationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -112,6 +113,23 @@ class WebAppointmentController extends Controller
 
         return redirect()->route('appointments.index')
             ->with('status', 'Appointment marked as completed.');
+    }
+
+    /**
+     * Open slots for the appointment's clinician on a given date, so the
+     * reschedule picker only offers valid times (mirrors the patient booking UX).
+     */
+    public function rescheduleSlots(Request $request, Appointment $appointment): JsonResponse
+    {
+        Gate::authorize('manage', $appointment);
+
+        $validated = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        return response()->json([
+            'slots' => $this->appointmentService->availableSlotsForReschedule($appointment, $validated['date']),
+        ]);
     }
 
     public function reschedule(Request $request, Appointment $appointment): RedirectResponse

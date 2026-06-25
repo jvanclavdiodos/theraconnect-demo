@@ -16,6 +16,10 @@ class AuthApi {
     required String password,
     required String passwordConfirmation,
     String? contactNo,
+    String? gender,
+    String? educationalAttainment,
+    String? employmentStatus,
+    String? personalIssues,
   }) async {
     try {
       final response = await _client.post(ApiConfig.registerEndpoint, data: {
@@ -24,6 +28,10 @@ class AuthApi {
         'password': password,
         'password_confirmation': passwordConfirmation,
         if (contactNo != null) 'contact_no': contactNo,
+        if (gender != null) 'gender': gender,
+        if (educationalAttainment != null) 'educational_attainment': educationalAttainment,
+        if (employmentStatus != null) 'employment_status': employmentStatus,
+        if (personalIssues != null) 'personal_issues': personalIssues,
       });
       final data = response.data['data'];
       return (

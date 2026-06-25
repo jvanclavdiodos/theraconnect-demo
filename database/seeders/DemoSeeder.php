@@ -555,7 +555,7 @@ class DemoSeeder extends Seeder
             'type' => 'appointment_approved',
             'title' => 'Appointment Approved',
             'body' => 'Your appointment on ' . $now->copy()->addDays(5)->format('M j') . ' at 9:00 AM is confirmed.',
-            'data' => json_encode(['appointment_id' => 5]),
+            'data' => ['appointment_id' => 5],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subHours(3),
         ]);
@@ -564,7 +564,7 @@ class DemoSeeder extends Seeder
             'type' => 'assignment_created',
             'title' => 'New Assignment',
             'body' => 'Dr. Chen assigned you: Daily Mood Journal.',
-            'data' => json_encode(['assignment_id' => $a1->id]),
+            'data' => ['assignment_id' => $a1->id],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subDays(7),
             'read_at' => $now->copy()->subDays(6),
@@ -574,7 +574,7 @@ class DemoSeeder extends Seeder
             'type' => 'assessment_assigned',
             'title' => 'New Questionnaire',
             'body' => 'Dr. Chen has assigned you a GAD-7 (Anxiety) questionnaire. Please complete it when you can.',
-            'data' => json_encode([]),
+            'data' => null,
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subHours(6),
         ]);
@@ -583,7 +583,7 @@ class DemoSeeder extends Seeder
             'type' => 'appointment_rejected',
             'title' => 'Appointment Update',
             'body' => 'Your requested appointment was not approved. Please rebook or contact the clinic.',
-            'data' => json_encode(['appointment_id' => 11]),
+            'data' => ['appointment_id' => 11],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subDays(2),
         ]);
@@ -592,7 +592,7 @@ class DemoSeeder extends Seeder
             'type' => 'assignment_deadline',
             'title' => 'Assignment Due Soon',
             'body' => 'Anxiety Trigger Log is due in 24 hours.',
-            'data' => json_encode(['assignment_id' => $a4->id]),
+            'data' => ['assignment_id' => $a4->id],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subHours(12),
         ]);
@@ -601,7 +601,7 @@ class DemoSeeder extends Seeder
             'type' => 'appointment_reminder',
             'title' => 'Appointment Reminder',
             'body' => 'Reminder: you have an appointment tomorrow at 9:00 AM with Dr. Chen.',
-            'data' => json_encode(['appointment_id' => 5]),
+            'data' => ['appointment_id' => 5],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subHours(20),
             'read_at' => $now->copy()->subHours(19),
@@ -611,7 +611,7 @@ class DemoSeeder extends Seeder
             'type' => 'assessment_assigned',
             'title' => 'New Questionnaire',
             'body' => 'Dr. Rivera has assigned you a PHQ-9 (Depression) questionnaire. Please complete it when you can.',
-            'data' => json_encode([]),
+            'data' => null,
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subDays(1),
         ]);

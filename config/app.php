@@ -56,6 +56,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Patient App Download URL
+    |--------------------------------------------------------------------------
+    |
+    | Public link to the patient mobile app (e.g. a Play Store listing or a
+    | hosted APK). The landing page's "Download the App" button points here
+    | when set; when left null it falls back to scrolling to the on-page
+    | "For Patients" section instead of a dead link.
+    |
+    */
+
+    'download_url' => env('APP_DOWNLOAD_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

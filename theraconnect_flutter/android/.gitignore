@@ -8,3 +8,8 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase — project-specific config / secrets (see FCM_SETUP.md). Never commit.
+app/google-services.json
+**/firebase-credentials*.json
+**/*service-account*.json

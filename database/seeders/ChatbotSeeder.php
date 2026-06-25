@@ -61,7 +61,7 @@ class ChatbotSeeder extends Seeder
                 'category' => 'smalltalk',
                 'training_phrases' => ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'greetings', 'howdy', 'hi there'],
                 'responses' => [
-                    ['response_text' => 'Hello! How can I assist you today? You can ask me about appointments, assignments, or clinic information.', 'is_fallback' => false, 'priority' => 0],
+                    ['response_text' => "Hi, I'm Joy, your TheraConnect assistant! How can I help you today? You can ask me about appointments, assignments, or clinic information.", 'is_fallback' => false, 'priority' => 0],
                 ],
             ],
             [
