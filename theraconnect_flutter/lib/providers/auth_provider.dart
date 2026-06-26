@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/clinician.dart';
 import '../models/user.dart';
 import '../models/patient.dart';
 import '../models/api_response.dart';
@@ -28,6 +29,12 @@ final apiClientProvider = Provider<ApiClient>((ref) {
 final authApiProvider = Provider<AuthApi>((ref) {
   final client = ref.watch(apiClientProvider);
   return AuthApi(client);
+});
+
+/// Clinicians offered in the sign-up "preferred clinician" picker. Loaded
+/// pre-auth from the public directory endpoint.
+final registrationCliniciansProvider = FutureProvider<List<Clinician>>((ref) {
+  return ref.watch(authApiProvider).fetchClinicians();
 });
 
 enum AuthState { unauthenticated, loading, authenticated }
@@ -116,7 +123,8 @@ class AuthNotifier
       String? gender,
       String? educationalAttainment,
       String? employmentStatus,
-      String? personalIssues}) async {
+      String? personalIssues,
+      int? requestedClinicianId}) async {
     state = (status: AuthState.loading, user: null, patient: null, error: null);
     try {
       final result = await _authApi.register(
@@ -129,6 +137,7 @@ class AuthNotifier
         educationalAttainment: educationalAttainment,
         employmentStatus: employmentStatus,
         personalIssues: personalIssues,
+        requestedClinicianId: requestedClinicianId,
       );
       await _authService.saveToken(result.token);
 

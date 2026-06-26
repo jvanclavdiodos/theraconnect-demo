@@ -27,6 +27,12 @@ Route::prefix('v1')->group(function () {
         Route::post('/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login']);
     });
 
+    // Clinician directory (public, throttled) — needed pre-auth so the register
+    // screen can offer a preferred-clinician picker. Exposes only safe public
+    // fields (id, name, specialization); also serves the authed booking flow.
+    Route::middleware('throttle:60,1')
+        ->get('/clinicians', [\App\Http\Controllers\Api\V1\ClinicianController::class, 'index']);
+
     // Authenticated routes — patient-only per §1.6
     Route::middleware(['auth:sanctum', 'role:patient'])->group(function () {
 
@@ -50,8 +56,8 @@ Route::prefix('v1')->group(function () {
             Route::post('/profile/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'updateAvatar'])->middleware('throttle:10,1');
             Route::get('/profile/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'avatar']);
 
-            // Clinicians (read-only list for clinician-first booking)
-            Route::get('/clinicians', [\App\Http\Controllers\Api\V1\ClinicianController::class, 'index']);
+            // (Clinician directory lives on the public route above — it is also
+            // used by the pre-auth register screen.)
 
             // Appointments
             Route::get('/schedules', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'schedules']);

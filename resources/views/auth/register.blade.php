@@ -34,6 +34,21 @@
                         @error('contact_no') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
+                    <div class="mb-3">
+                        <label for="requested_clinician_id" class="form-label">Preferred clinician <span class="text-muted">(optional)</span></label>
+                        <select id="requested_clinician_id" name="requested_clinician_id"
+                                class="form-select @error('requested_clinician_id') is-invalid @enderror">
+                            <option value="">— No preference for now —</option>
+                            @foreach($clinicians as $clinician)
+                                <option value="{{ $clinician->id }}" {{ (string) old('requested_clinician_id') === (string) $clinician->id ? 'selected' : '' }}>
+                                    {{ $clinician->user->name }}@if($clinician->specialization) — {{ $clinician->specialization }}@endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="form-text">Your request is sent to the clinician for approval before you're connected.</div>
+                        @error('requested_clinician_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+
                     <hr>
                     <p class="text-muted small mb-2">About you <span>(optional — you can fill these in later)</span></p>
 

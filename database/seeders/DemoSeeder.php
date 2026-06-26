@@ -128,6 +128,33 @@ class DemoSeeder extends Seeder
             'emergency_contact' => 'Linh Nguyen - 555-0303',
         ]);
 
+        // ── Pending clinician request ──────────────────────
+        // Olivia self-registered and asked to join Dr. Chen's caseload; she is
+        // unassigned until Dr. Chen approves (shows in "Pending requests").
+        $p5User = User::create([
+            'name' => 'Olivia Reyes',
+            'email' => 'olivia@theraconnect.test',
+            'password' => Hash::make('password'),
+            'role' => 'patient',
+        ]);
+        Patient::create([
+            'user_id' => $p5User->id,
+            'requested_clinician_id' => $c1->id,
+            'clinician_request_status' => Patient::REQUEST_PENDING,
+            'contact_no' => '555-0204',
+            'gender' => 'Female',
+            'personal_issues' => 'Looking for help managing anxiety and stress.',
+        ]);
+        Notification::create([
+            'user_id' => $c1User->id,
+            'type' => 'patient_request',
+            'title' => 'New patient request',
+            'body' => 'Olivia Reyes requested to be added to your caseload. Review and approve or decline.',
+            'data' => null,
+            'channel' => 'fcm',
+            'sent_at' => now()->subHours(2),
+        ]);
+
         // ── Appointments ───────────────────────────────────
         $now = now();
 

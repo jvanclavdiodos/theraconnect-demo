@@ -46,7 +46,17 @@ class PatientController extends Controller
         $atRisk = app(\App\Services\AttendanceService::class)
             ->atRiskPatientIds($patients->getCollection());
 
-        return view('patients.index', compact('patients', 'atRisk'));
+        // Self-registered patients awaiting a clinician decision. A clinician
+        // sees requests addressed to them; an admin sees all pending requests.
+        $pendingQuery = Patient::with(['user', 'requestedClinician.user'])
+            ->where('clinician_request_status', Patient::REQUEST_PENDING)
+            ->latest();
+        if ($user->role === 'clinician' && $user->clinician) {
+            $pendingQuery->where('requested_clinician_id', $user->clinician->id);
+        }
+        $pendingRequests = $pendingQuery->get();
+
+        return view('patients.index', compact('patients', 'atRisk', 'pendingRequests'));
     }
 
     public function create(): View

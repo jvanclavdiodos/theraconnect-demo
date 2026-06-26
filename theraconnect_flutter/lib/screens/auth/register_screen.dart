@@ -23,6 +23,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _gender;
   String? _education;
   String? _employment;
+  int? _requestedClinicianId;
   bool _obscureConfirm = true;
 
   @override
@@ -54,6 +55,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           educationalAttainment: _education,
           employmentStatus: _employment,
           personalIssues: _trimOrNull(_personalIssuesController),
+          requestedClinicianId: _requestedClinicianId,
         );
 
     if (error != null && mounted) {
@@ -66,6 +68,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final cliniciansAsync = ref.watch(registrationCliniciansProvider);
 
     ref.listen(authProvider, (_, next) {
       if (next.status == AuthState.authenticated && mounted) {
@@ -143,6 +146,41 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       prefixIcon: Icon(Icons.phone),
                       border: OutlineInputBorder(),
                     ),
+                  ),
+                  const SizedBox(height: 16),
+                  cliniciansAsync.when(
+                    data: (clinicians) => DropdownButtonFormField<int>(
+                      initialValue: _requestedClinicianId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Preferred Clinician (optional)',
+                        prefixIcon: Icon(Icons.medical_services_outlined),
+                        border: OutlineInputBorder(),
+                        helperText: 'Sent to the clinician for approval before you\'re connected.',
+                        helperMaxLines: 2,
+                      ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('No preference for now'),
+                        ),
+                        ...clinicians.map((c) => DropdownMenuItem<int>(
+                              value: c.id,
+                              child: Text(
+                                c.specialization != null
+                                    ? '${c.name} — ${c.specialization}'
+                                    : c.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )),
+                      ],
+                      onChanged: (v) => setState(() => _requestedClinicianId = v),
+                    ),
+                    loading: () => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: LinearProgressIndicator(),
+                    ),
+                    error: (_, __) => const SizedBox.shrink(),
                   ),
                   const SizedBox(height: 24),
                   Align(

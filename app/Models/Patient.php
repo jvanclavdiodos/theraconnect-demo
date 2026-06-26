@@ -17,9 +17,18 @@ class Patient extends Model
 
     public const EMPLOYMENT_STATUSES = ['Employed', 'Self-employed', 'Unemployed', 'Student', 'Retired'];
 
+    // Lifecycle of a patient's request to be assigned a clinician at sign-up.
+    public const REQUEST_PENDING = 'pending';
+
+    public const REQUEST_APPROVED = 'approved';
+
+    public const REQUEST_DENIED = 'denied';
+
     protected $fillable = [
         'user_id',
         'assigned_clinician_id',
+        'requested_clinician_id',
+        'clinician_request_status',
         'date_of_birth',
         'gender',
         'educational_attainment',
@@ -47,6 +56,11 @@ class Patient extends Model
     public function assignedClinician(): BelongsTo
     {
         return $this->belongsTo(Clinician::class, 'assigned_clinician_id');
+    }
+
+    public function requestedClinician(): BelongsTo
+    {
+        return $this->belongsTo(Clinician::class, 'requested_clinician_id');
     }
 
     public function appointments(): HasMany

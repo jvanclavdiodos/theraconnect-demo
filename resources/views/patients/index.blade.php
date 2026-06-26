@@ -22,6 +22,61 @@
     </a>
 </div>
 
+{{-- Pending clinician requests — self-registered patients awaiting a decision --}}
+@if($pendingRequests->isNotEmpty())
+<div class="card border-warning mb-4">
+    <div class="card-header bg-warning-subtle d-flex align-items-center gap-2">
+        <i class="bi bi-person-plus"></i>
+        <span class="fw-semibold">Pending clinician requests</span>
+        <span class="badge bg-warning text-dark">{{ $pendingRequests->count() }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Contact</th>
+                    @role('admin')<th>Requested clinician</th>@endrole
+                    <th>Requested</th>
+                    <th class="text-end">Decision</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($pendingRequests as $request)
+                    <tr>
+                        <td>
+                            <span class="d-flex align-items-center gap-2">
+                                <span class="tc-cell-avatar">{{ $initials($request->user->name) }}</span>
+                                <span class="fw-semibold">{{ $request->user->name }}</span>
+                            </span>
+                        </td>
+                        <td>{{ $request->user->email }}</td>
+                        <td>{{ $request->contact_no ?? '—' }}</td>
+                        @role('admin')<td>{{ $request->requestedClinician?->user?->name ?? '—' }}</td>@endrole
+                        <td>{{ $request->created_at->format('M d, Y') }}</td>
+                        <td class="text-end">
+                            <div class="d-inline-flex gap-2">
+                                <form action="{{ route('patients.request.approve', $request) }}" method="POST"
+                                      x-data @submit.prevent="if (confirm('Add this patient to the caseload?')) $el.submit()">
+                                    @csrf
+                                    <button class="btn btn-sm btn-success"><i class="bi bi-check-lg me-1"></i>Approve</button>
+                                </form>
+                                <form action="{{ route('patients.request.deny', $request) }}" method="POST"
+                                      x-data @submit.prevent="if (confirm('Decline this request?')) $el.submit()">
+                                    @csrf
+                                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-x-lg me-1"></i>Decline</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </div>
+</div>
+@endif
+
 {{-- Search --}}
 <form method="GET" action="{{ route('patients.index') }}" class="mb-3">
     <div class="input-group">

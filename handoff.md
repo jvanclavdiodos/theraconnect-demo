@@ -5,6 +5,38 @@ A living session-by-session changelog. Newest session first. Pair with `CLAUDE.m
 
 ---
 
+## Session 4 — Clinician requests for self-registered patients (June 27, 2026)
+
+**Tests:** 242 passing. Fixes the reported bug: *new (self-registered) patients weren't
+reflecting on the clinician's Patients tab or Messages.*
+
+**Root cause.** The whole clinician surface (patients tab, messaging, assignments, progress,
+notes, policies) scopes on `patients.assigned_clinician_id`. Self-registration (mobile API +
+web portal) never set it, so a self-registered patient was invisible to every clinician (admins
+saw them only because the admin list is unscoped).
+
+**Fix — request → approve/deny workflow.** A patient picks a *preferred clinician* at sign-up; it
+becomes a **pending request** the clinician approves or denies. Approval sets
+`assigned_clinician_id` (joins the caseload); denial leaves them unassigned to re-choose.
+
+- **Schema:** `patients.requested_clinician_id` + `clinician_request_status`
+  (`pending`/`approved`/`denied`, null = no request). Notifications enum gains `patient_request`,
+  `patient_request_approved`, `patient_request_denied` (create-migration edit for SQLite + MySQL
+  ALTER migration for existing DBs).
+- **Service:** `PatientRequestService` (`submit`/`approve`/`deny`) — shared by both register
+  paths; emits notifications. `PatientPolicy::respondToRequest` gates approve/deny to admin or
+  the requested clinician.
+- **Web:** `RegisterController` + register view picker; `PatientRequestController` (approve/deny)
+  + routes; "Pending clinician requests" section on the Patients tab.
+- **API:** `RegisterRequest`/`AuthController` accept `requested_clinician_id`; `GET /clinicians`
+  **relocated to a public route** so the register screen can load it pre-auth; `PatientResource`
+  exposes the request state.
+- **Flutter:** register screen gains a preferred-clinician dropdown (`registrationCliniciansProvider`
+  + `AuthApi.fetchClinicians`). **Needs an APK rebuild to ship.**
+- **Demo:** seeder adds `olivia@theraconnect.test` as a pending request to Dr. Chen.
+
+---
+
 ## Session 3 — Security & Ops Hardening (June 18, 2026)
 
 **Repo:** `jvanclavdiodos/theraconnect-demo` · **Live:** https://theraconnect-demo-production.up.railway.app

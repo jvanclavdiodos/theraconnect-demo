@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Resources\UserResource;
+use App\Models\Clinician;
 use App\Models\Patient;
 use App\Models\User;
+use App\Services\PatientRequestService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +17,9 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request, PatientRequestService $patientRequests): JsonResponse
     {
-        $user = DB::transaction(function () use ($request) {
+        $user = DB::transaction(function () use ($request, $patientRequests) {
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -25,7 +27,7 @@ class AuthController extends Controller
                 'role' => 'patient',
             ]);
 
-            Patient::create([
+            $patient = Patient::create([
                 'user_id' => $user->id,
                 'contact_no' => $request->contact_no,
                 'gender' => $request->gender,
@@ -33,6 +35,10 @@ class AuthController extends Controller
                 'employment_status' => $request->employment_status,
                 'personal_issues' => $request->personal_issues,
             ]);
+
+            if ($request->filled('requested_clinician_id')) {
+                $patientRequests->submit($patient, Clinician::findOrFail($request->requested_clinician_id));
+            }
 
             return $user;
         });

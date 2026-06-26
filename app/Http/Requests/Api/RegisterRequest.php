@@ -27,6 +27,8 @@ class RegisterRequest extends FormRequest
             'educational_attainment' => ['nullable', 'string', Rule::in(Patient::EDUCATION_LEVELS)],
             'employment_status' => ['nullable', 'string', Rule::in(Patient::EMPLOYMENT_STATUSES)],
             'personal_issues' => ['nullable', 'string', 'max:2000'],
+            // Preferred clinician — a request awaiting that clinician's approval.
+            'requested_clinician_id' => ['nullable', 'integer', 'exists:clinicians,id'],
         ];
     }
 }

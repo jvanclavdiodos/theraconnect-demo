@@ -12,6 +12,7 @@ use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\NotificationLogController;
 use App\Http\Controllers\Web\PatientController;
 use App\Http\Controllers\Web\PatientNoteController;
+use App\Http\Controllers\Web\PatientRequestController;
 use App\Http\Controllers\Web\ProgressController;
 use App\Http\Controllers\Web\RegisterController;
 use App\Http\Controllers\Web\WebAppointmentController;
@@ -68,6 +69,13 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/patients', [PatientController::class, 'index'])->name('patients.index');
     Route::get('/patients/create', [PatientController::class, 'create'])->name('patients.create');
     Route::post('/patients', [PatientController::class, 'store'])->name('patients.store');
+
+    // Approve/deny a self-registered patient's clinician request (admin, or the
+    // requested clinician — enforced by PatientPolicy::respondToRequest).
+    // Registered before the `{patient}` show route so they aren't swallowed.
+    Route::post('/patients/{patient}/request/approve', [PatientRequestController::class, 'approve'])->name('patients.request.approve');
+    Route::post('/patients/{patient}/request/deny', [PatientRequestController::class, 'deny'])->name('patients.request.deny');
+
     Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
 
     // Patient therapy-progress view (attendance + assessments + mood + goals).
