@@ -130,7 +130,7 @@
             </p>
             <div class="d-flex flex-wrap justify-content-center gap-3">
                 <a href="{{ config('app.download_url') ?: '#patients' }}" class="btn btn-hero btn-lg"
-                   @if(config('app.download_url')) target="_blank" rel="noopener" @endif>
+                   @if(config('app.download_url')) download="TheraConnect.apk" @endif>
                     <i class="bi bi-download me-2"></i>Download the App
                 </a>
                 <a href="{{ url('/login') }}" class="btn btn-hero-outline btn-lg">Sign In</a>
