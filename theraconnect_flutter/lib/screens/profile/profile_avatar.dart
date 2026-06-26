@@ -4,11 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/profile_provider.dart';
 
-/// Circular profile picture with a tap-to-change camera button (patient app).
+/// Circular profile picture. By default it shows a tap-to-change camera button
+/// (profile screen); set [editable] to false for a read-only display (e.g. the
+/// dashboard account header). [radius] sizes the avatar.
 class ProfileAvatar extends ConsumerStatefulWidget {
   final bool hasAvatar;
+  final double radius;
+  final bool editable;
 
-  const ProfileAvatar({super.key, required this.hasAvatar});
+  const ProfileAvatar({
+    super.key,
+    required this.hasAvatar,
+    this.radius = 40,
+    this.editable = true,
+  });
 
   @override
   ConsumerState<ProfileAvatar> createState() => _ProfileAvatarState();
@@ -60,43 +69,46 @@ class _ProfileAvatarState extends ConsumerState<ProfileAvatar> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
 
+    final radius = widget.radius;
+
     return Stack(
       children: [
         CircleAvatar(
-          radius: 40,
+          radius: radius,
           backgroundColor: scheme.primaryContainer,
           child: widget.hasAvatar
               ? FutureBuilder<Uint8List>(
                   future: _bytes,
                   builder: (context, snap) {
                     if (snap.hasData) {
-                      return CircleAvatar(radius: 40, backgroundImage: MemoryImage(snap.data!));
+                      return CircleAvatar(radius: radius, backgroundImage: MemoryImage(snap.data!));
                     }
                     return const SizedBox(
                       width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2),
                     );
                   },
                 )
-              : Icon(Icons.person, size: 40, color: scheme.onPrimaryContainer),
+              : Icon(Icons.person, size: radius, color: scheme.onPrimaryContainer),
         ),
-        Positioned(
-          right: 0,
-          bottom: 0,
-          child: Material(
-            color: scheme.primary,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: _uploading ? null : _pickAndUpload,
-              child: Padding(
-                padding: const EdgeInsets.all(6),
-                child: _uploading
-                    ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                    : Icon(Icons.camera_alt, size: 16, color: scheme.onPrimary),
+        if (widget.editable)
+          Positioned(
+            right: 0,
+            bottom: 0,
+            child: Material(
+              color: scheme.primary,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: _uploading ? null : _pickAndUpload,
+                child: Padding(
+                  padding: const EdgeInsets.all(6),
+                  child: _uploading
+                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      : Icon(Icons.camera_alt, size: 16, color: scheme.onPrimary),
+                ),
               ),
             ),
           ),
-        ),
       ],
     );
   }

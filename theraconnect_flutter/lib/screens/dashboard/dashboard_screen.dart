@@ -8,7 +8,9 @@ import '../../providers/appointment_provider.dart';
 import '../../providers/assignment_provider.dart';
 import '../../providers/assessment_provider.dart';
 import '../../providers/notification_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../utils/date_format.dart';
+import '../profile/profile_avatar.dart';
 
 class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
@@ -25,6 +27,7 @@ class DashboardScreen extends ConsumerWidget {
         assessments.valueOrNull?.where((a) => a.isPending).toList() ?? [];
 
     final user = authState.user;
+    final profile = ref.watch(profileProvider);
     final l = AppLocalizations.of(context)!;
     final pendingAppointments =
         appointments.valueOrNull?.where((a) => a.status == 'pending' || a.status == 'approved').length ?? 0;
@@ -38,7 +41,12 @@ class DashboardScreen extends ConsumerWidget {
         title: const Text('TheraConnect'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
+            icon: unreadNotifications > 0
+                ? Badge(
+                    label: Text('$unreadNotifications'),
+                    child: const Icon(Icons.notifications_outlined),
+                  )
+                : const Icon(Icons.notifications_outlined),
             onPressed: () => context.push('/notifications'),
           ),
         ],
@@ -55,28 +63,43 @@ class DashboardScreen extends ConsumerWidget {
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            // Account header — tap to open the full profile (the profile tab
+            // was removed from the bottom nav to reduce crowding).
             Card(
-              child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                      child: Icon(Icons.person, size: 32, color: Theme.of(context).colorScheme.onPrimaryContainer),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      user?.name ?? 'Patient',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    Text(
-                      user?.email ?? '',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => context.push('/profile'),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      ProfileAvatar(
+                        hasAvatar: profile.valueOrNull?.hasAvatar ?? false,
+                        radius: 28,
+                        editable: false,
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user?.name ?? 'Patient',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            Text(
+                              user?.email ?? '',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant),
+                    ],
+                  ),
                 ),
               ),
             ),

@@ -172,50 +172,50 @@ final routerProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/profile',
-                builder: (context, state) => const ProfileScreen(),
-              ),
-              GoRoute(
-                path: '/profile/edit',
-                builder: (context, state) => const EditProfileScreen(),
-              ),
-              GoRoute(
-                path: '/profile/password',
-                builder: (context, state) => const ChangePasswordScreen(),
-              ),
-              GoRoute(
-                path: '/notifications',
-                builder: (context, state) => const NotificationListScreen(),
-              ),
-              GoRoute(
-                path: '/notes',
-                builder: (context, state) => const NotesScreen(),
-              ),
-              GoRoute(
-                path: '/progress',
-                builder: (context, state) => const MyProgressScreen(),
-              ),
-              GoRoute(
-                path: '/assessments',
-                builder: (context, state) => const AssessmentsScreen(),
-              ),
-              GoRoute(
-                path: '/assessments/:id',
-                builder: (context, state) {
-                  final id = int.parse(state.pathParameters['id']!);
-                  return AssessmentFillScreen(assessmentId: id);
-                },
-              ),
-              GoRoute(
-                path: '/downloads',
-                builder: (context, state) => const DownloadsScreen(),
-              ),
-            ],
-          ),
         ],
+      ),
+      // Profile + secondary screens live on the root navigator: pushed over the
+      // shell as full-screen pages (no bottom nav, each has its own back
+      // button). Profile is opened from the dashboard account header — the
+      // Profile tab was removed from the bottom nav to reduce crowding.
+      GoRoute(
+        path: '/profile',
+        builder: (context, state) => const ProfileScreen(),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        builder: (context, state) => const EditProfileScreen(),
+      ),
+      GoRoute(
+        path: '/profile/password',
+        builder: (context, state) => const ChangePasswordScreen(),
+      ),
+      GoRoute(
+        path: '/notifications',
+        builder: (context, state) => const NotificationListScreen(),
+      ),
+      GoRoute(
+        path: '/notes',
+        builder: (context, state) => const NotesScreen(),
+      ),
+      GoRoute(
+        path: '/progress',
+        builder: (context, state) => const MyProgressScreen(),
+      ),
+      GoRoute(
+        path: '/assessments',
+        builder: (context, state) => const AssessmentsScreen(),
+      ),
+      GoRoute(
+        path: '/assessments/:id',
+        builder: (context, state) {
+          final id = int.parse(state.pathParameters['id']!);
+          return AssessmentFillScreen(assessmentId: id);
+        },
+      ),
+      GoRoute(
+        path: '/downloads',
+        builder: (context, state) => const DownloadsScreen(),
       ),
     ],
   );

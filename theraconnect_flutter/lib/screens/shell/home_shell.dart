@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../providers/notification_provider.dart';
 import '../../widgets/joy_avatar.dart';
 
 class HomeShell extends ConsumerWidget {
@@ -11,8 +10,6 @@ class HomeShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final unread = ref.watch(unreadNotificationCountProvider);
-
     return Scaffold(
       body: navigationShell,
       bottomNavigationBar: NavigationBar(
@@ -48,21 +45,6 @@ class HomeShell extends ConsumerWidget {
             icon: JoyAvatar(size: 24),
             selectedIcon: JoyAvatar(size: 24),
             label: 'Joy',
-          ),
-          NavigationDestination(
-            icon: unread > 0
-                ? Badge(
-                    label: Text('$unread'),
-                    child: const Icon(Icons.person),
-                  )
-                : const Icon(Icons.person),
-            selectedIcon: unread > 0
-                ? Badge(
-                    label: Text('$unread'),
-                    child: const Icon(Icons.person),
-                  )
-                : const Icon(Icons.person),
-            label: 'Profile',
           ),
         ],
       ),
