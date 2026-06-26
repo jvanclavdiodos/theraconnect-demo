@@ -5,6 +5,30 @@ A living session-by-session changelog. Newest session first. Pair with `CLAUDE.m
 
 ---
 
+## Session 5 — App timezone → Asia/Manila (June 27, 2026)
+
+**Tests:** 244 passing. Times now display in Philippine local time instead of UTC.
+
+**Why.** `now()`-based timestamps (messages, notifications, "today", reminders, audit logs) were
+stored/shown in UTC — 8 hours behind PH wall-clock. Appointment times were already naive wall-clock
+(clinic types 9 AM, patient sees 9 AM), so the fix is to make the *whole app* run on PH local time.
+
+**What changed**
+- `config/app.php` default timezone → `Asia/Manila`; `APP_TIMEZONE=Asia/Manila` in `.env`,
+  `.env.docker`, `.env.example`, `.env.railway.example`.
+- `AppServiceProvider` registers `Carbon::serializeUsing` / `CarbonImmutable::serializeUsing` to emit
+  the app-timezone **wall-clock with a trailing `Z`** (not converted to UTC). This preserves the
+  existing mobile contract (the app strips the `Z` and shows wall-clock — `date_format.dart`), so the
+  **Flutter app needs no rebuild** and web + mobile show the same time.
+- `phpunit.xml` pins `APP_TIMEZONE=UTC` so date assertions stay deterministic; new
+  `TimezoneSerializationTest` guards the wall-clock-preserving serializer.
+
+**Deploy note.** Railway must set `APP_TIMEZONE=Asia/Manila` in the service env for prod to switch
+(the code default only applies when the env var is unset). Historical pre-switch `now()` timestamps
+keep showing their old UTC wall-clock; new rows are correct PH time (self-heals on demo reseed).
+
+---
+
 ## Session 4 — Clinician requests for self-registered patients (June 27, 2026)
 
 **Tests:** 242 passing. Fixes the reported bug: *new (self-registered) patients weren't

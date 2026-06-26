@@ -2,8 +2,9 @@ import 'package:intl/intl.dart';
 
 /// Date/time formatting helpers for API-supplied date strings.
 ///
-/// The backend serializes timestamps as UTC ISO 8601 (e.g.
-/// `2026-06-24T09:00:00.000000Z`) for what are really naive clinic-local times.
+/// The backend (which runs on Asia/Manila) serializes timestamps as ISO 8601
+/// with a trailing `Z` (e.g. `2026-06-24T09:00:00.000000Z`) where the wall
+/// clock is already the clinic-local (PH) time — the `Z` does NOT mean UTC.
 /// We deliberately format the parsed value *without* `toLocal()` so the wall
 /// clock the clinic entered is the wall clock the patient sees — converting to
 /// the device timezone would shift the hour.

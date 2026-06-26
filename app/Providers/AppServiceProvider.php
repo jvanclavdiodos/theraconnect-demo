@@ -29,6 +29,17 @@ class AppServiceProvider extends ServiceProvider
     {
         Paginator::useBootstrapFive();
 
+        // The app runs on Asia/Manila (see config/app.php), so dates are stored
+        // and formatted as PH-local wall-clock. Serialize Carbon to JSON as that
+        // wall-clock with a trailing 'Z' (rather than converting to true UTC) so
+        // the mobile app — which shows the wall-clock and deliberately ignores
+        // the offset (see date_format.dart) — displays the same time the clinic
+        // entered, on any device, without needing a rebuild. This keeps the
+        // long-standing API contract intact after the UTC -> Manila switch.
+        $serializeAsWallClock = fn ($date) => $date->format('Y-m-d\TH:i:s.u\Z');
+        \Carbon\Carbon::serializeUsing($serializeAsWallClock);
+        \Carbon\CarbonImmutable::serializeUsing($serializeAsWallClock);
+
         // `{id}` route params are always numeric DB keys. Without this, a
         // non-numeric id (e.g. /api/v1/appointments/abc) reaches a controller
         // method type-hinted `int $id` and throws a 500 TypeError instead of a

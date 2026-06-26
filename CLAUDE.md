@@ -132,6 +132,12 @@ The repo ships portable deployment configs for **Railway** and **Docker Compose*
 - Flutter `ApiError.fromException(e)` collapses any non-`ApiError` exception to a generic
   `"Something went wrong. Please try again."` — never leak stack traces / API paths / backend
   exception text to patients on the mobile app.
+- **Timezone: the app runs on `Asia/Manila`** (`APP_TIMEZONE`, default in `config/app.php`). Times are
+  naive clinic-local wall-clock. `AppServiceProvider` registers a `Carbon::serializeUsing` that emits
+  the wall-clock with a trailing `Z` (NOT converted to UTC), so the mobile app — which strips the `Z`
+  (see `date_format.dart`) — shows the same time the dashboard does. **Don't** `toLocal()` mobile dates
+  or convert on the server. Tests pin `APP_TIMEZONE=UTC` (phpunit.xml) for determinism. Production
+  (Railway) must set `APP_TIMEZONE=Asia/Manila` in its env.
 
 ## Demo accounts (seeded)
 
