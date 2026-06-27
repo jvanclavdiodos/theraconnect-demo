@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\PostTooLargeException;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -50,6 +51,22 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return redirect()->back()->with('error', 'File is too large. The server size limit was exceeded.');
+        });
+
+        // ThrottleRequestsException is raised by the `throttle:` middleware
+        // when a limiter (login, register, password-change, chatbot, api) is
+        // exceeded. Without this renderable Laravel falls back to the default
+        // Symfony response, which is unbranded when debug is off and exposes
+        // internals when debug is on. Render the branded 429 page / a fixed
+        // JSON message instead.
+        $exceptions->renderable(function (ThrottleRequestsException $e, $request) {
+            if ($request->expectsJson()) {
+                return response()->json([
+                    'message' => 'Too many requests. Please try again later.',
+                ], 429);
+            }
+
+            return response()->view('errors.429', [], 429);
         });
 
         // Render branded error pages instead of the default Symfony traces for

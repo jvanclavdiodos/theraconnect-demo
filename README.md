@@ -209,7 +209,15 @@ php artisan test        # or: vendor/bin/phpunit
 vendor/bin/pint --test  # Laravel Pint style check
 ```
 
-Tests run on an **in-memory SQLite** DB — no MySQL needed. Run `php artisan test` for the current count (the suite grows as fixes land).
+Tests run on an **in-memory SQLite** DB — no MySQL needed. The suite comprises **50 test files** across three buckets:
+
+| Bucket | Files | Coverage |
+|---|---|---|
+| `tests/Integration/` | 39 | End-to-end flows for every surface: appointments (booking, reschedule, complete, attendance), assignments, messaging (web + API), notifications, assessments, mood logs, goals, chatbot, avatar uploads, password change, policy scoping, clinician availability, timezone serialization, portal feature parity |
+| `tests/Adversarial/` | 7 | IDOR bypass attempts, information leakage, input resilience (unexpected types, oversized payloads), state-machine logic, throttle/limiter behavior, UX friction, job idempotency |
+| `tests/Unit/` + `tests/Feature/` | 4 | PHPUnit stubs (kept for scaffold) |
+
+CI (`.github/workflows/ci.yml`) runs on every PR to `main`: `composer validate --strict`, `composer audit`, `vendor/bin/pint --test`, `php artisan test` against PHP 8.2 + 8.3, plus `flutter analyze` for the mobile app.
 
 ## Deployment
 

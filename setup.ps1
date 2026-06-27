@@ -129,11 +129,20 @@ if (-not $isLocalHost -and -not $SkipLocalGuard) {
 
 $prevPref = $ErrorActionPreference; $ErrorActionPreference = "Continue"
 if ($php -is [string]) {
-    & $php artisan migrate:fresh --seed --force 2>&1 | Out-Null
+    & $php artisan migrate:fresh --seed --force 2>&1 | Out-Host
+    $seedExit = $LASTEXITCODE
 } else {
-    php artisan migrate:fresh --seed --force 2>&1 | Out-Null
+    php artisan migrate:fresh --seed --force 2>&1 | Out-Host
+    $seedExit = $LASTEXITCODE
 }
 $ErrorActionPreference = $prevPref
+if ($seedExit -ne 0) {
+    Write-Host "  ERROR: migrations / seeding failed (exit $seedExit)." -ForegroundColor Red
+    Write-Host "  See output above. Common causes:" -ForegroundColor Red
+    Write-Host "    - DB not running or wrong credentials" -ForegroundColor Red
+    Write-Host "    - For non-local SEED_DEMO deploys: DEMO_PASSWORD must satisfy StrongPassword" -ForegroundColor Red
+    exit $seedExit
+}
 Write-Host "  Tables created. Demo data loaded." -ForegroundColor Green
 Write-Host "  6 users, 9 appointments, 4 assignments, 5 notifications" -ForegroundColor Green
 
@@ -158,5 +167,5 @@ Write-Host "    Patient   : emily@theraconnect.test / password" -ForegroundColor
 Write-Host ""
 Write-Host "  To run tests:" -ForegroundColor White
 Write-Host "    php artisan test" -ForegroundColor White
-Write-Host "  (38 tests, 148 assertions)" -ForegroundColor White
+Write-Host "  (50 test files across Integration + Adversarial + Unit buckets)" -ForegroundColor White
 Write-Host "========================================" -ForegroundColor Cyan

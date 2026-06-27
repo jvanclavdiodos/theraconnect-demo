@@ -34,19 +34,30 @@ class DemoSeeder extends Seeder
         // set DEMO_PASSWORD to a strong unique value — all seeded accounts
         // inherit it. Fail loud rather than silently seeding a weak password
         // to a public instance.
+        //
+        // The StrongPassword check only fires when seeding a non-local
+        // environment (i.e. a public demo deploy gated by SEED_DEMO=true in
+        // docker/entrypoint.sh). Local dev intentionally keeps the weak
+        // default 'password' for ergonomic demo logins documented in the
+        // README — without this exemption the seeder would always throw,
+        // silently breaking `php artisan migrate:fresh --seed` (the failure
+        // was previously swallowed by setup.ps1's `2>&1 | Out-Null`).
         $demoPassword = env('DEMO_PASSWORD', 'password');
-        $weak = new StrongPassword;
-        $failed = false;
-        $weak->validate('password', $demoPassword, function () use (&$failed) {
-            $failed = true;
-        });
-        if ($failed) {
-            throw new RuntimeException(
-                'DEMO_PASSWORD must satisfy StrongPassword (8-20 chars, >=1 '
-                .'uppercase letter, >=1 digit, no spaces). Refusing to seed a '
-                .'weak demo password to a potentially public instance.'
-            );
+
+        if (! app()->environment('local')) {
+            $failed = false;
+            (new StrongPassword)->validate('password', $demoPassword, function () use (&$failed) {
+                $failed = true;
+            });
+            if ($failed) {
+                throw new RuntimeException(
+                    'DEMO_PASSWORD must satisfy StrongPassword (8-20 chars, >=1 '
+                    .'uppercase letter, >=1 digit, no spaces). Refusing to seed a '
+                    .'weak demo password to a potentially public instance.'
+                );
+            }
         }
+
         $demoPasswordHash = Hash::make($demoPassword);
 
         // ── Admin ──────────────────────────────────────────
