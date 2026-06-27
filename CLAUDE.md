@@ -2,7 +2,7 @@
 
 Guidance for AI coding agents (Claude Code, etc.) and developers working in this repo.
 Read this first, then see `README.md` (setup + endpoints) and `TheraConnect_Agent_Spec.md` (full original spec).
-Working notes for the local experimental copy live in `SYSTEM_NOTES.md`; a session-by-session changelog lives in `handoff.md`.
+Working notes for the local experimental copy live in `SYSTEM_NOTES.md`.
 
 ## What this is
 
@@ -58,9 +58,10 @@ Run `php artisan test` for the current count — the suite grows as fixes land.
   (See `AssignmentService`, `SubmissionController@downloadFile`, `AssignmentController@downloadWorksheet`.)
 - **Notifications.** `NotificationService` writes the DB row (synchronous); the `SendPushNotification` job
   pushes via FCM (`FcmService`). FCM is optional — with no credentials it no-ops gracefully, and in-app
-  notifications still work. The Flutter `FcmService` is **background-only** today (foreground messages are
-  silently dropped; tapping a notification does not deep-link). See [.env.railway.example FCM section] for
-  provisioning credentials.
+  notifications still work. The Flutter `FcmService` displays foreground pushes via
+  `flutter_local_notifications` (banner + tap-to-deeplink), and refreshes the in-app notifications list
+  via the `onForegroundRefresh` callback (`main.dart`). Background delivery routes through FCM directly.
+  See [.env.railway.example FCM section] for provisioning credentials.
 - **Appointments.** Booking a slot that's already taken for a clinician is rejected. The check + insert run
   inside `DB::transaction` with `lockForUpdate` (`AppointmentService::bookAppointment` + `reschedule`),
   preventing a TOCTOU double-booking race. Reminders cover `approved` **and** `rescheduled`. Patients

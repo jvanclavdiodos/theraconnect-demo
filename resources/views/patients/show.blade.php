@@ -144,7 +144,7 @@
                 @if ($note->clinician_id === $myClinicianId)
                     <form action="{{ route('patient-notes.update', $note) }}" method="POST" x-show="editing" x-cloak>
                         @csrf @method('PUT')
-                        <input type="text" name="title" class="form-control mb-2" placeholder="Title (optional)" value="{{ $note->title }}">
+                        <input type="text" name="title" class="form-control mb-2" placeholder="Title (optional)" value="{{ $note->title }}" x-trap="editing">
                         <textarea name="body" rows="3" class="form-control mb-2" required>{{ $note->body }}</textarea>
                         <div class="d-flex align-items-center justify-content-between">
                             <div class="form-check">

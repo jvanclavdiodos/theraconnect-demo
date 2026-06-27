@@ -9,6 +9,7 @@ use App\Models\Patient;
 use App\Models\User;
 use App\Rules\StrongPassword;
 use App\Services\ActivityLogService;
+use App\Services\AttendanceService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,6 @@ use Illuminate\View\View;
 
 class PatientController extends Controller
 {
-
     public function index(Request $request): View
     {
         $query = Patient::with('user')->latest();
@@ -35,7 +35,7 @@ class PatientController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->whereHas('user', fn ($u) => $u->where('name', 'like', "%{$search}%")
                     ->orWhere('email', 'like', "%{$search}%"))
-                  ->orWhere('contact_no', 'like', "%{$search}%");
+                    ->orWhere('contact_no', 'like', "%{$search}%");
             });
         }
 
@@ -43,7 +43,7 @@ class PatientController extends Controller
 
         // Flag patients with a current no-show streak so disengagement is
         // visible on the list without opening each profile.
-        $atRisk = app(\App\Services\AttendanceService::class)
+        $atRisk = app(AttendanceService::class)
             ->atRiskPatientIds($patients->getCollection());
 
         // Self-registered patients awaiting a clinician decision. A clinician
@@ -150,7 +150,7 @@ class PatientController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $patient->user_id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$patient->user_id],
             'date_of_birth' => ['nullable', 'date'],
             'gender' => ['nullable', 'string', Rule::in(Patient::GENDERS)],
             'educational_attainment' => ['nullable', 'string', Rule::in(Patient::EDUCATION_LEVELS)],

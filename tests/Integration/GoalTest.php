@@ -2,7 +2,9 @@
 
 namespace Tests\Integration;
 
+use App\Models\Clinician;
 use App\Models\TherapyGoal;
+use App\Models\User;
 use Tests\TestCase;
 
 class GoalTest extends TestCase
@@ -143,19 +145,20 @@ class GoalTest extends TestCase
  * A second clinician (the default createClinician() uses fixed unique fields,
  * so a distinct one is built inline here).
  */
-function User_makeClinician(): \App\Models\User
+function User_makeClinician(): User
 {
-    $user = \App\Models\User::create([
+    $user = User::create([
         'name' => 'Dr. Other',
         'email' => 'other-clinician@test.com',
         'password' => 'password',
         'role' => 'clinician',
     ]);
-    \App\Models\Clinician::create([
+    Clinician::create([
         'user_id' => $user->id,
         'license_no' => 'LIC-OTHER-002',
         'specialization' => 'Testing',
         'contact_no' => '555-0199',
     ]);
+
     return $user;
 }

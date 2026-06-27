@@ -61,7 +61,7 @@ class AttendanceService
      * list. Returns a set of patient ids.
      *
      * @param  Collection<int, Patient>  $patients
-     * @return array<int, bool>  patient_id => true
+     * @return array<int, bool> patient_id => true
      */
     public function atRiskPatientIds(Collection $patients): array
     {

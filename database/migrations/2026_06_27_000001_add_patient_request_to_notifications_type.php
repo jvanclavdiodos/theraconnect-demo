@@ -21,7 +21,7 @@ return new class extends Migration
         }
 
         DB::statement(
-            "ALTER TABLE notifications MODIFY COLUMN type ENUM(".
+            'ALTER TABLE notifications MODIFY COLUMN type ENUM('.
             "'appointment_requested','appointment_approved','appointment_rejected',".
             "'appointment_rescheduled','appointment_reminder','assignment_created',".
             "'assignment_deadline','message_received','assessment_assigned',".
@@ -37,7 +37,7 @@ return new class extends Migration
         }
 
         DB::statement(
-            "ALTER TABLE notifications MODIFY COLUMN type ENUM(".
+            'ALTER TABLE notifications MODIFY COLUMN type ENUM('.
             "'appointment_requested','appointment_approved','appointment_rejected',".
             "'appointment_rescheduled','appointment_reminder','assignment_created',".
             "'assignment_deadline','message_received','assessment_assigned','generic') NOT NULL"

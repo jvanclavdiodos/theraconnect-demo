@@ -22,16 +22,16 @@ class AssignmentResource extends JsonResource
             // Authenticated download route — worksheet is on the private disk and
             // requires the patient's bearer token (handled by the Dio client).
             'attachment_url' => $this->attachment_path
-                ? url('/api/v1/assignments/' . $this->id . '/worksheet')
+                ? url('/api/v1/assignments/'.$this->id.'/worksheet')
                 : null,
             'due_date' => $this->due_date,
             'submission_status' => $this->when(
                 $this->relationLoaded('submissions') && $this->submissions->isNotEmpty(),
-                fn() => $this->submissions->first()->status
+                fn () => $this->submissions->first()->status
             ),
             'submitted_at' => $this->when(
                 $this->relationLoaded('submissions') && $this->submissions->isNotEmpty(),
-                fn() => $this->submissions->first()->submitted_at
+                fn () => $this->submissions->first()->submitted_at
             ),
             // The patient's own submission (content + file), for in-app preview.
             'submission' => $this->when(
@@ -46,7 +46,7 @@ class AssignmentResource extends JsonResource
                         'kind' => $s->previewKind(),
                         // Authenticated download route (private disk + bearer token).
                         'file_url' => $s->file_path
-                            ? url('/api/v1/submissions/' . $s->id . '/file')
+                            ? url('/api/v1/submissions/'.$s->id.'/file')
                             : null,
                     ];
                 }

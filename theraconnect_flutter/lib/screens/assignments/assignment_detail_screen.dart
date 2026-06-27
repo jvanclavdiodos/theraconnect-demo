@@ -52,7 +52,9 @@ class _AssignmentDetailScreenState
       }
     } catch (e) {
       if (mounted) {
-        final msg = e is ApiError ? e.userMessage : e.toString();
+        // Collapse any non-ApiError exception to a patient-friendly message —
+        // never leak backend paths / Dio internals / stack traces to patients.
+        final msg = ApiError.fromException(e).userMessage;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Download failed: $msg'),

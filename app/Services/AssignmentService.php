@@ -16,7 +16,7 @@ class AssignmentService
 
         if ($attachment) {
             // Private disk — worksheets are reachable only via authenticated routes.
-            $attachmentPath = $attachment->store('assignments', 'local');
+            $attachmentPath = $attachment->store('assignments');
             $attachmentName = $attachment->getClientOriginalName();
         }
 
@@ -46,14 +46,14 @@ class AssignmentService
                 ->first();
 
             if ($existing && $existing->file_path) {
-                Storage::disk('local')->delete($existing->file_path);
+                Storage::disk()->delete($existing->file_path);
             }
 
             // Private disk — submissions may contain sensitive patient content and
             // are only reachable through an authenticated download route. The
             // stored name is hashed (with a guessed extension), so keep the
             // original client filename for correct downloads.
-            $submissionData['file_path'] = $file->store('submissions', 'local');
+            $submissionData['file_path'] = $file->store('submissions');
             $submissionData['original_name'] = $file->getClientOriginalName();
         }
 

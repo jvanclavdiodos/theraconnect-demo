@@ -1,14 +1,13 @@
-FROM php:8.2-cli-alpine
-#
-# NOTE: pin to a specific patch (or image digest) for production reproducibility:
-#   docker pull php:8.2.25-cli-alpine@sha256:<digest>
-# The docker-compose and tests currently exercise the major.minor tag.
+# Pinned to a patch version for production reproducibility. Bumping the minor
+# (8.2 -> 8.3) requires verifying extension compatibility.
+FROM php:8.2.25-cli-alpine
 
 RUN apk add --no-cache \
     curl \
     libpng-dev \
     libzip-dev \
     oniguruma-dev \
+    icu-dev \
     zip \
     unzip \
     mysql-client \
@@ -18,9 +17,17 @@ RUN docker-php-ext-install \
     pdo_mysql \
     mbstring \
     zip \
-    gd
+    gd \
+    intl
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+
+# Ship a php.ini that raises upload limits above the app's in-app max rules
+# (so FormRequest surfaces the friendly "must not be greater than X MB" message
+# rather than the opaque PostTooLargeException 413 page), suppresses the
+# X-Powered-By header at the SAPI level, and routes PHP errors to stderr so
+# PaaS log drains capture them.
+COPY docker/php.ini /usr/local/etc/php/conf.d/theraconnect.ini
 
 WORKDIR /var/www
 

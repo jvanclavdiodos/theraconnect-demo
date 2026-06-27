@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StoreAssignmentRequest;
 use App\Jobs\SendPushNotification;
 use App\Models\Assignment;
 use App\Models\Clinician;
@@ -60,26 +61,16 @@ class WebAssignmentController extends Controller
         return view('assignments.create', compact('patients', 'clinicians'));
     }
 
-    public function store(Request $request): RedirectResponse
+    public function store(StoreAssignmentRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'patient_id' => ['required', 'exists:patients,id'],
-            'title' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string'],
-            'due_date' => ['nullable', 'date'],
-            'attachment' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,xls,xlsx,ppt,pptx,txt,rtf,jpg,jpeg,png'],
-        ]);
+        $validated = $request->validated();
 
         // A clinician authors their own assignments; an admin must attribute
-        // the assignment to a clinician via the form (clinician_id is NOT NULL).
-        $clinician = auth()->user()->clinician;
-
-        if (! $clinician) {
-            $request->validate([
-                'clinician_id' => ['required', 'exists:clinicians,id'],
-            ]);
-            $clinician = Clinician::with('user')->find($request->input('clinician_id'));
-        }
+        // the assignment to a clinician via the form (clinician_id validated
+        // by StoreAssignmentRequest when the authed user has no clinician
+        // profile — i.e. an admin).
+        $clinician = auth()->user()->clinician
+            ?? Clinician::with('user')->find($validated['clinician_id'] ?? null);
 
         // A clinician may only create assignments for patients assigned to them
         // (admins pass). Stops a crafted patient_id targeting another's patient.
@@ -134,11 +125,11 @@ class WebAssignmentController extends Controller
         Gate::authorize('view', $submission);
 
         abort_unless(
-            $submission->file_path && Storage::disk('local')->exists($submission->file_path),
+            $submission->file_path && Storage::disk()->exists($submission->file_path),
             404
         );
 
-        return Storage::disk('local')->download(
+        return Storage::disk()->download(
             $submission->file_path,
             $submission->original_name
         );
@@ -154,11 +145,11 @@ class WebAssignmentController extends Controller
         Gate::authorize('view', $submission);
 
         abort_unless(
-            $submission->file_path && Storage::disk('local')->exists($submission->file_path),
+            $submission->file_path && Storage::disk()->exists($submission->file_path),
             404
         );
 
-        return Storage::disk('local')->response(
+        return Storage::disk()->response(
             $submission->file_path,
             $submission->original_name
         );
@@ -169,11 +160,11 @@ class WebAssignmentController extends Controller
         Gate::authorize('manage', $assignment);
 
         abort_unless(
-            $assignment->attachment_path && Storage::disk('local')->exists($assignment->attachment_path),
+            $assignment->attachment_path && Storage::disk()->exists($assignment->attachment_path),
             404
         );
 
-        return Storage::disk('local')->download(
+        return Storage::disk()->download(
             $assignment->attachment_path,
             $assignment->attachment_name
         );

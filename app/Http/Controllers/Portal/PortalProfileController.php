@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\UpdateAvatarRequest;
 use App\Models\Patient;
 use App\Rules\StrongPassword;
 use Illuminate\Http\RedirectResponse;
@@ -75,19 +76,15 @@ class PortalProfileController extends Controller
             ->with('status', 'Password updated.');
     }
 
-    public function updateAvatar(Request $request): RedirectResponse
+    public function updateAvatar(UpdateAvatarRequest $request): RedirectResponse
     {
-        $request->validate([
-            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
-        ]);
-
         $user = $request->user();
 
         if ($user->avatar_path) {
-            Storage::disk('local')->delete($user->avatar_path);
+            Storage::disk()->delete($user->avatar_path);
         }
 
-        $path = $request->file('avatar')->store('avatars', 'local');
+        $path = $request->file('avatar')->store('avatars');
         $user->update(['avatar_path' => $path]);
 
         return back()->with('status', 'Profile picture updated.');
@@ -98,7 +95,7 @@ class PortalProfileController extends Controller
         $user = $request->user();
 
         if ($user->avatar_path) {
-            Storage::disk('local')->delete($user->avatar_path);
+            Storage::disk()->delete($user->avatar_path);
             $user->update(['avatar_path' => null]);
         }
 
@@ -111,10 +108,10 @@ class PortalProfileController extends Controller
         $user = $request->user();
 
         abort_unless(
-            $user->avatar_path && Storage::disk('local')->exists($user->avatar_path),
+            $user->avatar_path && Storage::disk()->exists($user->avatar_path),
             404
         );
 
-        return Storage::disk('local')->response($user->avatar_path);
+        return Storage::disk()->response($user->avatar_path);
     }
 }

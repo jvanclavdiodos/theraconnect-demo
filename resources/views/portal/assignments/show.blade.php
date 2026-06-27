@@ -69,7 +69,9 @@
                             @error('content')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <div class="mb-3">
-                            <input type="file" name="file" class="form-control @error('file') is-invalid @enderror">
+                            <input type="file" name="file" class="form-control @error('file') is-invalid @enderror"
+                                   accept=".pdf,.doc,.docx,.txt,.rtf,.jpg,.jpeg,.png"
+                                   data-validate-file data-max-bytes="10485760" data-allowed-extensions="pdf,doc,docx,txt,rtf,jpg,jpeg,png">
                             <div class="form-text">PDF, DOC, DOCX, TXT, RTF, JPG, or PNG. Max 10 MB.</div>
                             @error('file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
@@ -80,4 +82,8 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+    <script src="{{ asset('js/file-upload.js') }}" defer></script>
+@endpush
 @endsection

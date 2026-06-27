@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     build:
@@ -8,12 +6,11 @@ services:
     container_name: theraconnect-app
     restart: unless-stopped
     working_dir: /var/www
-    # The Dockerfile CMD already runs storage:link -> wait-for-db -> migrate
+    # The Dockerfile CMD already runs storage:Link -> wait-for-db -> migrate
     # -> db:seed -> serve. Override here only if you need a different boot.
     volumes:
       - .:/var/www
       - /var/www/vendor
-      - ./.env.docker:/var/www/.env:ro
       - /var/www/bootstrap/cache
     ports:
       - '8080:8080'
@@ -22,15 +19,16 @@ services:
         condition: service_healthy
     environment:
       APP_ENV: local
-      # Local-dev only — never set APP_DEBUG=true in staging/prod.
-      APP_DEBUG: 'true'
-      APP_KEY: ${APP_KEY:-}
+      # Local-dev default. Override via shell env or .env for any shared env.
+      APP_DEBUG: ${APP_DEBUG:-false}
+      APP_KEY: ${APP_KEY:?APP_KEY must be set; run `php artisan key:generate` and export APP_KEY}
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
       DB_DATABASE: theraconnect
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-password}
+      # Local-dev only. Override DB_PASSWORD for any shared environment.
+      DB_PASSWORD: ${DB_PASSWORD:-localdev_only_not_for_prod}
       QUEUE_CONNECTION: database
       SESSION_DRIVER: file
       PHP_CLI_SERVER_WORKERS: 1
@@ -51,6 +49,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
     networks:
       - theraconnect
 
@@ -59,7 +62,7 @@ services:
     container_name: theraconnect-mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-localdev_only_not_for_prod}
       MYSQL_DATABASE: theraconnect
     ports:
       - '3307:3306'
@@ -70,6 +73,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
     networks:
       - theraconnect
 
@@ -81,12 +89,14 @@ services:
     restart: unless-stopped
     working_dir: /var/www
     # Override the Dockerfile's boot CMD: the worker just needs the DB ready
-    # (the app service ran migrations) and the queue:work command.
-    command: sh -c "until php artisan db:show > /dev/null 2>&1; do echo 'Waiting for database...'; sleep 2; done && php artisan queue:work --tries=3 --max-time=3600 --sleep=3"
+    # (the app service ran migrations) and the queue:work command. The shared
+    # PDO probe in docker/wait-for-db.sh replaces `php artisan db:show`, which
+    # needs the absent `intl` extension and never returns against a non-empty DB.
+    # `--backoff=60,300,600` prevents hammering a failing external service.
+    command: sh -c "sh /var/www/docker/wait-for-db.sh && php artisan queue:work --tries=3 --max-time=3600 --sleep=3 --backoff=60,300,600"
     volumes:
       - .:/var/www
       - /var/www/vendor
-      - ./.env.docker:/var/www/.env:ro
       - /var/www/bootstrap/cache
     depends_on:
       mysql:
@@ -95,18 +105,31 @@ services:
         condition: service_healthy
     environment:
       APP_ENV: local
+      APP_KEY: ${APP_KEY:?APP_KEY must be set}
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
       DB_DATABASE: theraconnect
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_PASSWORD: ${DB_PASSWORD:-localdev_only_not_for_prod}
       QUEUE_CONNECTION: database
       FILESYSTEM_DISK: ${FILESYSTEM_DISK:-local}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID:-}
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
       AWS_BUCKET: ${AWS_BUCKET:-}
+    healthcheck:
+      # Exits non-zero if the worker process is no longer running.
+      test: ['CMD-SHELL', 'pgrep -f 'queue:work' > /dev/null || exit 1']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
     networks:
       - theraconnect
 
@@ -117,11 +140,14 @@ services:
     container_name: theraconnect-scheduler
     restart: unless-stopped
     working_dir: /var/www
-    command: sh -c "echo '* * * * * cd /var/www && php artisan schedule:run >> /dev/null 2>&1' > /etc/crontabs/root && crond -f -L /dev/stdout"
+    # `schedule:work` is a long-running daemon that ticks every minute. It
+    # replaces the previous `crond` approach, which wrote to /etc/crontabs/root
+    # (owned by root, mode 0600) and crashed immediately because the Dockerfile
+    # runs as non-root `www-data`.
+    command: sh -c "sh /var/www/docker/wait-for-db.sh && php artisan schedule:work"
     volumes:
       - .:/var/www
       - /var/www/vendor
-      - ./.env.docker:/var/www/.env:ro
       - /var/www/bootstrap/cache
     depends_on:
       mysql:
@@ -130,12 +156,18 @@ services:
         condition: service_healthy
     environment:
       APP_ENV: local
+      APP_KEY: ${APP_KEY:?APP_KEY must be set}
       DB_CONNECTION: mysql
       DB_HOST: mysql
       DB_PORT: 3306
       DB_DATABASE: theraconnect
       DB_USERNAME: root
-      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_PASSWORD: ${DB_PASSWORD:-localdev_only_not_for_prod}
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
     networks:
       - theraconnect
 

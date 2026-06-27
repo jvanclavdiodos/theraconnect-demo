@@ -28,10 +28,10 @@ class AppointmentService
             ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
             ->where(function ($q) use ($dayStart, $dayEnd) {
                 $q->whereBetween('scheduled_at', [$dayStart, $dayEnd])
-                  ->orWhere(function ($q2) use ($dayStart, $dayEnd) {
-                      $q2->whereNull('scheduled_at')
-                         ->whereBetween('requested_at', [$dayStart, $dayEnd]);
-                  });
+                    ->orWhere(function ($q2) use ($dayStart, $dayEnd) {
+                        $q2->whereNull('scheduled_at')
+                            ->whereBetween('requested_at', [$dayStart, $dayEnd]);
+                    });
             })
             ->get(['clinician_id', 'scheduled_at', 'requested_at']);
 
@@ -85,10 +85,10 @@ class AppointmentService
             ->when($ignoreAppointmentId, fn ($q) => $q->where('id', '!=', $ignoreAppointmentId))
             ->where(function ($q) use ($at) {
                 $q->where('scheduled_at', $at)
-                  ->orWhere(function ($q2) use ($at) {
-                      $q2->whereNull('scheduled_at')
-                         ->where('requested_at', $at);
-                  });
+                    ->orWhere(function ($q2) use ($at) {
+                        $q2->whereNull('scheduled_at')
+                            ->where('requested_at', $at);
+                    });
             })
             ->whereNotIn('status', ['cancelled', 'rejected', 'completed']);
 
@@ -117,7 +117,7 @@ class AppointmentService
                 }
 
                 if (! $this->isSlotAvailable($clinicianId, $data['requested_at'], lock: true)) {
-                    throw new SlotUnavailableException();
+                    throw new SlotUnavailableException;
                 }
             }
 
@@ -230,8 +230,7 @@ class AppointmentService
 
         return array_values(array_filter(
             $this->availability->availableSlots($clinician, $day),
-            fn ($slot) =>
-                Carbon::parse("$date $slot")->isFuture()
+            fn ($slot) => Carbon::parse("$date $slot")->isFuture()
                 && $this->isSlotAvailable($clinician->id, "$date $slot:00", $appointment->id)
         ));
     }

@@ -63,9 +63,9 @@ class SubmissionController extends Controller
         // AppointmentController enforces ownership for appointment downloads.
         Gate::authorize('view', $submission);
 
-        abort_unless($submission->file_path && Storage::disk('local')->exists($submission->file_path), 404);
+        abort_unless($submission->file_path && Storage::disk()->exists($submission->file_path), 404);
 
-        return Storage::disk('local')->download(
+        return Storage::disk()->download(
             $submission->file_path,
             $submission->original_name
         );

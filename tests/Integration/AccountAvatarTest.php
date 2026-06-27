@@ -15,7 +15,7 @@ class AccountAvatarTest extends TestCase
 
         $this->actingAs($clinician['user'], 'web')
             ->post('/account/avatar', [
-                'avatar' => UploadedFile::fake()->create('me.jpg', 80, 'image/jpeg'),
+                'avatar' => UploadedFile::fake()->image('me.jpg', 800, 800),
             ])
             ->assertRedirect();
 

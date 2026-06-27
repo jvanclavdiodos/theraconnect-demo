@@ -30,8 +30,8 @@ class MeetingLinkTest extends TestCase
 
         $base = rtrim(config('services.jitsi.base_url'), '/');
         $this->assertNotNull($approved->meeting_link);
-        $this->assertStringStartsWith($base . '/', $approved->meeting_link);
-        $this->assertStringContainsString('-' . $approved->id . '-', $approved->meeting_link);
+        $this->assertStringStartsWith($base.'/', $approved->meeting_link);
+        $this->assertStringContainsString('-'.$approved->id.'-', $approved->meeting_link);
     }
 
     public function test_approving_in_person_appointment_has_no_link(): void

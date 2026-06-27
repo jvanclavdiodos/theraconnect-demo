@@ -42,7 +42,11 @@ class MessageService
 
             $isPatient = $sender->id === $conversation->patient->user_id;
 
-            $conversation->forceFill([
+            // fill() instead of forceFill() — the columns being set
+            // (last_message_at + the per-participant last_read_at) are all
+            // listed in Conversation::$fillable, so regular mass assignment
+            // works identically without bypassing the guard.
+            $conversation->fill([
                 'last_message_at' => $message->created_at,
                 // The sender has implicitly read up to their own message.
                 ($isPatient ? 'patient_last_read_at' : 'clinician_last_read_at') => $message->created_at,
@@ -78,7 +82,7 @@ class MessageService
             ->where('messages.sender_id', '!=', $userId)
             ->where(function ($q) {
                 $q->whereNull('conversations.clinician_last_read_at')
-                  ->orWhereColumn('messages.created_at', '>', 'conversations.clinician_last_read_at');
+                    ->orWhereColumn('messages.created_at', '>', 'conversations.clinician_last_read_at');
             })
             ->count();
     }
@@ -92,6 +96,7 @@ class MessageService
             ? 'patient_last_read_at'
             : 'clinician_last_read_at';
 
-        $conversation->forceFill([$column => now()])->save();
+        // fill() (not forceFill): the read-timestamp columns are in $fillable.
+        $conversation->fill([$column => now()])->save();
     }
 }

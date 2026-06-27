@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
+use App\Http\Resources\PatientResource;
 use App\Http\Resources\UserResource;
 use App\Models\Clinician;
 use App\Models\Patient;
@@ -55,9 +56,20 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->email)->first();
+        // Lowercase the email so login is case-insensitive regardless of DB
+        // collation. Pairs with the User::setEmailAttribute mutator that
+        // lowercases on write (all seeded demo accounts are already lower).
+        $email = strtolower($request->email);
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        $user = User::where('email', $email)->first();
+
+        // Anti-enumeration: always perform a Hash::check — against the user's
+        // real hash if found, or a freshly-minted dummy hash if the email
+        // doesn't exist — so the 401 timing is identical in both cases and
+        // an attacker can't infer account existence via response latency.
+        $storedHash = $user?->password ?? Hash::make(str()->random(32));
+
+        if (! $user || ! Hash::check($request->password, $storedHash)) {
             return response()->json([
                 'message' => 'The provided credentials are incorrect.',
             ], 401);
@@ -100,7 +112,7 @@ class AuthController extends Controller
             'data' => [
                 'user' => new UserResource($user),
                 'patient_profile' => $user->patient
-                    ? new \App\Http\Resources\PatientResource($user->patient)
+                    ? new PatientResource($user->patient)
                     : null,
             ],
         ]);

@@ -2,6 +2,7 @@
 
 namespace Tests\Integration;
 
+use App\Models\Patient;
 use Tests\TestCase;
 
 class PatientProfileFieldsTest extends TestCase
@@ -30,7 +31,7 @@ class PatientProfileFieldsTest extends TestCase
         // personal_issues is encrypted at rest — verify via model
         $this->assertSame(
             'Anxiety around exams.',
-            \App\Models\Patient::latest()->first()->personal_issues
+            Patient::latest()->first()->personal_issues
         );
     }
 

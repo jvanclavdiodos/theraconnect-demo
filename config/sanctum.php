@@ -48,9 +48,14 @@ return [
     | considered expired. This will override any values set in the token's
     | "expires_at" attribute, but first-party sessions are not affected.
     |
+    | Capped at 7 days (down from the prior 30) to limit the window of any
+    | token compromise — appropriate for PHI-adjacent data. Patients
+    | re-authenticate after expiry; the web dashboard uses session auth so
+    | is unaffected.
+    |
     */
 
-    'expiration' => 60 * 24 * 30, // 30 days
+    'expiration' => 60 * 24 * 7, // 7 days
 
     /*
     |--------------------------------------------------------------------------

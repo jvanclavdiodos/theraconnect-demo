@@ -57,7 +57,8 @@
                 <div class="col-12">
                     <label for="attachment" class="form-label">Worksheet / Attachment <span class="text-muted">(optional)</span></label>
                     <input type="file" id="attachment" name="attachment" class="form-control @error('attachment') is-invalid @enderror"
-                           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.jpg,.jpeg,.png">
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.jpg,.jpeg,.png"
+                           data-validate-file data-max-bytes="10485760" data-allowed-extensions="pdf,doc,docx,xls,xlsx,ppt,pptx,txt,rtf,jpg,jpeg,png">
                     @error('attachment')<div class="invalid-feedback">{{ $message }}</div>@enderror
                     <small class="text-muted">PDF, Office documents, text, or images. Max 10 MB. The patient can download this from the mobile app.</small>
                 </div>
@@ -70,4 +71,8 @@
         </form>
     </div>
 </div>
+
+@push('scripts')
+    <script src="{{ asset('js/file-upload.js') }}" defer></script>
+@endpush
 @endsection

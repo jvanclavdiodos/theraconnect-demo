@@ -99,8 +99,13 @@ class WebAppointmentController extends Controller
             ]);
         }
 
-        // Default to 'attended' so the existing one-click "close case" still works.
-        $outcome = $request->input('outcome', 'attended');
+        // Default to 'attended' so the existing one-click "close case" still
+        // works. Validate the outcome so a crafted payload can't set an
+        // unsupported status that would otherwise silently fall through to
+        // "attended" below.
+        $outcome = $request->validate([
+            'outcome' => ['nullable', 'string', 'in:attended,no_show'],
+        ])['outcome'] ?? 'attended';
 
         if ($outcome === 'no_show') {
             $this->appointmentService->markNoShow($appointment);

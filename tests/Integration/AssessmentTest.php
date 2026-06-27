@@ -3,7 +3,6 @@
 namespace Tests\Integration;
 
 use App\Models\Assessment;
-use App\Models\Notification;
 use Tests\TestCase;
 
 class AssessmentTest extends TestCase

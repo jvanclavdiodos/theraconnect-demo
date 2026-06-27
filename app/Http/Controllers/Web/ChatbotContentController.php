@@ -65,7 +65,7 @@ class ChatbotContentController extends Controller
     public function update(Request $request, ChatbotIntent $intent): RedirectResponse
     {
         $validated = $request->validate([
-            'intent_key' => ['required', 'string', 'max:100', 'unique:chatbot_intents,intent_key,' . $intent->id],
+            'intent_key' => ['required', 'string', 'max:100', 'unique:chatbot_intents,intent_key,'.$intent->id],
             'display_name' => ['required', 'string', 'max:255'],
             'category' => ['required', 'in:faq,scheduling,smalltalk,fallback'],
             'training_phrases' => ['required', 'array', 'min:1'],

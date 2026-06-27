@@ -34,7 +34,7 @@ class PatientRequestController extends Controller
         app(ActivityLogService::class)->log($request->user(), 'patient.request_approved', $patient);
 
         return redirect()->route('patients.index')
-            ->with('status', $patient->user->name . ' was added to the caseload.');
+            ->with('status', $patient->user->name.' was added to the caseload.');
     }
 
     public function deny(Request $request, Patient $patient): RedirectResponse

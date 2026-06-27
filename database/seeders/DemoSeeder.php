@@ -581,7 +581,7 @@ class DemoSeeder extends Seeder
             'user_id' => $p1User->id,
             'type' => 'appointment_approved',
             'title' => 'Appointment Approved',
-            'body' => 'Your appointment on ' . $now->copy()->addDays(5)->format('M j') . ' at 9:00 AM is confirmed.',
+            'body' => 'Your appointment on '.$now->copy()->addDays(5)->format('M j').' at 9:00 AM is confirmed.',
             'data' => ['appointment_id' => 5],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subHours(3),

@@ -44,11 +44,11 @@ class PortalAssignmentController extends Controller
         Gate::authorize('view', $assignment);
 
         abort_unless(
-            $assignment->attachment_path && Storage::disk('local')->exists($assignment->attachment_path),
+            $assignment->attachment_path && Storage::disk()->exists($assignment->attachment_path),
             404
         );
 
-        return Storage::disk('local')->download(
+        return Storage::disk()->download(
             $assignment->attachment_path,
             $assignment->attachment_name
         );
@@ -86,11 +86,11 @@ class PortalAssignmentController extends Controller
         Gate::authorize('view', $submission);
 
         abort_unless(
-            $submission->file_path && Storage::disk('local')->exists($submission->file_path),
+            $submission->file_path && Storage::disk()->exists($submission->file_path),
             404
         );
 
-        return Storage::disk('local')->download(
+        return Storage::disk()->download(
             $submission->file_path,
             $submission->original_name
         );

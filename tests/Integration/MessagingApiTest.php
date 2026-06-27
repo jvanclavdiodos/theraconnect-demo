@@ -5,6 +5,7 @@ namespace Tests\Integration;
 use App\Models\Clinician;
 use App\Models\Conversation;
 use App\Models\User;
+use App\Services\MessageService;
 use Tests\TestCase;
 
 class MessagingApiTest extends TestCase
@@ -84,11 +85,11 @@ class MessagingApiTest extends TestCase
         $ctx = $this->assignedPatient();
 
         // Clinician sends two messages to the patient.
-        $conversation = app(\App\Services\MessageService::class)
+        $conversation = app(MessageService::class)
             ->conversationFor($ctx['patient']['patient'], $ctx['clinician']['clinician']);
-        app(\App\Services\MessageService::class)
+        app(MessageService::class)
             ->send($conversation, $ctx['clinician']['user'], 'one');
-        app(\App\Services\MessageService::class)
+        app(MessageService::class)
             ->send($conversation, $ctx['clinician']['user'], 'two');
 
         // Patient's inbox shows unread.

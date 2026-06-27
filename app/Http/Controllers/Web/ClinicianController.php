@@ -68,7 +68,7 @@ class ClinicianController extends Controller
     {
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,' . $clinician->user_id],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email,'.$clinician->user_id],
             'license_no' => ['nullable', 'string', 'max:100'],
             'specialization' => ['nullable', 'string', 'max:255'],
             'contact_no' => ['nullable', 'string', 'max:20'],
