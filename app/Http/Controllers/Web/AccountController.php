@@ -43,12 +43,17 @@ class AccountController extends Controller
     {
         $user = $request->user();
 
-        if ($user->avatar_path) {
-            Storage::disk()->delete($user->avatar_path);
-        }
-
+        // Store new first, then update DB, then delete old — file ops can't
+        // roll back, so this order ensures a store failure leaves the user's
+        // existing avatar intact rather than deleting it before the new
+        // upload lands.
+        $oldPath = $user->avatar_path;
         $path = $request->file('avatar')->store('avatars');
         $user->update(['avatar_path' => $path]);
+
+        if ($oldPath) {
+            Storage::disk()->delete($oldPath);
+        }
 
         return back()->with('status', 'Profile picture updated.');
     }

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
+use App\Jobs\SendPushNotification;
 use App\Models\Clinician;
 use App\Models\Patient;
 use App\Models\User;
@@ -65,7 +66,14 @@ class RegisterController extends Controller
             ]);
 
             if (! empty($validated['requested_clinician_id'])) {
-                $patientRequests->submit($patient, Clinician::findOrFail($validated['requested_clinician_id']));
+                // Capture the notification so the push fires after commit —
+                // mirrors PatientRequestController@approve/deny. Without this
+                // the clinician never gets a push for a new patient request.
+                $notification = $patientRequests->submit(
+                    $patient,
+                    Clinician::findOrFail($validated['requested_clinician_id'])
+                );
+                SendPushNotification::dispatch($notification->id)->afterCommit();
             }
 
             return $user;

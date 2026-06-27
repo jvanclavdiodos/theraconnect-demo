@@ -73,6 +73,15 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
         });
 
+        // Password-change endpoint (3 surfaces: API patient, web staff, portal
+        // patient). Keyed by the authenticated user id so a stolen token /
+        // hijacked session can't brute-force the current_password rule via
+        // repeated attempts. 10/min is generous for a forgetful user but
+        // stops automated grinding.
+        RateLimiter::for('password-change', function (Request $request) {
+            return Limit::perMinute(10)->by(optional($request->user())->id ?: $request->ip());
+        });
+
         Gate::policy(Appointment::class, AppointmentPolicy::class);
         Gate::policy(Assignment::class, AssignmentPolicy::class);
         Gate::policy(Submission::class, SubmissionPolicy::class);

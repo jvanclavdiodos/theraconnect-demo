@@ -74,16 +74,20 @@ class ClinicianController extends Controller
             'contact_no' => ['nullable', 'string', 'max:20'],
         ]);
 
-        $clinician->user->update([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-        ]);
+        // Wrap user + profile updates in a transaction so a profile-row
+        // failure rolls back the user's name/email change too.
+        DB::transaction(function () use ($clinician, $validated) {
+            $clinician->user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+            ]);
 
-        $clinician->update([
-            'license_no' => $validated['license_no'] ?? $clinician->license_no,
-            'specialization' => $validated['specialization'] ?? $clinician->specialization,
-            'contact_no' => $validated['contact_no'] ?? $clinician->contact_no,
-        ]);
+            $clinician->update([
+                'license_no' => $validated['license_no'] ?? $clinician->license_no,
+                'specialization' => $validated['specialization'] ?? $clinician->specialization,
+                'contact_no' => $validated['contact_no'] ?? $clinician->contact_no,
+            ]);
+        });
 
         return redirect()->route('clinicians.index')
             ->with('status', 'Clinician updated successfully.');

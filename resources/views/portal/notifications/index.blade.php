@@ -24,6 +24,18 @@
     @endif
 </div>
 
+{{-- Alpine-scoped toast for AJAX errors (replaces the previous blocking alert()). --}}
+<div x-data="{ toast: '', shown: false, timer: null }"
+     @toast-error.window="toast = $event.detail; shown = true; clearTimeout(timer); timer = setTimeout(() => shown = false, 4000)"
+     class="position-fixed top-0 end-0 p-3" style="z-index: 1080;">
+    <div class="toast align-items-center text-bg-danger border-0" :class="{ 'show': shown }" role="alert" aria-live="assertive" aria-atomic="true" x-cloak>
+        <div class="d-flex">
+            <div class="toast-body" x-text="toast"></div>
+            <button type="button" class="btn-close btn-close-white me-2 m-auto" @click="shown = false" aria-label="Close"></button>
+        </div>
+    </div>
+</div>
+
 <div class="card" x-data="{ unreadCount: {{ $notifications->where('read_at', null)->count() }} }">
     <div class="list-group list-group-flush">
         @forelse($notifications as $n)
@@ -99,7 +111,7 @@
             }
         } catch (e) {
             if (form.querySelector('button')) form.querySelector('button').disabled = false;
-            alert('Could not mark notification as read. Please try again.');
+            window.dispatchEvent(new CustomEvent('toast-error', { detail: 'Could not mark notification as read. Please try again.' }));
         }
     };
 
@@ -118,7 +130,7 @@
             });
         } catch (e) {
             if (form.querySelector('button')) form.querySelector('button').disabled = false;
-            alert('Could not mark all notifications as read. Please try again.');
+            window.dispatchEvent(new CustomEvent('toast-error', { detail: 'Could not mark all notifications as read. Please try again.' }));
         }
     };
 })();

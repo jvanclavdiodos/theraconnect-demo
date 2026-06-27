@@ -133,7 +133,8 @@
                     @if ($note->clinician_id === $myClinicianId)
                         <div class="ms-2 d-flex gap-1" x-show="!editing">
                             <button type="button" class="btn btn-outline-secondary btn-sm" @click="editing = true">Edit</button>
-                            <form action="{{ route('patient-notes.destroy', $note) }}" method="POST" onsubmit="return confirm('Delete this note?')">
+                            <form action="{{ route('patient-notes.destroy', $note) }}" method="POST"
+                                  x-data @submit.prevent="if (confirm('Delete this note?')) $el.submit()">
                                 @csrf @method('DELETE')
                                 <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
                             </form>

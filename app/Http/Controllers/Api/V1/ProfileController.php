@@ -45,12 +45,17 @@ class ProfileController extends Controller
     {
         $user = auth()->user();
 
-        if ($user->avatar_path) {
-            Storage::disk()->delete($user->avatar_path);
-        }
-
+        // Store the new avatar BEFORE updating the DB path or deleting the
+        // old file. File ops can't roll back inside a transaction — if the
+        // store fails mid-way, the old avatar stays intact and the user
+        // keeps their existing picture rather than ending up with none.
+        $oldPath = $user->avatar_path;
         $path = $request->file('avatar')->store('avatars');
         $user->update(['avatar_path' => $path]);
+
+        if ($oldPath) {
+            Storage::disk()->delete($oldPath);
+        }
 
         return response()->json([
             'data' => new PatientResource($user->patient->fresh()->load('user')),

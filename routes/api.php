@@ -58,9 +58,6 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['throttle:register'])->group(function () {
         Route::post('/register', [AuthController::class, 'register']);
     });
-    Route::middleware(['throttle:register'])->group(function () {
-        Route::post('/register', [AuthController::class, 'register']);
-    });
 
     // Clinician directory (public, throttled) — needed pre-auth so the register
     // screen can offer a preferred-clinician picker. Exposes only safe public
@@ -74,7 +71,7 @@ Route::prefix('v1')->group(function () {
         // Profile
         Route::post('/logout', [AuthController::class, 'logout'])->middleware('throttle:10,1');
         Route::get('/me', [AuthController::class, 'me']);
-        Route::put('/auth/password', [PasswordController::class, 'update']);
+        Route::put('/auth/password', [PasswordController::class, 'update'])->middleware('throttle:password-change');
 
         // Notifications
         Route::middleware('throttle:api')->group(function () {

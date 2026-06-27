@@ -13,6 +13,7 @@ use App\Models\Patient;
 use App\Models\Submission;
 use App\Models\TherapyGoal;
 use App\Models\User;
+use App\Rules\StrongPassword;
 use App\Services\JitsiService;
 use App\Support\Assessments;
 use Illuminate\Database\Seeder;
@@ -28,11 +29,31 @@ class DemoSeeder extends Seeder
             return;
         }
 
+        // Demo password: defaults to `password` for local dev (matches the
+        // README + setup.ps1 demo-accounts table). On a demo Railway instance
+        // set DEMO_PASSWORD to a strong unique value — all seeded accounts
+        // inherit it. Fail loud rather than silently seeding a weak password
+        // to a public instance.
+        $demoPassword = env('DEMO_PASSWORD', 'password');
+        $weak = new StrongPassword;
+        $failed = false;
+        $weak->validate('password', $demoPassword, function () use (&$failed) {
+            $failed = true;
+        });
+        if ($failed) {
+            throw new RuntimeException(
+                'DEMO_PASSWORD must satisfy StrongPassword (8-20 chars, >=1 '
+                .'uppercase letter, >=1 digit, no spaces). Refusing to seed a '
+                .'weak demo password to a potentially public instance.'
+            );
+        }
+        $demoPasswordHash = Hash::make($demoPassword);
+
         // ── Admin ──────────────────────────────────────────
         User::create([
             'name' => 'Admin User',
             'email' => 'admin@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'admin',
         ]);
 
@@ -40,7 +61,7 @@ class DemoSeeder extends Seeder
         $c1User = User::create([
             'name' => 'Dr. Sarah Chen, MD',
             'email' => 'clinician@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'clinician',
         ]);
         $c1 = Clinician::create([
@@ -53,7 +74,7 @@ class DemoSeeder extends Seeder
         $c2User = User::create([
             'name' => 'Dr. James Rivera, PsyD',
             'email' => 'dr.rivera@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'clinician',
         ]);
         $c2 = Clinician::create([
@@ -68,7 +89,7 @@ class DemoSeeder extends Seeder
         $p1User = User::create([
             'name' => 'Jane Doe',
             'email' => 'patient@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'patient',
         ]);
         $p1 = Patient::create([
@@ -84,7 +105,7 @@ class DemoSeeder extends Seeder
         $p2User = User::create([
             'name' => 'Michael Torres',
             'email' => 'michael@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'patient',
         ]);
         $p2 = Patient::create([
@@ -100,7 +121,7 @@ class DemoSeeder extends Seeder
         $p3User = User::create([
             'name' => 'Emily Watson',
             'email' => 'emily@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'patient',
         ]);
         $p3 = Patient::create([
@@ -116,7 +137,7 @@ class DemoSeeder extends Seeder
         $p4User = User::create([
             'name' => 'Sophia Nguyen',
             'email' => 'sophia@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'patient',
         ]);
         $p4 = Patient::create([
@@ -134,7 +155,7 @@ class DemoSeeder extends Seeder
         $p5User = User::create([
             'name' => 'Olivia Reyes',
             'email' => 'olivia@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'patient',
         ]);
         Patient::create([

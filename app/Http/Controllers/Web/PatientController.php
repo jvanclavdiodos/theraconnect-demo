@@ -163,23 +163,27 @@ class PatientController extends Controller
             'assigned_clinician_id' => ['nullable', 'exists:clinicians,id'],
         ]);
 
-        $patient->user->update([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-        ]);
+        // Wrap user + profile updates in a transaction so a profile-row
+        // failure rolls back the user's name/email change too.
+        DB::transaction(function () use ($patient, $validated) {
+            $patient->user->update([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+            ]);
 
-        $patient->update([
-            'assigned_clinician_id' => $validated['assigned_clinician_id'] ?? null,
-            'date_of_birth' => $validated['date_of_birth'] ?? null,
-            'gender' => $validated['gender'] ?? null,
-            'educational_attainment' => $validated['educational_attainment'] ?? null,
-            'employment_status' => $validated['employment_status'] ?? null,
-            'personal_issues' => $validated['personal_issues'] ?? null,
-            'contact_no' => $validated['contact_no'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'emergency_contact' => $validated['emergency_contact'] ?? null,
-            'notes' => $validated['notes'] ?? null,
-        ]);
+            $patient->update([
+                'assigned_clinician_id' => $validated['assigned_clinician_id'] ?? null,
+                'date_of_birth' => $validated['date_of_birth'] ?? null,
+                'gender' => $validated['gender'] ?? null,
+                'educational_attainment' => $validated['educational_attainment'] ?? null,
+                'employment_status' => $validated['employment_status'] ?? null,
+                'personal_issues' => $validated['personal_issues'] ?? null,
+                'contact_no' => $validated['contact_no'] ?? null,
+                'address' => $validated['address'] ?? null,
+                'emergency_contact' => $validated['emergency_contact'] ?? null,
+                'notes' => $validated['notes'] ?? null,
+            ]);
+        });
 
         return redirect()->route('patients.index')
             ->with('status', 'Patient updated successfully.');

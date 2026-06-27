@@ -28,6 +28,15 @@ fi
 sh /var/www/docker/wait-for-db.sh
 
 php artisan migrate --force
-php artisan db:seed --force
+
+# Seed demo data ONLY in local dev or when SEED_DEMO=true is set explicitly.
+# Production deploys (APP_ENV=production, SEED_DEMO unset/false) skip seeding
+# entirely — no demo admin/clinician/patient accounts with known passwords get
+# created on an internet-facing instance. DemoSeeder is idempotent so repeated
+# boots of a demo instance are safe.
+SEED_DEMO="${SEED_DEMO:-}"
+if [ "${APP_ENV:-production}" = "local" ] || [ "$SEED_DEMO" = "true" ]; then
+    php artisan db:seed --force
+fi
 
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"

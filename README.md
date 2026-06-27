@@ -1,6 +1,6 @@
 ﻿# TheraConnect
 
-A three-tier clinic management system connecting patients, clinicians, and administrators. Patients use a Flutter mobile app (JSON API), while clinicians and admins use a server-rendered Blade dashboard. One Laravel backend serves both clients through the same service layer.
+A three-tier clinic management system connecting patients, clinicians, and administrators. Patients can use either a Flutter mobile app (JSON API) or a browser portal (`/portal`, session auth) with full feature parity. Clinicians and admins use a server-rendered Blade dashboard. One Laravel backend serves all three surfaces through the same service layer.
 
 ## Tech Stack
 
@@ -16,7 +16,7 @@ A three-tier clinic management system connecting patients, clinicians, and admin
 
 ## Prerequisites
 
-- **PHP 8.2+** with extensions: `curl`, `fileinfo`, `gd`, `mbstring`, `openssl`, `pdo_mysql`, `zip`
+- **PHP 8.2+** with extensions: `curl`, `fileinfo`, `gd`, `intl`, `mbstring`, `openssl`, `pdo_mysql`, `zip`
 - **Composer** ([getcomposer.org](https://getcomposer.org))
 - **MySQL 8+** or **MariaDB 10.2+** running on port 3306
 - (Optional) **Flutter SDK** for the mobile app in `theraconnect_flutter/`
@@ -67,10 +67,13 @@ The seeder creates realistic demo data for walkthroughs:
 
 | Entity | Count | Details |
 |---|---|---|
-| Users | 6 | 1 admin, 2 clinicians, 3 patients |
-| Appointments | 9 | 3 pending, 2 approved, 2 completed, 1 rejected, 1 cancelled |
-| Assignments | 4 | 2 with submissions (1 submitted, 1 reviewed) |
-| Notifications | 5 | Various types with read/unread states |
+| Users | 8 | 1 admin, 2 clinicians, 5 patients |
+| Appointments | 15 | 4 pending, 2 approved, 7 completed, 1 rejected, 1 cancelled |
+| Assignments | 5 | 2 with submissions (1 submitted, 1 reviewed) |
+| Notifications | 8 | Various types with read/unread states |
+| Assessments | 7 | 5 completed (PHQ-9 / GAD-7), 2 pending assignment |
+| Mood logs | 30 | 14-day trend (Jane), 7-day (Emily), 6-day (Michael), 3-day (Sophia) |
+| Therapy goals | 6 | 4 active, 2 met; with GAS ratings |
 
 ### Demo Accounts
 
@@ -84,8 +87,12 @@ All passwords are `password`. Patients use the mobile app; admin/clinician use t
 | Patient | `patient@theraconnect.test` | Mobile app only |
 | Patient | `michael@theraconnect.test` | Mobile app only |
 | Patient | `emily@theraconnect.test` | Mobile app only |
+| Patient | `sophia@theraconnect.test` | Mobile app only |
+| Patient | `olivia@theraconnect.test` | Mobile app only (pending clinician request) |
 
 > Demo accounts use password `password` — rotate before any real use.
+>
+> On a Railway (or any non-local) deployment, seeding is env-gated: the entrypoint only runs `db:seed` when `APP_ENV=local` or `SEED_DEMO=true` is explicitly set. For a demo deploy set `SEED_DEMO=true` and `DEMO_PASSWORD=<strong value>` — all seeded accounts inherit that password (it must satisfy `StrongPassword`: 8–20 chars, ≥1 uppercase, ≥1 digit, no spaces). A true production deploy (no demo data, no demo accounts) leaves both vars unset.
 
 ## API Reference
 
@@ -98,6 +105,7 @@ Base URL: `/api/v1`. Add `Authorization: Bearer <token>` for authenticated route
 | `POST` | `/login` | None | `{email, password}` — patients only |
 | `POST` | `/logout` | Bearer | Revokes all user tokens |
 | `GET` | `/me` | Bearer | Current user + patient profile |
+| `PUT` | `/auth/password` | Bearer | Change password `{current_password, password, password_confirmation}` (throttled 10/min) |
 | `GET` | `/profile` | Bearer | Patient details |
 | `PUT` | `/profile` | Bearer | Update `{date_of_birth?, contact_no?, address?, emergency_contact?}` |
 | `POST` | `/profile/avatar` | Bearer | Multipart avatar upload (JPG/PNG/WebP, ≤4 MB, ≤1024×1024) |
@@ -147,6 +155,8 @@ Base URL: `/api/v1`. Add `Authorization: Bearer <token>` for authenticated route
 | Chatbot content (admin) | `/chatbot-content` |
 | Account (own profile/password) | `/account` |
 | Patient portal | `/portal` (patients land here after login) |
+
+> The patient portal (`/portal/*`) has full feature parity with the Flutter app — appointments (book/list/cancel), assignments (download/submit), messaging, questionnaires (PHQ-9/GAD-7), mood logs, therapy goals, shared notes, chatbot, notifications, and profile management. Thin portal controllers reuse the same Services + Policies as the API.
 
 ## Project Structure
 
@@ -213,7 +223,7 @@ A pilot/demo instance runs on Railway:
 Deployment configuration lives in:
 - **`.env.railway.example`** — production-flavored env vars (`APP_DEBUG=false`, `SESSION_ENCRYPT=true`, `FILESYSTEM_DISK=s3`, `QUEUE_CONNECTION=database`, `LOG_STACK=stderr`). Set these in the Railway service's **Variables** tab; the `${{MySQL.*}}` references auto-fill from the Railway MySQL plugin.
 - **`Dockerfile`** — non-root `www-data` container, `HEALTHCHECK` probing `/api/v1/health`, `intl` extension installed, pinned to `php:8.2.25-cli-alpine`.
-- **`docker/entrypoint.sh`** — boot sequence: `storage:link` → wait for DB (PDO probe) → `migrate --force` → `db:seed --force` (idempotent, aborts on failure) → `php artisan serve` on `$PORT`.
+- **`docker/entrypoint.sh`** — boot sequence: `storage:link` → wait for DB (PDO probe) → `migrate --force` → `db:seed --force` (idempotent, env-gated on `APP_ENV=local` or `SEED_DEMO=true`, aborts on failure) → `php artisan serve` on `$PORT`.
 - **`railway.worker.json`** / **`railway.scheduler.json`** — auxiliary queue-worker and scheduler Railway services. Both use the shared `docker/wait-for-db.sh` probe. Required for `SendPushNotification` delivery and appointment/assignment reminders.
 - **`docker-compose.yml`** — full local stack: `app`, `mysql`, `queue-worker`, `scheduler` (via `schedule:work`).
 
@@ -221,4 +231,7 @@ Deployment configuration lives in:
 
 Set `FILESYSTEM_DISK=s3` plus the `AWS_*` env vars. Patient submissions and assignment worksheets are served **only** through authenticated download routes — the bucket must be **private** (block-public-access on). With no S3 creds, the app falls back to the private `local` disk (uploads reset on redeploy).
 
-See `CLAUDE.md` for architectural conventions and `TheraConnect_Agent_Spec.md` for the original full specification.
+### Push notifications (FCM)
+
+The push notification code is fully implemented (backend + Flutter foreground/background/tap-to-deeplink) but disabled by default — in-app notifications still work without it. To activate, create a Firebase project, drop in the `google-services.json`, and set `FCM_PROJECT_ID` + `FCM_CREDENTIALS_B64` env vars. See **`FCM_SETUP.md`** for the full 15-minute walkthrough.
+

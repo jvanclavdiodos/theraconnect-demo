@@ -7,6 +7,7 @@ use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Resources\PatientResource;
 use App\Http\Resources\UserResource;
+use App\Jobs\SendPushNotification;
 use App\Models\Clinician;
 use App\Models\Patient;
 use App\Models\User;
@@ -38,7 +39,15 @@ class AuthController extends Controller
             ]);
 
             if ($request->filled('requested_clinician_id')) {
-                $patientRequests->submit($patient, Clinician::findOrFail($request->requested_clinician_id));
+                // Capture the notification so the push fires after commit —
+                // matches PatientRequestController@approve/deny. Without this
+                // the clinician only learns about the request on dashboard
+                // refresh, never via push.
+                $notification = $patientRequests->submit(
+                    $patient,
+                    Clinician::findOrFail($request->requested_clinician_id)
+                );
+                SendPushNotification::dispatch($notification->id)->afterCommit();
             }
 
             return $user;
