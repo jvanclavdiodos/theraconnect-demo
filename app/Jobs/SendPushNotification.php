@@ -12,6 +12,16 @@ class SendPushNotification implements ShouldQueue
 {
     use Queueable;
 
+    /**
+     * Cap retry attempts. Without this Laravel's queue defaults to unlimited
+     * retries; a persistently-failing FCM call would loop forever, generating
+     * duplicate push notifications on each retry (the job had no sent_at
+     * idempotency guard before this change either).
+     */
+    public int $tries = 3;
+
+    public int $timeout = 30;
+
     public function __construct(
         private int $notificationId,
     ) {}
@@ -21,6 +31,17 @@ class SendPushNotification implements ShouldQueue
         $notification = Notification::find($this->notificationId);
 
         if (! $notification) {
+            return;
+        }
+
+        // Idempotency guard: if a previous run already dispatched at least one
+        // successful FCM send, the notification row's sent_at is set. A retry
+        // (queue-worker overlap, manual re-run, or failure-recovery requeue)
+        // would otherwise re-iterate every device token and fan out duplicate
+        // pushes to every device that already received one. Early-return keeps
+        // the job at-most-effectively-once for the user-visible side (push
+        // delivery), acceptable because FCM has its own delivery-retry layer.
+        if ($notification->sent_at !== null) {
             return;
         }
 

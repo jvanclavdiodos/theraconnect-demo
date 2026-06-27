@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Rules\StrongPassword;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
@@ -33,8 +34,26 @@ class AccountController extends Controller
         ]);
 
         $user = $request->user();
-        $user->password = $request->password;
-        $user->save();
+
+        // Wrap the password change + token/session revocation in a single
+        // transaction so a token-revocation failure rolls back the password
+        // change (a stolen token otherwise outlives the user's password
+        // change). Mirrors Api\V1\PasswordController::update which keeps only
+        // the calling token; here we revoke ALL of the user's Sanctum tokens
+        // (staff uses session auth — no "current token" to preserve) and also
+        // invalidate every OTHER active session on the account, so a hijacked
+        // browser session can't outlive the password change.
+        DB::transaction(function () use ($user, $request) {
+            $user->password = $request->password;
+            $user->save();
+
+            $user->tokens()->delete();
+
+            DB::table('sessions')
+                ->where('user_id', $user->id)
+                ->where('id', '!=', session()->getId())
+                ->delete();
+        });
 
         return back()->with('status', 'Password updated.');
     }

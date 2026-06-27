@@ -8,6 +8,7 @@ use App\Models\Patient;
 use App\Rules\StrongPassword;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -68,8 +69,27 @@ class PortalProfileController extends Controller
         ]);
 
         $user = $request->user();
-        $user->password = $request->password;
-        $user->save();
+
+        // Mirror Api\V1\PasswordController::update: wrap the password change
+        // + Sanctum token revocation in a single transaction so a revocation
+        // failure rolls back the password change. The portal uses session
+        // auth, so we revoke ALL bearer tokens (the patient's other mobile
+        // devices + any attacker-stolen tokens) — the patient re-auths their
+        // mobile app on next launch. Also invalidates other browser sessions
+        // to close hijacked-session windows. Without this, a patient who
+        // suspects compromise and changes their password leaves stolen bearer
+        // tokens valid for up to 7 days (Sanctum expiration).
+        DB::transaction(function () use ($user, $request) {
+            $user->password = $request->password;
+            $user->save();
+
+            $user->tokens()->delete();
+
+            DB::table('sessions')
+                ->where('user_id', $user->id)
+                ->where('id', '!=', session()->getId())
+                ->delete();
+        });
 
         return redirect()
             ->route('portal.profile.show')

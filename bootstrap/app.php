@@ -8,6 +8,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\PostTooLargeException;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
@@ -73,7 +74,15 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->view('errors.404', [], 404);
         });
 
-        $exceptions->renderable(function (AuthorizationException $e, $request) {
+        // Laravel's Handler::prepareException() wraps AuthorizationException
+        // in Symfony's AccessDeniedHttpException BEFORE the custom renderable
+        // fires, so registering the closure for AuthorizationException alone
+        // was dead code — the wrapped exception bypassed it and Symfony's
+        // default "This action is unauthorized." + stack-trace renderer ran
+        // instead. Matching on BOTH classes (the wrapped form is what
+        // actually reaches the renderer at runtime) restores the intended
+        // `{message:'Forbidden.'}` JSON / `errors.403` view responses.
+        $exceptions->renderable(function (AuthorizationException | AccessDeniedHttpException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Forbidden.'], 403);
             }
