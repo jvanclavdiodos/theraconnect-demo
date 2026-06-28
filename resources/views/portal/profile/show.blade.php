@@ -18,7 +18,7 @@
             <div class="card-body text-center">
                 @if(auth()->user()->hasAvatar())
                     <img src="{{ route('portal.profile.avatar') }}" alt="avatar" class="rounded-circle mb-3"
-                         style="width:96px;height:96px;object-fit:cover;border:1px solid #dee2e6;">
+                         style="width:96px;height:96px;object-fit:cover;border:1px solid var(--bs-border-color);">
                 @else
                     <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3"
                          style="width:96px;height:96px;"><i class="bi bi-person fs-1 text-secondary"></i></div>

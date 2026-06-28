@@ -434,6 +434,54 @@ a:hover { color: var(--tc-teal-dark); }
 .pw-req.ok { color: var(--tc-green); }
 .pw-req.bad { color: var(--tc-red); }
 
+/* ── Dark-mode fixes for non-adaptive Bootstrap utilities ───────────────────
+   Bootstrap 5.3's .bg-white / .bg-light / .text-dark / .text-black and the
+   .table-light variant are FIXED colours — they do NOT follow data-bs-theme.
+   They're used across the app for chat bubbles, card headers/footers, unread
+   notification rows, avatar placeholders and table headers; in dark mode they
+   render as bright panels with body-coloured (i.e. light) text on top, which
+   is unreadable. Remap them to the dark surface tokens so contrast holds.
+   All rules are scoped to the dark theme, so light mode is untouched.
+   (.bg-* / .text-* are !important utilities in Bootstrap, so the overrides
+   must be !important to win.) */
+[data-bs-theme="dark"] .bg-white {
+  background-color: var(--tc-surface) !important;
+  color: var(--tc-slate);
+}
+[data-bs-theme="dark"] .bg-light {
+  /* A touch lighter than the card surface so chat bubbles / unread rows still
+     read as a distinct, slightly-raised surface. */
+  background-color: var(--tc-neutral-200) !important;
+  color: var(--tc-slate);
+}
+[data-bs-theme="dark"] .text-dark,
+[data-bs-theme="dark"] .text-black {
+  color: var(--tc-slate) !important;
+}
+
+/* Table header variant — drive it off the dark tokens so .table-light theads
+   match the rest of the (dark) table instead of flashing a bright band. */
+[data-bs-theme="dark"] .table-light {
+  --bs-table-bg: var(--tc-neutral-100);
+  --bs-table-color: var(--tc-slate);
+  --bs-table-border-color: var(--tc-neutral-200);
+}
+
+/* Secondary outline buttons (the navbar's theme toggle, notification bell and
+   mobile sidebar toggle are .btn-outline-secondary) — Bootstrap's default
+   greys are muddy/low-contrast on the dark navbar. Repoint them at the slate
+   tokens so the icons and borders stay legible in every state. */
+[data-bs-theme="dark"] .btn-outline-secondary {
+  --bs-btn-color: var(--tc-slate-mid);
+  --bs-btn-border-color: var(--tc-neutral-300);
+  --bs-btn-hover-bg: var(--tc-neutral-200);
+  --bs-btn-hover-border-color: var(--tc-neutral-300);
+  --bs-btn-hover-color: var(--tc-slate);
+  --bs-btn-active-bg: var(--tc-neutral-200);
+  --bs-btn-active-border-color: var(--tc-neutral-300);
+  --bs-btn-active-color: var(--tc-slate);
+}
+
 /* -- Reduced motion ------------------------------------------------------
    Respect prefers-reduced-motion: disable sidebar slide, card hover lifts,
    filter-pill transitions, etc. for users with motion sensitivity.

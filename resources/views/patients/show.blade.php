@@ -12,7 +12,7 @@
     <div class="d-flex align-items-center gap-3">
         @if ($patient->user->hasAvatar())
             <img src="{{ route('avatars.show', $patient->user) }}" alt="avatar"
-                 style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:1px solid #dee2e6;">
+                 style="width:56px;height:56px;border-radius:50%;object-fit:cover;border:1px solid var(--bs-border-color);">
         @endif
         <h2 class="mb-0">{{ $patient->user->name }}</h2>
     </div>
