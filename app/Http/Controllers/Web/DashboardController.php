@@ -30,7 +30,13 @@ class DashboardController extends Controller
 
         $pendingAppointments = $appointments()->where('status', 'pending')->count();
         $todayAppointments = $appointments()->whereDate('scheduled_at', today())->count();
-        $recentAppointments = $appointments()->with('patient.user')->latest()->take(5)->get();
+        $recentAppointments = $appointments()
+            ->whereNotNull('patient_id')
+            ->whereHas('patient')
+            ->with('patient.user')
+            ->latest()
+            ->take(5)
+            ->get();
 
         $assignments = fn () => $clinicianId
             ? Assignment::where('clinician_id', $clinicianId)
