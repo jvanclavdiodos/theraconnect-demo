@@ -139,4 +139,47 @@ class ChatbotFlowTest extends TestCase
             ->assertJsonPath('data.intent_key', 'clinic_hours')
             ->assertJsonPath('data.is_fallback', false);
     }
+
+    // ── Portal (web session) chatbot ─────────────────────────────────────────
+
+    public function test_portal_chatbot_page_renders_for_patient(): void
+    {
+        $patient = $this->createPatient('portal-chat@test.com');
+
+        $this->actingAs($patient['user'])
+            ->get('/portal/chatbot')
+            ->assertStatus(200)
+            ->assertSee('Joy')
+            ->assertSee('alpine:init');
+    }
+
+    public function test_portal_chatbot_message_returns_json_exchange(): void
+    {
+        $patient = $this->createPatient('portal-chat2@test.com');
+
+        $response = $this->actingAs($patient['user'])
+            ->postJson('/portal/chatbot', [
+                'message' => 'What are your clinic hours?',
+            ]);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure(['question', 'answer' => ['reply', 'intent_key', 'is_fallback']])
+            ->assertJsonPath('answer.intent_key', 'clinic_hours')
+            ->assertJsonPath('answer.is_fallback', false);
+    }
+
+    public function test_portal_chatbot_rejects_unauthenticated(): void
+    {
+        $this->postJson('/portal/chatbot', ['message' => 'hello'])
+            ->assertStatus(401);
+    }
+
+    public function test_portal_chatbot_empty_message_rejected(): void
+    {
+        $patient = $this->createPatient('portal-chat3@test.com');
+
+        $this->actingAs($patient['user'])
+            ->postJson('/portal/chatbot', ['message' => ''])
+            ->assertStatus(422);
+    }
 }

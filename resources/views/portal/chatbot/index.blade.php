@@ -77,7 +77,7 @@
 // the conversation history in client-side state so each send appends to the
 // transcript instead of triggering a full page reload (the prior session-
 // flash approach lost all history after every message).
-window.Alpine?.data('chatSession', (opts) => ({
+document.addEventListener('alpine:init', () => Alpine.data('chatSession', (opts) => ({
     messages: opts.seed ? [opts.seed] : [],
     draft: '',
     awaiting: false,
@@ -132,7 +132,7 @@ window.Alpine?.data('chatSession', (opts) => ({
             this.awaiting = false;
         }
     },
-}));
+})));
 </script>
 @endpush
 @endsection
