@@ -139,4 +139,39 @@ class ChatbotFlowTest extends TestCase
             ->assertJsonPath('data.intent_key', 'clinic_hours')
             ->assertJsonPath('data.is_fallback', false);
     }
+
+    public function test_chatbot_quota_429_opens_cooldown_and_stops_calling_gemini(): void
+    {
+        config([
+            'services.gemini.key' => 'test-key',
+            'services.gemini.model' => 'gemini-2.5-flash',
+        ]);
+        // Mirror the real exhausted-free-tier response observed against Gemini.
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'error' => ['code' => 429, 'status' => 'RESOURCE_EXHAUSTED'],
+            ], 429),
+        ]);
+
+        $patient = $this->createPatient('quota@test.com');
+        $token = $this->getApiToken($patient['user']);
+
+        // First message tries the AI path, gets 429, falls back to rule-based.
+        $this->withHeaders($this->apiHeaders($token))
+            ->postJson('/api/v1/chatbot/message', ['message' => 'What are your clinic hours?'])
+            ->assertStatus(200)
+            ->assertJsonPath('data.intent_key', 'clinic_hours')
+            ->assertJsonPath('data.is_fallback', false);
+
+        // Second message: cooldown is active, so the AI path is skipped entirely
+        // — but the chatbot still answers from the rule-based matcher.
+        $this->withHeaders($this->apiHeaders($token))
+            ->postJson('/api/v1/chatbot/message', ['message' => 'Hello there!'])
+            ->assertStatus(200)
+            ->assertJsonPath('data.intent_key', 'greeting');
+
+        // Only the first message ever reached Gemini; the cooldown suppressed
+        // the doomed second round-trip.
+        Http::assertSentCount(1);
+    }
 }
