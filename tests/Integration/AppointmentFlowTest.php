@@ -5,7 +5,9 @@ namespace Tests\Integration;
 use App\Exceptions\SlotUnavailableException;
 use App\Models\Appointment;
 use App\Models\Assignment;
+use App\Models\Clinician;
 use App\Models\Notification;
+use App\Models\User;
 use App\Services\AppointmentService;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\DB;
@@ -497,6 +499,128 @@ class AppointmentFlowTest extends TestCase
             ->assertStatus(403);
 
         $this->assertEquals('rejected', $appointment->fresh()->status);
+    }
+
+    /**
+     * Approving an appointment must link the patient to that clinician so they
+     * appear in the caseload and messaging becomes available.
+     */
+    public function test_approving_appointment_assigns_patient_to_clinician(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'mode' => 'in_person',
+            'status' => 'pending',
+        ]);
+
+        $this->assertNull($patient['patient']->fresh()->assigned_clinician_id);
+
+        app(AppointmentService::class)->approve($appointment);
+
+        $this->assertEquals(
+            $clinician['clinician']->id,
+            $patient['patient']->fresh()->assigned_clinician_id
+        );
+    }
+
+    /**
+     * If the patient already has an assigned clinician (e.g. via the sign-up
+     * request flow), approving an appointment with a different clinician must
+     * NOT overwrite the existing care relationship.
+     */
+    public function test_approving_appointment_does_not_overwrite_existing_assignment(): void
+    {
+        $userA = User::create(['name' => 'Dr. A', 'email' => 'dr-a@test.com', 'password' => 'password', 'role' => 'clinician']);
+        $clinicianA = Clinician::create(['user_id' => $userA->id, 'license_no' => 'LIC-A', 'specialization' => 'Test']);
+
+        $userB = User::create(['name' => 'Dr. B', 'email' => 'dr-b@test.com', 'password' => 'password', 'role' => 'clinician']);
+        $clinicianB = Clinician::create(['user_id' => $userB->id, 'license_no' => 'LIC-B', 'specialization' => 'Test']);
+
+        $patient = $this->createPatient();
+        $patient['patient']->update(['assigned_clinician_id' => $clinicianA->id]);
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinicianB->id,
+            'requested_at' => '2030-12-31 10:00:00',
+            'mode' => 'in_person',
+            'status' => 'pending',
+        ]);
+
+        app(AppointmentService::class)->approve($appointment);
+
+        $this->assertEquals(
+            $clinicianA->id,
+            $patient['patient']->fresh()->assigned_clinician_id,
+            'Existing assignment to clinician A must not be overwritten.'
+        );
+    }
+
+    /**
+     * After a clinician approves an appointment, the patient should appear in
+     * that clinician's active patient list.
+     */
+    public function test_approved_patient_appears_in_clinician_patient_list(): void
+    {
+        $admin = $this->createAdmin();
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'mode' => 'in_person',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->patch("/appointments/{$appointment->id}/approve")
+            ->assertRedirect();
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get('/patients')
+            ->assertOk()
+            ->assertSee($patient['user']->name);
+    }
+
+    /**
+     * After appointment approval the clinician must be able to open a message
+     * thread with the patient (previously forbidden because the caseload link
+     * was never written).
+     */
+    public function test_clinician_can_message_patient_after_appointment_approval(): void
+    {
+        $admin = $this->createAdmin();
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'mode' => 'in_person',
+            'status' => 'pending',
+        ]);
+
+        // Before approval the clinician has no caseload relationship — messaging is blocked.
+        $this->actingAs($clinician['user'], 'web')
+            ->post('/messages/open', ['patient_id' => $patient['patient']->id])
+            ->assertStatus(403);
+
+        $this->actingAs($admin, 'web')
+            ->patch("/appointments/{$appointment->id}/approve")
+            ->assertRedirect();
+
+        // After approval the patient is on the caseload — messaging must succeed.
+        $this->actingAs($clinician['user'], 'web')
+            ->post('/messages/open', ['patient_id' => $patient['patient']->id])
+            ->assertRedirect();
     }
 
     /**
