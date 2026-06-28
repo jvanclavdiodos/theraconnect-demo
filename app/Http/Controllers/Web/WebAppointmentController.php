@@ -26,6 +26,8 @@ class WebAppointmentController extends Controller
     public function index(Request $request): View
     {
         $query = Appointment::with(['patient.user', 'clinician.user'])
+            ->whereNotNull('patient_id')
+            ->whereHas('patient')
             ->latest('requested_at');
 
         // Clinicians see only their own caseload; admins see every appointment.
