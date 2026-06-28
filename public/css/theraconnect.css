@@ -32,6 +32,12 @@
   --tc-surface: #ffffff;
   --tc-surface-muted: #F8FAFB;
 
+  /* The sidebar is always a dark slate panel with light text in BOTH themes,
+     so its background must NOT invert in dark mode. Keep it on a dedicated
+     token rather than --tc-slate (which flips to a light value under
+     [data-bs-theme="dark"] and would render light text on a light panel). */
+  --tc-sidebar-bg: #1A2332;
+
   /* Status — amber / green / red / blue (each: base / soft bg / dark text) */
   --tc-amber: #D97706;       --tc-amber-bg: #FEF3C7;  --tc-amber-text: #92400E;
   --tc-green: #059669;       --tc-green-bg: #D1FAE5;  --tc-green-text: #065F46;
@@ -121,7 +127,7 @@ a:hover { color: var(--tc-teal-dark); }
 
 /* ----------------------------------------------------------------- Sidebar */
 #sidebar-wrapper {
-  background: var(--tc-slate) !important;
+  background: var(--tc-sidebar-bg) !important;
   color: #cbd5e1;
 }
 
