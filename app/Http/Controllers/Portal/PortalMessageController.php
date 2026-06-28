@@ -26,12 +26,7 @@ class PortalMessageController extends Controller
         abort_unless($patient !== null, 404);
 
         if (! $patient->assigned_clinician_id) {
-            $patient->loadMissing('requestedClinician.user');
-
-            return view('portal.messages.index', [
-                'conversation' => null,
-                'patient' => $patient,
-            ]);
+            return view('portal.messages.index', ['conversation' => null]);
         }
 
         $patient->loadMissing('assignedClinician.user');
@@ -41,10 +36,7 @@ class PortalMessageController extends Controller
 
         $this->messages->markRead($conversation, $request->user());
 
-        return view('portal.messages.index', [
-            'conversation' => $conversation,
-            'patient' => $patient,
-        ]);
+        return view('portal.messages.index', compact('conversation'));
     }
 
     public function send(Request $request, Conversation $conversation): RedirectResponse

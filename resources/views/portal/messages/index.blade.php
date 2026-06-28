@@ -10,21 +10,11 @@
 <h1 class="tc-page-title mb-3">Messages</h1>
 
 @if(! $conversation)
-    @php
-        $pendingClinician = $patient?->clinician_request_status === \App\Models\Patient::REQUEST_PENDING
-            ? $patient->requestedClinician
-            : null;
-    @endphp
     <div class="card">
         <div class="card-body tc-empty">
             <div class="tc-empty-icon"><i class="bi bi-chat-dots"></i></div>
-            @if($pendingClinician)
-                <div>Your request to {{ $pendingClinician->user?->name ?? 'your selected clinician' }} is pending approval.</div>
-                <p class="text-muted small mt-1 mb-0">Once the request is approved, you can start a conversation here.</p>
-            @else
-                <div>You don't have an assigned clinician to message yet.</div>
-                <p class="text-muted small mt-1 mb-0">Once a clinician is assigned to you, you can start a conversation here.</p>
-            @endif
+            <div>You don't have an assigned clinician to message yet.</div>
+            <p class="text-muted small mt-1 mb-0">Once a clinician is assigned to you, you can start a conversation here.</p>
         </div>
     </div>
 @else

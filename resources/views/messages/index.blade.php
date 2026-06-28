@@ -10,21 +10,6 @@
 @php $me = auth()->id(); @endphp
 <h2>Messages</h2>
 
-@if($pendingRequests->isNotEmpty())
-    <div class="alert alert-warning d-flex align-items-start gap-2 mt-3" role="alert">
-        <i class="bi bi-person-plus fs-5"></i>
-        <div class="flex-grow-1">
-            <div class="fw-semibold">
-                {{ $pendingRequests->count() }} patient request{{ $pendingRequests->count() === 1 ? '' : 's' }} pending approval
-            </div>
-            <div class="small">
-                Approve the request before starting a message thread. Pending patients are not added to your active caseload yet.
-            </div>
-            <a href="{{ route('patients.index') }}" class="btn btn-sm btn-outline-dark mt-2">Review requests</a>
-        </div>
-    </div>
-@endif
-
 {{-- Compose: start/open a thread with a caseload patient --}}
 <div class="card shadow-sm mt-3">
     <div class="card-body">
