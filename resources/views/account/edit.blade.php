@@ -15,7 +15,7 @@
         <div class="d-flex align-items-center gap-3 mb-3">
             @if ($user->hasAvatar())
                 <img src="{{ route('avatars.show', $user) }}" alt="avatar"
-                     style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:1px solid var(--bs-border-color);">
+                     style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:1px solid #dee2e6;">
             @else
                 <span class="rounded-circle d-inline-flex align-items-center justify-content-center"
                       style="width:88px;height:88px;background:var(--tc-teal,#0D6E8A);color:#fff;font-size:1.75rem;">

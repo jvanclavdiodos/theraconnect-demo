@@ -63,7 +63,7 @@
                                 @if ($submission->file_path && $submission->previewKind() === 'image')
                                     <a href="#" data-bs-toggle="modal" data-bs-target="#subModal{{ $submission->id }}">
                                         <img src="{{ route('submissions.preview', $submission) }}" alt="preview"
-                                             style="height:44px;width:44px;object-fit:cover;border-radius:6px;border:1px solid var(--bs-border-color);">
+                                             style="height:44px;width:44px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;">
                                     </a>
                                 @elseif ($submission->file_path)
                                     <i class="bi {{ $submission->previewKind() === 'pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-text' }} fs-4 text-secondary"></i>

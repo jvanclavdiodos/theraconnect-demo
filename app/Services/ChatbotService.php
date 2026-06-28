@@ -3,9 +3,6 @@
 namespace App\Services;
 
 use App\Models\ChatbotIntent;
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -19,102 +16,25 @@ class ChatbotService
     private const GEMINI_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
 
     /**
-     * Cache flag that, while present, suppresses the Gemini call so we answer
-     * straight from the rule-based matcher. Set after a quota (429) or provider
-     * outage (5xx / timeout) so we don't make every patient wait on — and
-     * spam the logs with — a provider we already know is failing.
-     */
-    private const COOLDOWN_KEY = 'chatbot:ai:cooldown';
-
-    private const COOLDOWN_SECONDS = 300; // 5 minutes; the AI path auto-resumes after.
-
-    /**
      * Resolve a patient message to a reply. When a Gemini API key is
-     * configured (and not in a failure cooldown), an LLM (Gemini Flash)
-     * answers, grounded on the chatbot knowledge base. If the key is absent or
-     * the call fails for any reason, we fall back to the original Jaccard
-     * intent matcher — so the chatbot keeps working with zero external
-     * dependencies.
+     * configured, an LLM (Gemini Flash) answers, grounded on the chatbot
+     * knowledge base. If the key is absent or the call fails for any reason,
+     * we fall back to the original Jaccard intent matcher — so the chatbot
+     * keeps working with zero external dependencies.
      */
     public function resolve(string $message): array
     {
-        if ($this->aiAvailable()) {
+        if (config('services.gemini.key')) {
             try {
                 return $this->aiResolve($message);
-            } catch (RequestException $e) {
-                // Gemini answered with an error status (e.g. 429 quota
-                // exhausted, 401 bad key, 5xx outage). Log the status + body so
-                // the cause is actually diagnosable, and back off on the
-                // persistent failure modes.
-                $this->reportHttpFailure($e);
-            } catch (ConnectionException $e) {
-                // Timed out / unreachable — back off so the next patient isn't
-                // also made to wait on a stalled provider.
-                $this->beginCooldown();
-                Log::warning('Chatbot AI path unreachable; using rule-based fallback.', [
-                    'error' => $e->getMessage(),
-                    'cooldown_seconds' => self::COOLDOWN_SECONDS,
-                ]);
             } catch (\Throwable $e) {
-                // Unexpected response shape or other error — fall back without a
-                // cooldown (likely a one-off, not a provider-wide problem).
-                Log::warning('Chatbot AI path failed; using rule-based fallback.', [
+                Log::warning('Chatbot AI path failed, using Jaccard fallback', [
                     'error' => $e->getMessage(),
-                    'exception' => $e::class,
                 ]);
             }
         }
 
         return $this->jaccardResolve($message);
-    }
-
-    /**
-     * The AI path is usable when a key is configured AND we are not inside a
-     * post-failure cooldown window.
-     */
-    private function aiAvailable(): bool
-    {
-        if (! config('services.gemini.key')) {
-            return false;
-        }
-
-        return ! Cache::has(self::COOLDOWN_KEY);
-    }
-
-    /**
-     * Log a Gemini HTTP error with enough context to diagnose it, and open a
-     * cooldown for the failure modes that persist beyond a single request
-     * (429 quota/rate-limit, 5xx provider outage).
-     */
-    private function reportHttpFailure(RequestException $e): void
-    {
-        $status = $e->response?->status();
-        $body = $e->response ? Str::limit($e->response->body(), 500) : null;
-        $persistent = $status === 429 || ($status !== null && $status >= 500);
-
-        if ($persistent) {
-            $this->beginCooldown();
-        }
-
-        $context = [
-            'status' => $status,
-            'body' => $body,
-            'model' => config('services.gemini.model'),
-            'cooldown_seconds' => $persistent ? self::COOLDOWN_SECONDS : null,
-        ];
-
-        // A 429 means the Gemini quota/billing needs operator attention, so
-        // surface it at error level; other statuses stay at warning.
-        if ($status === 429) {
-            Log::error('Chatbot AI quota/rate limit hit (HTTP 429) — check Gemini billing/quota at https://ai.dev/rate-limit. Falling back to rule-based matcher.', $context);
-        } else {
-            Log::warning('Chatbot AI path HTTP failure; using rule-based fallback.', $context);
-        }
-    }
-
-    private function beginCooldown(): void
-    {
-        Cache::put(self::COOLDOWN_KEY, true, self::COOLDOWN_SECONDS);
     }
 
     private function aiResolve(string $message): array
