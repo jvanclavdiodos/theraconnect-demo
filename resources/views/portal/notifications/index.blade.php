@@ -39,9 +39,8 @@
 <div class="card" x-data="{ unreadCount: {{ $notifications->where('read_at', null)->count() }} }">
     <div class="list-group list-group-flush">
         @forelse($notifications as $n)
-            <div class="list-group-item d-flex align-items-start gap-3 {{ $n->read_at ? '' : 'tc-notification-unread' }}"
-                 x-data="{ read: {{ $n->read_at ? 'true' : 'false' }} }"
-                 :class="{ 'tc-notification-unread': !read }">
+            <div class="list-group-item d-flex align-items-start gap-3"
+                 x-data="{ read: {{ $n->read_at ? 'true' : 'false' }} }">
                 <i class="bi mt-1" :class="read ? 'bi-bell' : 'bi-bell-fill text-primary'" aria-hidden="true"></i>
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">{{ $n->title }}</div>
