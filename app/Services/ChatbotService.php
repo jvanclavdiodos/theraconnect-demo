@@ -46,7 +46,8 @@ class ChatbotService
             'x-goog-api-key' => config('services.gemini.key'),
             'content-type' => 'application/json',
         ])
-            ->timeout(20)
+            ->connectTimeout(5)
+            ->timeout(15)
             ->post($url, [
                 'systemInstruction' => [
                     'parts' => [['text' => $this->buildSystemPrompt()]],

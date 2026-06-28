@@ -91,9 +91,13 @@ document.addEventListener('alpine:init', () => Alpine.data('chatSession', (opts)
         this.draft = '';
         this.awaiting = true;
 
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 15000);
+
         try {
             const res = await fetch(this.endpoint, {
                 method: 'POST',
+                signal: controller.signal,
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': this.csrf,
@@ -110,25 +114,26 @@ document.addEventListener('alpine:init', () => Alpine.data('chatSession', (opts)
             }
 
             // Append the user's question + Joy's reply to the transcript.
-            this.messages.push({
+            this.messages = [...this.messages, {
                 question: body.question || question,
                 answer: body.answer || { reply: "I'm not sure how to help with that yet." },
-            });
+            }];
 
-            // Auto-scroll to the newest exchange.
+            // Auto-scroll to newest exchange (flex-column-reverse: newest = scrollTop 0).
             this.$nextTick(() => {
                 const scroller = this.$refs.scroll;
-                if (scroller) scroller.scrollTop = scroller.scrollHeight;
+                if (scroller) scroller.scrollTop = 0;
             });
         } catch (err) {
             // Re-render the user's question so they can see what failed, with
             // an inline error reply rather than a popup. Never leak backend
             // internals — keep the message generic.
-            this.messages.push({
+            this.messages = [...this.messages, {
                 question: question,
                 answer: { reply: "Sorry, I couldn't reply just now. Please try again in a moment." },
-            });
+            }];
         } finally {
+            clearTimeout(timer);
             this.awaiting = false;
         }
     },
