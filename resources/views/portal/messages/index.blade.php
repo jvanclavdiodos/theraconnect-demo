@@ -28,7 +28,7 @@
             @forelse($conversation->messages as $message)
                 @php $mine = $message->sender_id === auth()->id(); @endphp
                 <div class="d-flex mb-2 {{ $mine ? 'justify-content-end' : 'justify-content-start' }}">
-                    <div class="p-2 px-3 rounded-3 {{ $mine ? 'bg-primary text-white' : 'bg-light' }}" style="max-width: 75%;">
+                    <div class="p-2 px-3 rounded-3 {{ $mine ? 'bg-primary text-white' : 'tc-message-other' }}" style="max-width: 75%;">
                         <div style="white-space:pre-wrap;">{{ $message->body }}</div>
                         <div class="small {{ $mine ? 'text-white-50' : 'text-muted' }} text-end mt-1">
                             {{ $message->created_at->format('M j, g:i A') }}
