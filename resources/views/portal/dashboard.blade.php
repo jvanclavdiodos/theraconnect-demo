@@ -88,8 +88,13 @@
             </thead>
             <tbody>
                 @forelse($upcoming as $appt)
-                    <tr style="cursor:pointer" onclick="window.location='{{ route('portal.appointments.show', $appt) }}'">
-                        <td>{{ ($appt->scheduled_at ?? $appt->requested_at)->format('D, M j · g:i A') }}</td>
+                    <tr style="position: relative; cursor: pointer;">
+                        <td>
+                            <a href="{{ route('portal.appointments.show', $appt) }}" class="stretched-link text-decoration-none text-reset"
+                               aria-label="View appointment for {{ $appt->clinician?->user?->name ?? 'your clinician' }} on {{ ($appt->scheduled_at ?? $appt->requested_at)->format('M j, g:i A') }}">
+                                {{ ($appt->scheduled_at ?? $appt->requested_at)->format('D, M j · g:i A') }}
+                            </a>
+                        </td>
                         <td>{{ $appt->clinician?->user?->name ?? '—' }}</td>
                         <td>{{ $appt->mode === 'online' ? 'Online' : 'In-person' }}</td>
                         <td><span class="badge bg-{{ $statusColor($appt->status) }}">{{ ucfirst($appt->status) }}</span></td>

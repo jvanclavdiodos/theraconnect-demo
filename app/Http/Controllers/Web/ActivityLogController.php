@@ -14,14 +14,14 @@ class ActivityLogController extends Controller
         $query = ActivityLog::with('user')->orderByDesc('created_at');
 
         if ($request->filled('event')) {
-            $query->where('event', 'like', '%' . $request->event . '%');
+            $query->where('event', 'like', '%'.$request->event.'%');
         }
 
         if ($request->filled('user')) {
             $term = $request->user;
             $query->whereHas('user', function ($q) use ($term) {
                 $q->where('name', 'like', "%{$term}%")
-                  ->orWhere('email', 'like', "%{$term}%");
+                    ->orWhere('email', 'like', "%{$term}%");
             });
         }
 

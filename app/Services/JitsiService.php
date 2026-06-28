@@ -18,6 +18,6 @@ class JitsiService
         $base = rtrim(config('services.jitsi.base_url'), '/');
         $prefix = config('services.jitsi.room_prefix', 'TheraConnect');
 
-        return "{$base}/{$prefix}-{$appointmentId}-" . Str::uuid();
+        return "{$base}/{$prefix}-{$appointmentId}-".Str::uuid();
     }
 }

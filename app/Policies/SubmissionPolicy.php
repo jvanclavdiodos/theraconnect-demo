@@ -16,8 +16,6 @@ class SubmissionPolicy
     /**
      * A patient may view their own submission. Admins/clinicians may view
      * any submission (they review them via the web dashboard).
-     *
-     * @return bool
      */
     public function view(User $user, Submission $submission): bool
     {
@@ -57,8 +55,6 @@ class SubmissionPolicy
      * dashboard. Used for completeness — there is no /api/v1/submissions
      * DELETE route today, but the policy locks down the operation if one
      * is added.
-     *
-     * @return bool
      */
     public function delete(User $user, Submission $submission): bool
     {

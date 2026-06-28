@@ -34,7 +34,9 @@
                 <hr>
                 <form method="POST" action="{{ route('portal.profile.avatar.update') }}" enctype="multipart/form-data">
                     @csrf
-                    <input type="file" name="avatar" class="form-control form-control-sm mb-2 @error('avatar') is-invalid @enderror" accept="image/*">
+                    <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp"
+                           data-validate-file data-max-bytes="4194304" data-allowed-extensions="jpg,jpeg,png,webp"
+                           class="form-control form-control-sm mb-2 @error('avatar') is-invalid @enderror">
                     @error('avatar')<div class="invalid-feedback d-block text-start">{{ $message }}</div>@enderror
                     <button class="btn btn-sm btn-outline-primary w-100">Upload photo</button>
                 </form>
@@ -69,4 +71,8 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+    <script src="{{ asset('js/file-upload.js') }}" defer></script>
+@endpush
 @endsection

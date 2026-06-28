@@ -81,6 +81,23 @@ class NotificationService
         );
     }
 
+    /**
+     * Sent to the assigned clinician when a patient cancels their own
+     * appointment, so the clinician's calendar isn't left expecting a
+     * no-show. The patient already knows (they performed the action); this
+     * is the symmetric notification to the other party.
+     */
+    public function appointmentCancelledByPatient(int $clinicianUserId, string $patientName, string $requestedAt): Notification
+    {
+        return $this->create(
+            $clinicianUserId,
+            'appointment_cancelled',
+            'Appointment Cancelled',
+            "{$patientName} cancelled their appointment for {$requestedAt}.",
+            null
+        );
+    }
+
     public function appointmentReminder(int $userId, int $appointmentId, string $time): Notification
     {
         return $this->create(

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Exceptions\InvalidStateException;
 use App\Exceptions\SlotUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Jobs\SendPushNotification;
@@ -50,15 +51,19 @@ class WebAppointmentController extends Controller
     {
         Gate::authorize('manage', $appointment);
 
-        $notification = DB::transaction(function () use ($appointment) {
-            $this->appointmentService->approve($appointment);
+        try {
+            $notification = DB::transaction(function () use ($appointment) {
+                $this->appointmentService->approve($appointment);
 
-            return $this->notificationService->appointmentApproved(
-                $appointment->patient->user->id,
-                $appointment->scheduled_at->format('M d, Y h:i A'),
-                $appointment->meeting_link
-            );
-        });
+                return $this->notificationService->appointmentApproved(
+                    $appointment->patient->user->id,
+                    $appointment->scheduled_at->format('M d, Y h:i A'),
+                    $appointment->meeting_link
+                );
+            });
+        } catch (InvalidStateException $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
+        }
 
         SendPushNotification::dispatch($notification->id)->afterCommit();
 
@@ -70,13 +75,17 @@ class WebAppointmentController extends Controller
     {
         Gate::authorize('manage', $appointment);
 
-        $notification = DB::transaction(function () use ($appointment) {
-            $this->appointmentService->reject($appointment);
+        try {
+            $notification = DB::transaction(function () use ($appointment) {
+                $this->appointmentService->reject($appointment);
 
-            return $this->notificationService->appointmentRejected(
-                $appointment->patient->user->id
-            );
-        });
+                return $this->notificationService->appointmentRejected(
+                    $appointment->patient->user->id
+                );
+            });
+        } catch (InvalidStateException $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
+        }
 
         SendPushNotification::dispatch($notification->id)->afterCommit();
 
@@ -99,8 +108,13 @@ class WebAppointmentController extends Controller
             ]);
         }
 
-        // Default to 'attended' so the existing one-click "close case" still works.
-        $outcome = $request->input('outcome', 'attended');
+        // Default to 'attended' so the existing one-click "close case" still
+        // works. Validate the outcome so a crafted payload can't set an
+        // unsupported status that would otherwise silently fall through to
+        // "attended" below.
+        $outcome = $request->validate([
+            'outcome' => ['nullable', 'string', 'in:attended,no_show'],
+        ])['outcome'] ?? 'attended';
 
         if ($outcome === 'no_show') {
             $this->appointmentService->markNoShow($appointment);
@@ -169,7 +183,7 @@ class WebAppointmentController extends Controller
 
                 return $created;
             });
-        } catch (SlotUnavailableException $e) {
+        } catch (SlotUnavailableException | InvalidStateException $e) {
             return back()->withErrors([
                 'scheduled_at' => $e->getMessage(),
             ]);

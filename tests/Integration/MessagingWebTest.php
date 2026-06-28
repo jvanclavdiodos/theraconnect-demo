@@ -4,6 +4,7 @@ namespace Tests\Integration;
 
 use App\Models\Clinician;
 use App\Models\Conversation;
+use App\Models\Message;
 use App\Models\User;
 use Tests\TestCase;
 
@@ -67,7 +68,7 @@ class MessagingWebTest extends TestCase
         ]);
         $this->assertSame(
             'Hello from your clinician',
-            \App\Models\Message::where('conversation_id', $conversation->id)->first()->body
+            Message::where('conversation_id', $conversation->id)->first()->body
         );
         // Patient was notified.
         $this->assertDatabaseHas('notifications', [

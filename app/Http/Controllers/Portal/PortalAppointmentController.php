@@ -9,6 +9,7 @@ use App\Models\Appointment;
 use App\Models\Clinician;
 use App\Services\AppointmentService;
 use App\Services\NotificationService;
+use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -85,8 +86,23 @@ class PortalAppointmentController extends Controller
         $patient = $request->user()->patient;
         abort_unless($patient !== null, 404);
 
+        // Same rules as StoreAppointmentRequest, except clinician_id is
+        // required here (clinician-first booking). The whole-hour alignment
+        // closure is duplicated so a patient gets the clear "must be top of
+        // the hour" message instead of a generic "slot unavailable" from
+        // AvailabilityService.
         $validated = $request->validate([
-            'requested_at' => ['required', 'date', 'after:now'],
+            'requested_at' => [
+                'required',
+                'date',
+                'after:now',
+                function (string $attribute, mixed $value, \Closure $fail) {
+                    $carbon = Carbon::parse($value);
+                    if ($carbon->minute !== 0 || $carbon->second !== 0) {
+                        $fail('The requested time must be at the top of the hour (e.g., 09:00, 14:00).');
+                    }
+                },
+            ],
             'mode' => ['required', 'in:in_person,online'],
             'reason' => ['nullable', 'string', 'max:500'],
             'clinician_id' => ['required', 'exists:clinicians,id'],
@@ -132,7 +148,22 @@ class PortalAppointmentController extends Controller
             return back()->with('status', 'This appointment is already cancelled.');
         }
 
-        $this->appointments->cancel($appointment);
+        // Tell the assigned clinician the appointment was cancelled (the patient
+        // already knows — they performed the action). Wrapped in a transaction
+        // with the cancel so the push's ->afterCommit() waits for commit.
+        DB::transaction(function () use ($appointment) {
+            $appointment = $this->appointments->cancel($appointment);
+            $appointment->load('clinician.user', 'patient.user');
+
+            if ($appointment->clinician && $appointment->clinician->user) {
+                $notification = $this->notifications->appointmentCancelledByPatient(
+                    $appointment->clinician->user->id,
+                    $appointment->patient->user->name,
+                    $appointment->requested_at->format('M d, Y h:i A'),
+                );
+                SendPushNotification::dispatch($notification->id)->afterCommit();
+            }
+        });
 
         return redirect()
             ->route('portal.appointments.index')

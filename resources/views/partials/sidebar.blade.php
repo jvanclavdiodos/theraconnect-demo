@@ -16,7 +16,7 @@
     }
 @endphp
 
-<aside class="text-white" id="sidebar-wrapper" :class="{ 'open': sidebarOpen }">
+<aside class="text-white" id="sidebar-wrapper" role="navigation" aria-label="Main navigation" :class="{ 'open': sidebarOpen }">
     <div class="sidebar-heading d-flex justify-content-between align-items-center">
         <div class="tc-brand">
             <span class="tc-logo"><i class="bi bi-activity"></i></span>

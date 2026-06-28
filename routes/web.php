@@ -1,5 +1,16 @@
 <?php
 
+use App\Http\Controllers\Portal\PortalAppointmentController;
+use App\Http\Controllers\Portal\PortalAssessmentController;
+use App\Http\Controllers\Portal\PortalAssignmentController;
+use App\Http\Controllers\Portal\PortalChatbotController;
+use App\Http\Controllers\Portal\PortalDashboardController;
+use App\Http\Controllers\Portal\PortalGoalController;
+use App\Http\Controllers\Portal\PortalMessageController;
+use App\Http\Controllers\Portal\PortalMoodLogController;
+use App\Http\Controllers\Portal\PortalNoteController;
+use App\Http\Controllers\Portal\PortalNotificationController;
+use App\Http\Controllers\Portal\PortalProfileController;
 use App\Http\Controllers\Web\AccountController;
 use App\Http\Controllers\Web\ActivityLogController;
 use App\Http\Controllers\Web\AuthenticatedSessionController;
@@ -17,17 +28,6 @@ use App\Http\Controllers\Web\ProgressController;
 use App\Http\Controllers\Web\RegisterController;
 use App\Http\Controllers\Web\WebAppointmentController;
 use App\Http\Controllers\Web\WebAssignmentController;
-use App\Http\Controllers\Portal\PortalAppointmentController;
-use App\Http\Controllers\Portal\PortalAssessmentController;
-use App\Http\Controllers\Portal\PortalAssignmentController;
-use App\Http\Controllers\Portal\PortalChatbotController;
-use App\Http\Controllers\Portal\PortalDashboardController;
-use App\Http\Controllers\Portal\PortalGoalController;
-use App\Http\Controllers\Portal\PortalMessageController;
-use App\Http\Controllers\Portal\PortalMoodLogController;
-use App\Http\Controllers\Portal\PortalNoteController;
-use App\Http\Controllers\Portal\PortalNotificationController;
-use App\Http\Controllers\Portal\PortalProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -36,15 +36,18 @@ Route::get('/', function () {
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
-    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware('throttle:auth');
+    // Combined login rate limiters (5/min/IP + 5/min per email|IP) — see
+    // AppServiceProvider RateLimiter::for('login') / ('account-login'). They're
+    // applied as separate middleware so they don't share a quota.
+    Route::post('/login', [AuthenticatedSessionController::class, 'store'])->middleware(['throttle:login', 'throttle:account-login']);
 
     // Patient self-registration (parity with the mobile register screen).
     Route::get('/register', [RegisterController::class, 'create'])->name('register');
-    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:auth');
+    Route::post('/register', [RegisterController::class, 'store'])->middleware('throttle:register');
 });
 
 // Logout is shared by all authenticated roles (staff dashboard + patient portal).
-Route::middleware('auth')->post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+Route::middleware(['auth', 'throttle:10,1'])->post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
 Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -56,7 +59,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
 
     // Account / profile picture (any staff user manages their own).
     Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
-    Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
+    Route::put('/account/password', [AccountController::class, 'updatePassword'])->middleware('throttle:password-change')->name('account.password.update');
     Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->middleware('throttle:10,1')->name('account.avatar.update');
     Route::delete('/account/avatar', [AccountController::class, 'destroyAvatar'])->name('account.avatar.destroy');
     Route::get('/avatars/{user}', [AccountController::class, 'showAvatar'])->name('avatars.show');
@@ -194,7 +197,7 @@ Route::middleware(['auth', 'role:patient'])->prefix('portal')->name('portal.')->
     Route::get('/profile', [PortalProfileController::class, 'show'])->name('profile.show');
     Route::get('/profile/edit', [PortalProfileController::class, 'edit'])->name('profile.edit');
     Route::match(['put', 'patch'], '/profile', [PortalProfileController::class, 'update'])->name('profile.update');
-    Route::put('/profile/password', [PortalProfileController::class, 'updatePassword'])->name('profile.password.update');
+    Route::put('/profile/password', [PortalProfileController::class, 'updatePassword'])->middleware('throttle:password-change')->name('profile.password.update');
     Route::post('/profile/avatar', [PortalProfileController::class, 'updateAvatar'])->middleware('throttle:10,1')->name('profile.avatar.update');
     Route::delete('/profile/avatar', [PortalProfileController::class, 'destroyAvatar'])->name('profile.avatar.destroy');
     Route::get('/profile/avatar', [PortalProfileController::class, 'avatar'])->name('profile.avatar');

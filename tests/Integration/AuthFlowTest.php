@@ -2,6 +2,7 @@
 
 namespace Tests\Integration;
 
+use App\Models\User;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
@@ -53,7 +54,7 @@ class AuthFlowTest extends TestCase
             'employment_status' => 'Student',
         ]);
         // personal_issues is encrypted at rest — verify via the model.
-        $patient = \App\Models\User::where('email', 'profile@test.com')->first()->patient;
+        $patient = User::where('email', 'profile@test.com')->first()->patient;
         $this->assertSame('Exam stress and poor sleep.', $patient->personal_issues);
     }
 

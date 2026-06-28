@@ -7,7 +7,7 @@
   "deploy": {
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5,
-    "startCommand": "sh -c \"until php artisan db:show > /dev/null 2>&1; do echo 'Waiting for database...'; sleep 2; done && php artisan queue:work --tries=3 --max-time=3600 --sleep=3\"",
+    "startCommand": "sh -c \"sh /var/www/docker/wait-for-db.sh && php artisan queue:work --tries=3 --max-time=3600 --sleep=3 --backoff=60,300,600\"",
     "sleepApplication": false
   }
 }

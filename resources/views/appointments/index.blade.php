@@ -71,42 +71,42 @@
                         <td class="text-end">
                             @if ($appt->meetingLinkActive())
                                 <a href="{{ $appt->meeting_link }}" target="_blank" rel="noopener"
-                                   class="btn btn-sm btn-primary" title="Join video call"
+                                   class="btn btn-sm btn-primary" aria-label="Join video call"
                                    x-data @click="$dispatch('open-conclude', { id: {{ $appt->id }} })">
-                                    <i class="bi bi-camera-video"></i>
+                                    <i class="bi bi-camera-video" aria-hidden="true"></i>
                                 </a>
                             @elseif ($appt->mode === 'online' && $appt->meeting_link && optional($appt->meetingLinkExpiresAt())->isPast())
                                 <span class="badge bg-secondary" title="Link expired {{ $appt->meetingLinkExpiresAt()->diffForHumans() }}">
-                                    <i class="bi bi-camera-video-off"></i> Link expired
+                                    <i class="bi bi-camera-video-off" aria-hidden="true"></i> Link expired
                                 </span>
                             @endif
 
                             @if ($appt->status === 'pending')
                                 <form action="{{ route('appointments.approve', $appt) }}" method="POST" class="d-inline">
                                     @csrf @method('PATCH')
-                                    <button class="btn btn-sm btn-success" title="Approve">
-                                        <i class="bi bi-check-lg"></i>
+                                    <button class="btn btn-sm btn-success" type="submit" aria-label="Approve appointment">
+                                        <i class="bi bi-check-lg" aria-hidden="true"></i>
                                     </button>
                                 </form>
                                 <form action="{{ route('appointments.reject', $appt) }}" method="POST" class="d-inline"
                                       x-data @submit.prevent="if (confirm('Reject this appointment?')) $el.submit()">
                                     @csrf @method('PATCH')
-                                    <button class="btn btn-sm btn-danger" title="Reject">
-                                        <i class="bi bi-x-lg"></i>
+                                    <button class="btn btn-sm btn-danger" type="submit" aria-label="Reject appointment">
+                                        <i class="bi bi-x-lg" aria-hidden="true"></i>
                                     </button>
                                 </form>
                             @endif
 
                             @if (in_array($appt->status, ['approved', 'rescheduled']))
-                                <button class="btn btn-sm btn-outline-secondary" title="Reschedule"
+                                <button class="btn btn-sm btn-outline-secondary" type="button" aria-label="Reschedule appointment"
                                         x-data
                                         @click="$dispatch('open-reschedule', { id: {{ $appt->id }} })">
-                                    <i class="bi bi-calendar2-week"></i>
+                                    <i class="bi bi-calendar2-week" aria-hidden="true"></i>
                                 </button>
-                                <button class="btn btn-sm btn-outline-success" title="Conclude / close case"
+                                <button class="btn btn-sm btn-outline-success" type="button" aria-label="Conclude or close case"
                                         x-data
                                         @click="$dispatch('open-conclude', { id: {{ $appt->id }} })">
-                                    <i class="bi bi-clipboard-check"></i>
+                                    <i class="bi bi-clipboard-check" aria-hidden="true"></i>
                                 </button>
                             @endif
                         </td>
@@ -150,15 +150,15 @@
      x-show="open"
      x-cloak
      style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050;">
-    <div class="modal d-block" tabindex="-1" style="display: block !important;">
+    <div class="modal d-block" tabindex="-1" style="display: block !important;" role="dialog" aria-modal="true" aria-labelledby="reschedule-title">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+            <div class="modal-content" x-trap="open">
                 <form :action="'/appointments/' + apptId + '/reschedule'" method="POST">
                     @csrf @method('PATCH')
                     <input type="hidden" name="scheduled_at" :value="date && slot ? date + ' ' + slot + ':00' : ''">
                     <div class="modal-header">
-                        <h5 class="modal-title">Reschedule Appointment</h5>
-                        <button type="button" class="btn-close" @click="open = false"></button>
+                        <h5 class="modal-title" id="reschedule-title">Reschedule Appointment</h5>
+                        <button type="button" class="btn-close" aria-label="Close" @click="open = false"></button>
                     </div>
                     <div class="modal-body">
                         <label for="reschedule_date" class="form-label">New date</label>
@@ -195,14 +195,14 @@
      x-show="open"
      x-cloak
      style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1050;">
-    <div class="modal d-block" tabindex="-1" style="display: block !important;">
+    <div class="modal d-block" tabindex="-1" style="display: block !important;" role="dialog" aria-modal="true" aria-labelledby="conclude-title">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
+            <div class="modal-content" x-trap="open">
                 <form :action="'/appointments/' + apptId + '/complete'" method="POST">
                     @csrf @method('PATCH')
                     <div class="modal-header">
-                        <h5 class="modal-title">Conclude appointment</h5>
-                        <button type="button" class="btn-close" @click="open = false"></button>
+                        <h5 class="modal-title" id="conclude-title">Conclude appointment</h5>
+                        <button type="button" class="btn-close" aria-label="Close" @click="open = false"></button>
                     </div>
                     <div class="modal-body">
                         <p>How did this session go? This closes the case and records attendance for progress tracking.</p>

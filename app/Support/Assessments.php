@@ -16,6 +16,7 @@ namespace App\Support;
 class Assessments
 {
     public const PHQ9 = 'phq9';
+
     public const GAD7 = 'gad7';
 
     /** Shared 0–3 answer options (index = stored value). */

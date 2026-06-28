@@ -32,11 +32,7 @@ class ProfileNotifier extends StateNotifier<AsyncValue<Patient?>> {
       _cache.put('patient', patient.toJson());
       state = AsyncValue.data(patient);
     } catch (e) {
-      if (e is ApiError) {
-        state = AsyncValue.error(e.userMessage, StackTrace.current);
-      } else {
-        state = AsyncValue.error(e.toString(), StackTrace.current);
-      }
+      state = AsyncValue.error(ApiError.fromException(e).userMessage, StackTrace.current);
     }
   }
 

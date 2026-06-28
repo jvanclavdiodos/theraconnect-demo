@@ -111,7 +111,11 @@ class AuthNotifier
     } catch (e) {
       // Any non-ApiError (parsing, secure storage, platform) must still reset
       // the loading state, otherwise the sign-in spinner hangs forever.
-      final message = 'Unexpected error: $e';
+      // Any non-ApiError (parsing, secure storage, platform) must still reset
+      // the loading state, otherwise the sign-in spinner hangs forever.
+      // Collapse to a patient-friendly message — never leak stack traces /
+      // Dio request paths / backend exception text from the caught exception.
+      final message = ApiError.fromException(e).userMessage;
       state = (status: AuthState.unauthenticated, user: null, patient: null, error: message);
       return message;
     }
@@ -160,7 +164,8 @@ class AuthNotifier
     } catch (e) {
       // Any non-ApiError (parsing, secure storage, platform) must still reset
       // the loading state, otherwise the sign-up spinner hangs forever.
-      final message = 'Unexpected error: $e';
+      // See comment in login() — never leak exception text via $e.toString().
+      final message = ApiError.fromException(e).userMessage;
       state = (status: AuthState.unauthenticated, user: null, patient: null, error: message);
       return message;
     }
@@ -180,7 +185,8 @@ class AuthNotifier
     } on ApiError catch (e) {
       return e.userMessage;
     } catch (e) {
-      return 'Unexpected error: $e';
+      // Collapse to a patient-friendly message — never leak exception text.
+      return ApiError.fromException(e).userMessage;
     }
   }
 

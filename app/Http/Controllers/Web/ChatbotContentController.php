@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ChatbotIntent;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class ChatbotContentController extends Controller
@@ -36,20 +37,26 @@ class ChatbotContentController extends Controller
             'responses.*.priority' => ['sometimes', 'integer'],
         ]);
 
-        $intent = ChatbotIntent::create([
-            'intent_key' => $validated['intent_key'],
-            'display_name' => $validated['display_name'],
-            'category' => $validated['category'],
-            'training_phrases' => $validated['training_phrases'],
-        ]);
-
-        foreach ($validated['responses'] as $responseData) {
-            $intent->responses()->create([
-                'response_text' => $responseData['response_text'],
-                'is_fallback' => $responseData['is_fallback'] ?? false,
-                'priority' => $responseData['priority'] ?? 0,
+        // Wrap intent + responses create in a transaction: if a response row
+        // fails to insert, the intent shouldn't be left with partial responses.
+        $intent = DB::transaction(function () use ($validated) {
+            $intent = ChatbotIntent::create([
+                'intent_key' => $validated['intent_key'],
+                'display_name' => $validated['display_name'],
+                'category' => $validated['category'],
+                'training_phrases' => $validated['training_phrases'],
             ]);
-        }
+
+            foreach ($validated['responses'] as $responseData) {
+                $intent->responses()->create([
+                    'response_text' => $responseData['response_text'],
+                    'is_fallback' => $responseData['is_fallback'] ?? false,
+                    'priority' => $responseData['priority'] ?? 0,
+                ]);
+            }
+
+            return $intent;
+        });
 
         return redirect()->route('chatbot-content.index')
             ->with('status', 'Intent created successfully.');
@@ -65,7 +72,7 @@ class ChatbotContentController extends Controller
     public function update(Request $request, ChatbotIntent $intent): RedirectResponse
     {
         $validated = $request->validate([
-            'intent_key' => ['required', 'string', 'max:100', 'unique:chatbot_intents,intent_key,' . $intent->id],
+            'intent_key' => ['required', 'string', 'max:100', 'unique:chatbot_intents,intent_key,'.$intent->id],
             'display_name' => ['required', 'string', 'max:255'],
             'category' => ['required', 'in:faq,scheduling,smalltalk,fallback'],
             'training_phrases' => ['required', 'array', 'min:1'],
@@ -77,17 +84,22 @@ class ChatbotContentController extends Controller
             'responses.*.priority' => ['sometimes', 'integer'],
         ]);
 
-        $intent->update($validated);
+        // Wrap update + responses re-create in a transaction: the delete +
+        // recreate sequence must be atomic — a mid-loop failure would otherwise
+        // leave the intent with all responses deleted and none recreated.
+        DB::transaction(function () use ($intent, $validated) {
+            $intent->update($validated);
 
-        $intent->responses()->delete();
+            $intent->responses()->delete();
 
-        foreach ($validated['responses'] as $responseData) {
-            $intent->responses()->create([
-                'response_text' => $responseData['response_text'],
-                'is_fallback' => $responseData['is_fallback'] ?? false,
-                'priority' => $responseData['priority'] ?? 0,
-            ]);
-        }
+            foreach ($validated['responses'] as $responseData) {
+                $intent->responses()->create([
+                    'response_text' => $responseData['response_text'],
+                    'is_fallback' => $responseData['is_fallback'] ?? false,
+                    'priority' => $responseData['priority'] ?? 0,
+                ]);
+            }
+        });
 
         return redirect()->route('chatbot-content.index')
             ->with('status', 'Intent updated successfully.');

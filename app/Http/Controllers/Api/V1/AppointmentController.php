@@ -15,6 +15,7 @@ use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class AppointmentController extends Controller
@@ -121,13 +122,35 @@ class AppointmentController extends Controller
         $patient = $this->getPatient();
 
         try {
-            $appointment = $this->appointmentService->bookAppointment([
-                'patient_id' => $patient->id,
-                'clinician_id' => $request->clinician_id,
-                'requested_at' => $request->requested_at,
-                'mode' => $request->mode,
-                'reason' => $request->reason,
-            ]);
+            $appointment = DB::transaction(function () use ($request, $patient) {
+                $appt = $this->appointmentService->bookAppointment([
+                    'patient_id' => $patient->id,
+                    'clinician_id' => $request->clinician_id,
+                    'requested_at' => $request->requested_at,
+                    'mode' => $request->mode,
+                    'reason' => $request->reason,
+                ]);
+
+                $appt->load('clinician.user', 'patient.user');
+
+                // Tell the assigned clinician a new request is awaiting their
+                // approval. Bookings without a clinician (clinician_id is
+                // nullable) have no one to notify. The in-app row is written
+                // synchronously inside the same transaction so the dispatch's
+                // ->afterCommit() actually waits for commit (otherwise it's a
+                // silent no-op). Mirrors PortalAppointmentController@store.
+                if ($appt->clinician && $appt->clinician->user) {
+                    $notification = $this->notificationService->appointmentRequested(
+                        $appt->clinician->user->id,
+                        $appt->patient->user->name,
+                        $appt->requested_at->format('M d, Y h:i A'),
+                    );
+
+                    SendPushNotification::dispatch($notification->id)->afterCommit();
+                }
+
+                return $appt;
+            });
         } catch (SlotUnavailableException $e) {
             return response()->json([
                 'message' => $e->getMessage(),
@@ -138,19 +161,6 @@ class AppointmentController extends Controller
         }
 
         $appointment->load('clinician.user', 'patient.user');
-
-        // Tell the assigned clinician a new request is awaiting their approval.
-        // Bookings without a clinician (clinician_id is nullable) have no one to
-        // notify. The in-app row is written synchronously; the push is best-effort.
-        if ($appointment->clinician && $appointment->clinician->user) {
-            $notification = $this->notificationService->appointmentRequested(
-                $appointment->clinician->user->id,
-                $appointment->patient->user->name,
-                $appointment->requested_at->format('M d, Y h:i A'),
-            );
-
-            SendPushNotification::dispatch($notification->id)->afterCommit();
-        }
 
         return response()->json([
             'data' => new AppointmentResource($appointment),
@@ -181,7 +191,26 @@ class AppointmentController extends Controller
             ], 409);
         }
 
-        $appointment = $this->appointmentService->cancel($appointment);
+        // Tell the assigned clinician the appointment was cancelled (the patient
+        // already knows — they performed the action). Wrapped in a transaction
+        // with the cancel so the push's ->afterCommit() waits for commit and
+        // the two writes share a failure mode.
+        $appointment = DB::transaction(function () use ($appointment) {
+            $appointment = $this->appointmentService->cancel($appointment);
+            $appointment->load('clinician.user', 'patient.user');
+
+            if ($appointment->clinician && $appointment->clinician->user) {
+                $notification = $this->notificationService->appointmentCancelledByPatient(
+                    $appointment->clinician->user->id,
+                    $appointment->patient->user->name,
+                    $appointment->requested_at->format('M d, Y h:i A'),
+                );
+                SendPushNotification::dispatch($notification->id)->afterCommit();
+            }
+
+            return $appointment;
+        });
+
         $appointment->load('clinician.user');
 
         return response()->json([

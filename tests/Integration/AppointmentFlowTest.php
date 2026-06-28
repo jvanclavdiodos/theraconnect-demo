@@ -2,8 +2,13 @@
 
 namespace Tests\Integration;
 
+use App\Exceptions\SlotUnavailableException;
 use App\Models\Appointment;
+use App\Models\Assignment;
+use App\Models\Notification;
 use App\Services\AppointmentService;
+use App\Services\NotificationService;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class AppointmentFlowTest extends TestCase
@@ -173,7 +178,7 @@ class AppointmentFlowTest extends TestCase
             ->assertStatus(422)
             ->assertJsonPath('errors.requested_at.0', 'That time slot is already booked.');
 
-        $this->assertEquals(1, \App\Models\Appointment::count());
+        $this->assertEquals(1, Appointment::count());
     }
 
     public function test_schedule_slots_contain_correct_data(): void
@@ -357,7 +362,7 @@ class AppointmentFlowTest extends TestCase
             'status' => 'approved',
         ]);
 
-        $this->expectException(\App\Exceptions\SlotUnavailableException::class);
+        $this->expectException(SlotUnavailableException::class);
         app(AppointmentService::class)->reschedule($b, "$day 14:00:00");
     }
 
@@ -381,12 +386,12 @@ class AppointmentFlowTest extends TestCase
         ]);
 
         // Swap NotificationService for a fake that throws on appointmentApproved.
-        $fakeNotif = $this->partialMock(\App\Services\NotificationService::class);
+        $fakeNotif = $this->partialMock(NotificationService::class);
         $fakeNotif->shouldReceive('appointmentApproved')
             ->once()
             ->andThrow(new \RuntimeException('notif insert failed'));
 
-        $this->app->instance(\App\Services\NotificationService::class, $fakeNotif);
+        $this->app->instance(NotificationService::class, $fakeNotif);
 
         // Admin approves via the web route (session-authenticated).
         $admin = $this->createAdmin();
@@ -402,8 +407,8 @@ class AppointmentFlowTest extends TestCase
         $this->assertEquals('pending', $appointment->fresh()->status);
 
         // And no notification row + no queued push job.
-        $this->assertEquals(0, \App\Models\Notification::where('user_id', $patient['user']->id)->count());
-        $this->assertEquals(0, \Illuminate\Support\Facades\DB::table('jobs')->count());
+        $this->assertEquals(0, Notification::where('user_id', $patient['user']->id)->count());
+        $this->assertEquals(0, DB::table('jobs')->count());
     }
 
     /**
@@ -417,12 +422,12 @@ class AppointmentFlowTest extends TestCase
         $clinician = $this->createClinician();
         $patient = $this->createPatient('web-assign@test.com');
 
-        $fakeNotif = $this->partialMock(\App\Services\NotificationService::class);
+        $fakeNotif = $this->partialMock(NotificationService::class);
         $fakeNotif->shouldReceive('assignmentCreated')
             ->once()
             ->andThrow(new \RuntimeException('notif insert failed'));
 
-        $this->app->instance(\App\Services\NotificationService::class, $fakeNotif);
+        $this->app->instance(NotificationService::class, $fakeNotif);
 
         try {
             $this->actingAs($admin, 'web')
@@ -437,9 +442,9 @@ class AppointmentFlowTest extends TestCase
             // expected
         }
 
-        $this->assertEquals(0, \App\Models\Assignment::where('title', 'Atomic Test Assignment')->count());
-        $this->assertEquals(0, \App\Models\Notification::where('user_id', $patient['user']->id)->count());
-        $this->assertEquals(0, \Illuminate\Support\Facades\DB::table('jobs')->count());
+        $this->assertEquals(0, Assignment::where('title', 'Atomic Test Assignment')->count());
+        $this->assertEquals(0, Notification::where('user_id', $patient['user']->id)->count());
+        $this->assertEquals(0, DB::table('jobs')->count());
     }
 
     /**

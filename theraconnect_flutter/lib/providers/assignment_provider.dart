@@ -34,11 +34,7 @@ class AssignmentNotifier extends StateNotifier<AsyncValue<List<Assignment>>> {
       _cache.put('assignments', result.assignments.map((a) => a.toJson()).toList());
       state = AsyncValue.data(result.assignments);
     } catch (e) {
-      if (e is ApiError) {
-        state = AsyncValue.error(e.userMessage, StackTrace.current);
-      } else {
-        state = AsyncValue.error(e.toString(), StackTrace.current);
-      }
+      state = AsyncValue.error(ApiError.fromException(e).userMessage, StackTrace.current);
     }
   }
 

@@ -14,7 +14,7 @@
 
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" required autofocus>
+                        <input type="email" id="email" name="email" class="form-control" value="{{ old('email') }}" required autofocus>
                     </div>
 
                     <div class="mb-3">

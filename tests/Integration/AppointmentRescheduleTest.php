@@ -46,7 +46,7 @@ class AppointmentRescheduleTest extends TestCase
 
         // 2030-12-31 is a weekday → default 08:00–16:00 window (9 whole-hour slots).
         $slots = $this->actingAs($clinician['user'], 'web')
-            ->getJson(route('appointments.reschedule-slots', $appt) . '?date=2030-12-31')
+            ->getJson(route('appointments.reschedule-slots', $appt).'?date=2030-12-31')
             ->assertStatus(200)
             ->json('slots');
 
@@ -66,7 +66,7 @@ class AppointmentRescheduleTest extends TestCase
         $this->approvedAppointment($clinician, $other, '2030-12-31 10:00:00');
 
         $slots = $this->actingAs($clinician['user'], 'web')
-            ->getJson(route('appointments.reschedule-slots', $appt) . '?date=2030-12-31')
+            ->getJson(route('appointments.reschedule-slots', $appt).'?date=2030-12-31')
             ->json('slots');
 
         $this->assertContains('09:00', $slots);
@@ -81,7 +81,7 @@ class AppointmentRescheduleTest extends TestCase
         $stranger = $this->secondClinician();
 
         $this->actingAs($stranger['user'], 'web')
-            ->getJson(route('appointments.reschedule-slots', $appt) . '?date=2030-12-31')
+            ->getJson(route('appointments.reschedule-slots', $appt).'?date=2030-12-31')
             ->assertStatus(403);
     }
 

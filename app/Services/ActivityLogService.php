@@ -16,11 +16,11 @@ class ActivityLogService
     public function log(User $actor, string $event, ?Model $target = null, array $meta = []): void
     {
         ActivityLog::create([
-            'user_id'     => $actor->id,
-            'event'       => $event,
+            'user_id' => $actor->id,
+            'event' => $event,
             'target_type' => $target ? class_basename($target) : null,
-            'target_id'   => $target?->getKey(),
-            'meta'        => empty($meta) ? null : $meta,
+            'target_id' => $target?->getKey(),
+            'meta' => empty($meta) ? null : $meta,
         ]);
     }
 }

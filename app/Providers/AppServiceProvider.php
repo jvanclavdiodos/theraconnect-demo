@@ -9,6 +9,8 @@ use App\Models\User;
 use App\Policies\AppointmentPolicy;
 use App\Policies\AssignmentPolicy;
 use App\Policies\SubmissionPolicy;
+use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\Paginator;
@@ -37,8 +39,8 @@ class AppServiceProvider extends ServiceProvider
         // entered, on any device, without needing a rebuild. This keeps the
         // long-standing API contract intact after the UTC -> Manila switch.
         $serializeAsWallClock = fn ($date) => $date->format('Y-m-d\TH:i:s.u\Z');
-        \Carbon\Carbon::serializeUsing($serializeAsWallClock);
-        \Carbon\CarbonImmutable::serializeUsing($serializeAsWallClock);
+        Carbon::serializeUsing($serializeAsWallClock);
+        CarbonImmutable::serializeUsing($serializeAsWallClock);
 
         // `{id}` route params are always numeric DB keys. Without this, a
         // non-numeric id (e.g. /api/v1/appointments/abc) reaches a controller
@@ -46,8 +48,21 @@ class AppServiceProvider extends ServiceProvider
         // clean 404. (Route-model-bound params like {appointment} 404 already.)
         Route::pattern('id', '[0-9]+');
 
-        RateLimiter::for('auth', function (Request $request) {
+        // Rate limiter for the staff web login. Separate buckets for login vs
+        // registration so a registration flood can't lock out legitimate logins
+        // (and vice versa). The `account-login` bucket is also keyed by the
+        // submitted email so distributed brute-force attempts against a single
+        // account from rotating IPs trip the limit before they can grind.
+        RateLimiter::for('login', function (Request $request) {
             return Limit::perMinute(5)->by($request->ip());
+        });
+
+        RateLimiter::for('register', function (Request $request) {
+            return Limit::perMinute(3)->by($request->ip());
+        });
+
+        RateLimiter::for('account-login', function (Request $request) {
+            return Limit::perMinute(5)->by($request->input('email', '').'|'.$request->ip());
         });
 
         RateLimiter::for('chatbot', function (Request $request) {
@@ -56,6 +71,15 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by(optional($request->user())->id ?: $request->ip());
+        });
+
+        // Password-change endpoint (3 surfaces: API patient, web staff, portal
+        // patient). Keyed by the authenticated user id so a stolen token /
+        // hijacked session can't brute-force the current_password rule via
+        // repeated attempts. 10/min is generous for a forgetful user but
+        // stops automated grinding.
+        RateLimiter::for('password-change', function (Request $request) {
+            return Limit::perMinute(10)->by(optional($request->user())->id ?: $request->ip());
         });
 
         Gate::policy(Appointment::class, AppointmentPolicy::class);

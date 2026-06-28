@@ -3,14 +3,15 @@
 namespace App\Services;
 
 use App\Models\DeviceToken;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
 class FcmService
 {
     private ?string $projectId;
+
     private ?string $credentialsPath;
+
     private ?string $accessToken = null;
 
     public function __construct()

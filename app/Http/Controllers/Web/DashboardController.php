@@ -38,9 +38,7 @@ class DashboardController extends Controller
 
         $pendingAssignments = $assignments()
             ->with('patient.user')
-            ->withCount('submissions')
-            ->whereHas('submissions')
-            ->whereDoesntHave('submissions', fn ($q) => $q->where('status', 'reviewed'))
+            ->whereHas('submissions', fn ($q) => $q->where('status', '!=', 'reviewed'))
             ->latest()
             ->take(5)
             ->get();

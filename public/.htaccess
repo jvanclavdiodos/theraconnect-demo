@@ -23,3 +23,21 @@
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^ index.php [L]
 </IfModule>
+
+# Apache-only hardening. Note: the Railway pilot runs on `php artisan serve`
+# which ignores .htaccess entirely — the SecurityHeaders global middleware
+# (registered in bootstrap/app.php) is the primary guard there. These directives
+# apply when deploying behind Apache + PHP-FPM.
+<IfModule mod_headers.c>
+    Header always unset X-Powered-By
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Block direct web access to dotfiles (.env, .git, .htaccess itself, etc.).
+# The Dockerfile doesn't ship these but the directive is defense-in-depth
+# for Apache-backed builds.
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>

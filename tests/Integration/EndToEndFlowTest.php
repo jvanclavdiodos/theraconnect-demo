@@ -2,10 +2,9 @@
 
 namespace Tests\Integration;
 
+use App\Models\Appointment;
 use App\Models\Assignment;
 use App\Models\Notification;
-use App\Models\Appointment;
-use App\Services\AppointmentService;
 use Tests\TestCase;
 
 class EndToEndFlowTest extends TestCase

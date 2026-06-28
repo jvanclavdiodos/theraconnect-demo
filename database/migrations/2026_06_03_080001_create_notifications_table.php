@@ -17,6 +17,7 @@ return new class extends Migration
                 'appointment_rejected',
                 'appointment_rescheduled',
                 'appointment_reminder',
+                'appointment_cancelled',
                 'assignment_created',
                 'assignment_deadline',
                 'message_received',

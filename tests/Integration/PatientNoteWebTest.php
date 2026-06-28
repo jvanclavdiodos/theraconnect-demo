@@ -3,7 +3,6 @@
 namespace Tests\Integration;
 
 use App\Models\Clinician;
-use App\Models\PatientNote;
 use App\Models\User;
 use Tests\TestCase;
 

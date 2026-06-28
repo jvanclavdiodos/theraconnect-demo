@@ -53,11 +53,11 @@ class AssignmentController extends Controller
         Gate::authorize('view', $assignment);
 
         abort_unless(
-            $assignment->attachment_path && Storage::disk('local')->exists($assignment->attachment_path),
+            $assignment->attachment_path && Storage::disk()->exists($assignment->attachment_path),
             404
         );
 
-        return Storage::disk('local')->download(
+        return Storage::disk()->download(
             $assignment->attachment_path,
             $assignment->attachment_name
         );

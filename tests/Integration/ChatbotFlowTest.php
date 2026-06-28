@@ -2,6 +2,7 @@
 
 namespace Tests\Integration;
 
+use Database\Seeders\ChatbotSeeder;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -10,7 +11,7 @@ class ChatbotFlowTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->seed(\Database\Seeders\ChatbotSeeder::class);
+        $this->seed(ChatbotSeeder::class);
 
         // Force the rule-based path by default so the suite is deterministic and
         // never makes a live API call — regardless of any GEMINI_API_KEY in the

@@ -158,7 +158,12 @@ class _DownloadTile extends ConsumerWidget {
 
   String _formatDate(DateTime? date) {
     if (date == null) return '';
-    final d = date.toLocal();
+    // `savedAt` is captured client-side via `DateTime.now().toIso8601String()`
+    // — already local, no conversion needed. Don't `toLocal()` here: doing so
+    // on a server timestamp would silently shift the displayed time by the
+    // device's UTC offset (the app intentionally stores/renders clinic wall-
+    // clock time, not UTC — see lib/utils/date_format.dart).
+    final d = date;
     final two = (int n) => n.toString().padLeft(2, '0');
     return '${d.year}-${two(d.month)}-${two(d.day)} ${two(d.hour)}:${two(d.minute)}';
   }

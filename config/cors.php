@@ -1,7 +1,5 @@
 <?php
 
-use Illuminate\Support\Facades\Config;
-
 return [
 
     /*
@@ -10,14 +8,14 @@ return [
     |--------------------------------------------------------------------------
     |
     | Here you may configure your settings for cross-origin resource sharing
-    | from the browser. This defaults to a permissive `*` policy which is safe
-    | enough because the JSON API uses Sanctum bearer tokens (not cookies) and
-    | browsers won't auto-send credentials cross-origin without explicit
-    | `allow_credentials` headers.
+    | from the browser. This defaults to a fail-closed policy when
+    | CORS_ALLOWED_ORIGINS is unset/empty — the JSON API uses Sanctum bearer
+    | tokens (not cookies), so legitimate API clients won't be blocked by an
+    | empty allowlist (they call via Dio / fetch from native clients).
     |
-    | For defense-in-depth, restrict `allowed_origins` via the CORS_ALLOWED_ORIGINS
-    | env var to the Railway dashboard domain and the Flutter app's HTTP origin
-    | (when running as a web app). Leave blank to fall back to permissive `*`.
+    | For production, set CORS_ALLOWED_ORIGINS to the dashboard domain and the
+    | Flutter app's HTTP origin (when running as a web app). Local dev may set
+    | to `*` for convenience.
     |
     */
 
@@ -25,8 +23,10 @@ return [
 
     'allowed_methods' => ['*'],
 
+    // Fail-closed when the env var is unset or empty. To permit any origin
+    // (local dev only), explicitly set CORS_ALLOWED_ORIGINS=* in your .env.
     'allowed_origins' => array_values(array_filter(
-        array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', '*')))
+        array_map('trim', explode(',', (string) env('CORS_ALLOWED_ORIGINS', '')))
     )),
 
     'allowed_origins_patterns' => [],

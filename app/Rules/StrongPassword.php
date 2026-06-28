@@ -16,6 +16,7 @@ use Illuminate\Contracts\Validation\ValidationRule;
 class StrongPassword implements ValidationRule
 {
     public const MIN = 8;
+
     public const MAX = 20;
 
     public function validate(string $attribute, mixed $value, Closure $fail): void
