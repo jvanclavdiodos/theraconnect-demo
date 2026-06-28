@@ -1,6 +1,6 @@
 ﻿# TheraConnect
 
-A three-tier clinic management system connecting patients, clinicians, and administrators. Patients use a Flutter mobile app (JSON API), while clinicians and admins use a server-rendered Blade dashboard.
+A three-tier clinic management system connecting patients, clinicians, and administrators. Patients can use either a Flutter mobile app (JSON API) or a browser portal (`/portal`, session auth) with full feature parity. Clinicians and admins use a server-rendered Blade dashboard. One Laravel backend serves all three surfaces through the same service layer.
 
 ## Tech Stack
 
@@ -11,36 +11,12 @@ A three-tier clinic management system connecting patients, clinicians, and admin
 | Mobile App | Flutter 3.x / Dart |
 | Database | MySQL 8 / MariaDB 10.2+ (InnoDB, utf8mb4) |
 | API Auth | Laravel Sanctum (bearer tokens) |
-| Push Notifications | Firebase Cloud Messaging (Phase 7) |
+| Push Notifications | Firebase Cloud Messaging (optional) |
 | Background Jobs | Laravel Scheduler + Database Queue |
-
-## Build Status
-
-| Phase | Description | Status |
-|---|---|---|
-| 1 | Project scaffolding, Sanctum, Blade+Bootstrap+Alpine | Done |
-| 2 | 10-table MySQL schema, 10 Eloquent models, seeders | Done |
-| 3 | Auth (API token + web session), roles, policies | Done |
-| 4 | Appointments module (patient API) | Done |
-| 5 | Patient & clinician management (web dashboard) | Done |
-| 6 | Assignment module | Done |
-| 7 | Notifications (FCM + scheduler) | Done |
-| 8 | Chatbot intent engine | Done |
-| 9 | Web dashboard (all views + UI polish) | Done |
-| 10 | Flutter mobile app (all screens) | Done |
-| 11 | Integration & API wiring | Done |
-| 12 | System testing & usability | Partially done (automated suite green; SUS usability eval needs human participants) |
-| 13 | Deployment & handoff | Pilot live (Railway); hardened Dockerfile, S3 uploads, queue worker + scheduler templates |
-
-> **Security & ops hardening pass** (post-Phase 13): same-origin double-booking race fixed
-> (`lockForUpdate`), web controllers transactional, private/type-restricted uploads (S3-capable),
-> SRI on CDN tags, patient-only API `/login`, `AppointmentPolicy` blocks cancel of terminal
-> states, `SubmissionPolicy` view/delete via `Gate::authorize`, soft-deletes User on
-> Patient/Clinician delete, `NotificationResource`, composite-unique device tokens. See `handoff.md`.
 
 ## Prerequisites
 
-- **PHP 8.2+** with extensions: `curl`, `fileinfo`, `mbstring`, `openssl`, `pdo_mysql`, `zip`
+- **PHP 8.2+** with extensions: `curl`, `fileinfo`, `gd`, `intl`, `mbstring`, `openssl`, `pdo_mysql`, `zip`
 - **Composer** ([getcomposer.org](https://getcomposer.org))
 - **MySQL 8+** or **MariaDB 10.2+** running on port 3306
 - (Optional) **Flutter SDK** for the mobile app in `theraconnect_flutter/`
@@ -57,26 +33,20 @@ Double-click `setup.bat` or run in PowerShell:
 .\setup.ps1 -SkipLocalGuard
 ```
 
-This auto-installs dependencies, creates the database, runs migrations, and seeds data in ~90 seconds.
+Auto-installs dependencies, creates the database, runs migrations, and seeds demo data in ~90 seconds.
 
 ### Manual setup (cross-platform)
 
 ```bash
-# 1. Install PHP dependencies
 composer install
-
-# 2. Create your environment file
 cp .env.example .env && php artisan key:generate    # Windows cmd: copy .env.example .env
 
-# 3. Create the database (choose one):
-#    - CLI:  mysql -u root -e "CREATE DATABASE theraconnect"
-#    - Or Docker (DB only, nothing else on host):
-#      docker compose -f docker-compose.db.yml up -d   # MySQL on :3307
+# Create the database (choose one):
+mysql -u root -e "CREATE DATABASE theraconnect"
+#   ...or Docker (DB only):
+docker compose -f docker-compose.db.yml up -d        # MySQL on :3307
 
-# 4. Run migrations and seed with demo data
 php artisan migrate:fresh --seed
-
-# 5. Start the dev server
 php artisan serve --port=8080
 ```
 
@@ -84,181 +54,109 @@ php artisan serve --port=8080
 
 Open **http://localhost:8080/login** and sign in with one of the demo accounts below.
 
-### Demo Data (loaded by setup)
+### Docker (full stack)
+
+```bash
+docker compose up --build
+# app on :8080, MySQL on :3307, plus queue-worker + scheduler services
+```
+
+### Demo Data
 
 The seeder creates realistic demo data for walkthroughs:
 
 | Entity | Count | Details |
 |---|---|---|
-| Users | 6 | 1 admin, 2 clinicians, 3 patients |
-| Appointments | 9 | 3 pending, 2 approved, 2 completed, 1 rejected, 1 cancelled |
-| Assignments | 4 | 2 with submissions (1 submitted, 1 reviewed) |
-| Notifications | 5 | Various types with read/unread states |
+| Users | 8 | 1 admin, 2 clinicians, 5 patients |
+| Appointments | 15 | 4 pending, 2 approved, 7 completed, 1 rejected, 1 cancelled |
+| Assignments | 5 | 2 with submissions (1 submitted, 1 reviewed) |
+| Notifications | 8 | Various types with read/unread states |
+| Assessments | 7 | 5 completed (PHQ-9 / GAD-7), 2 pending assignment |
+| Mood logs | 30 | 14-day trend (Jane), 7-day (Emily), 6-day (Michael), 3-day (Sophia) |
+| Therapy goals | 6 | 4 active, 2 met; with GAS ratings |
 
 ### Demo Accounts
 
-| Role | Email | Password | Dashboard |
+All passwords are `password`. Patients use the mobile app; admin/clinician use the web dashboard.
+
+| Role | Email | Access |
+|---|---|---|
+| Admin | `admin@theraconnect.test` | Full access |
+| Clinician (CBT) | `clinician@theraconnect.test` | All except Clinicians page |
+| Clinician (Family) | `dr.rivera@theraconnect.test` | All except Clinicians page |
+| Patient | `patient@theraconnect.test` | Mobile app only |
+| Patient | `michael@theraconnect.test` | Mobile app only |
+| Patient | `emily@theraconnect.test` | Mobile app only |
+| Patient | `sophia@theraconnect.test` | Mobile app only |
+| Patient | `olivia@theraconnect.test` | Mobile app only (pending clinician request) |
+
+> Demo accounts use password `password` — rotate before any real use.
+>
+> On a Railway (or any non-local) deployment, seeding is env-gated: the entrypoint only runs `db:seed` when `APP_ENV=local` or `SEED_DEMO=true` is explicitly set. For a demo deploy set `SEED_DEMO=true` and `DEMO_PASSWORD=<strong value>` — all seeded accounts inherit that password (it must satisfy `StrongPassword`: 8–20 chars, ≥1 uppercase, ≥1 digit, no spaces). A true production deploy (no demo data, no demo accounts) leaves both vars unset.
+
+## API Reference
+
+Base URL: `/api/v1`. Add `Authorization: Bearer <token>` for authenticated routes and `Accept: application/json` for proper error responses. A Postman collection lives at `postman/TheraConnect_API_v1.postman_collection.json` (includes an 8-step end-to-end flow).
+
+| Method | URL | Auth | Description |
 |---|---|---|---|
-| Admin | `admin@theraconnect.test` | `password` | Full access |
-| Clinician (CBT) | `clinician@theraconnect.test` | `password` | All except Clinicians page |
-| Clinician (Family) | `dr.rivera@theraconnect.test` | `password` | All except Clinicians page |
-| Patient | `patient@theraconnect.test` | `password` | Mobile app only |
-| Patient | `michael@theraconnect.test` | `password` | Mobile app only |
-| Patient | `emily@theraconnect.test` | `password` | Mobile app only |
+| `GET` | `/health` | None | Health check (verifies DB reachable) |
+| `POST` | `/register` | None | `{name, email, password, password_confirmation, contact_no?}` |
+| `POST` | `/login` | None | `{email, password}` — patients only |
+| `POST` | `/logout` | Bearer | Revokes all user tokens |
+| `GET` | `/me` | Bearer | Current user + patient profile |
+| `PUT` | `/auth/password` | Bearer | Change password `{current_password, password, password_confirmation}` (throttled 10/min) |
+| `GET` | `/profile` | Bearer | Patient details |
+| `PUT` | `/profile` | Bearer | Update `{date_of_birth?, contact_no?, address?, emergency_contact?}` |
+| `POST` | `/profile/avatar` | Bearer | Multipart avatar upload (JPG/PNG/WebP, ≤4 MB, ≤1024×1024) |
+| `GET` | `/profile/avatar` | Bearer | Serve own avatar inline |
+| `GET` | `/schedules?date=` | Bearer | Available time slots per clinician |
+| `GET` | `/appointments` | Bearer | Patient's own appointments (paginated) |
+| `POST` | `/appointments` | Bearer | `{requested_at, mode, reason?, clinician_id?}` — whole-hour only |
+| `GET` | `/appointments/{id}` | Bearer | Single appointment (ownership check) |
+| `DELETE` | `/appointments/{id}` | Bearer | Cancel appointment (terminal states blocked) |
+| `GET` | `/assignments` | Bearer | Patient's assignments with submission status |
+| `GET` | `/assignments/{id}` | Bearer | Single assignment (ownership check) |
+| `GET` | `/assignments/{id}/worksheet` | Bearer | Download worksheet (private disk, owner only) |
+| `POST` | `/assignments/{id}/submit` | Bearer | Multipart `{content?, file?}`; blocked once reviewed |
+| `GET` | `/submissions/{id}/file` | Bearer | Download own submission file |
+| `GET` | `/clinicians` | None | Public directory (id, name, specialization) |
+| `GET` | `/notifications` | Bearer | Patient's notifications (paginated) |
+| `POST` | `/notifications/{id}/read` | Bearer | Mark notification as read |
+| `POST` | `/device-token` | Bearer | Register FCM token `{token, platform}` |
+| `DELETE` | `/device-token` | Bearer | Remove FCM token `{token}` |
+| `GET` | `/mood-logs` | Bearer | Mood check-in history |
+| `POST` | `/mood-logs` | Bearer | `{score (1-10), note?}` |
+| `GET` | `/goals` | Bearer | Therapy goals (read-only, clinician-authored) |
+| `GET` | `/notes` | Bearer | Shared clinician notes (read-only) |
+| `GET` | `/assessments` | Bearer | Assigned questionnaires (PHQ-9 / GAD-7) |
+| `GET` | `/assessments/{assessment}` | Bearer | Single assessment |
+| `POST` | `/assessments/{assessment}/submit` | Bearer | Submit responses |
+| `GET` | `/conversations` | Bearer | Patient's conversation threads |
+| `POST` | `/conversations` | Bearer | Open a conversation |
+| `GET` | `/conversations/{conversation}/messages` | Bearer | Messages in a thread |
+| `POST` | `/conversations/{conversation}/messages` | Bearer | Send a message |
+| `POST` | `/chatbot/message` | Bearer | Ask the Joy chatbot `{message}` |
 
-### Postman Collection
-
-Import `postman/TheraConnect_API_v1.postman_collection.json` for all 20 API endpoints with an 8-step end-to-end flow.
-
-## Deployment (Railway)
-
-A pilot/demo instance runs on Railway:
-
-- **Live API + dashboard:** https://theraconnect-demo-production.up.railway.app
-- **Health check:** https://theraconnect-demo-production.up.railway.app/api/v1/health
-- **Repo Railway deploys from:** `jvanclavdiodos/theraconnect-demo`
-- The Flutter app's API base URL lives in `theraconnect_flutter/lib/config/api_config.dart` (point it at the live URL, then `flutter build apk --release`).
-
-### How it deploys
-- Railway builds the root `Dockerfile` (configured by `railway.json`). The container runs as
-  **non-root `www-data`**, exposes a `HEALTHCHECK` probing `/api/v1/health`, and gates boot on
-  DB readiness (`until php artisan db:show …`) before running `migrate --force` →
-  `db:seed --force` (seeder is idempotent; **seed failures abort boot — no `|| true`**) →
-  `php artisan serve` on `$PORT`.
-- Environment variables are documented in **`.env.railway.example`** — set them in the Railway
-  service's **Variables** tab. The `${{MySQL.*}}` references auto-fill from the Railway MySQL
-  plugin. `bootstrap/app.php` trusts the Railway proxy so HTTPS + secure cookies work.
-
-### Persistent uploads (S3)
-Set `FILESYSTEM_DISK=s3` plus the `AWS_*` env vars (see `.env.railway.example`). Patient
-submissions and assignment worksheets are served **only** through authenticated download routes
-— the bucket must be **private** (block-public-access on). With no S3 creds, the app falls back
-to the private `local` disk (uploads reset on redeploy).
-
-### Auxiliary services (recommended)
-- **Queue worker** — deploy a second Railway service pointing at `railway.worker.json` (or use
-  the `queue-worker` service in `docker-compose.yml`). Runs
-  `php artisan queue:work --tries=3 --max-time=3600`. Required for `SendPushNotification` to
-  actually deliver (with `QUEUE_CONNECTION=database`).
-- **Scheduler** — deploy a third Railway service pointing at `railway.scheduler.json` (or the
-  `scheduler` compose service). Runs as a Railway Cron service firing
-  `php artisan schedule:run` every minute. Required for appointment/assignment reminders.
-
-### Pilot trade-offs (NOT production-hardened)
-- Uses single-process `php artisan serve` for the app service — fine for a pilot; swap to
-  PHP-FPM + Nginx for prod.
-- **Push (FCM) optional** — no Firebase credentials configured by default. With creds set,
-  background delivery works; foreground display + tap-to-deeplink are deferred (need
-  `flutter_local_notifications`). In-app notifications always work.
-- **Demo accounts use password `password`** — rotate before any real use.
-- `queue-worker`/`scheduler` services exist as templates but are **not** auto-deployed on
-  Railway — create them manually per `railway.worker.json` / `railway.scheduler.json`.
-
-## Testing
-
-### PHPUnit
-
-```bash
-php artisan test        # or: vendor/bin/phpunit
-```
-
-Runs on an **in-memory SQLite** DB — no MySQL needed. **65 tests, 229 assertions, all green.**
-
-| Suite | Tests | Status |
-|-------|-------|--------|
-| Integration (AppointmentFlow) | 9 | Pass |
-| Integration (AssignmentFlow) | 10 | Pass |
-| Integration (AuthFlow) | 8 | Pass |
-| Integration (ChatbotFlow) | 5 | Pass |
-| Integration (EndToEndFlow) | 4 | Pass |
-| Integration (NotificationFlow) | 6 | Pass |
-| Integration (Policy) | 1 | Pass |
-| Integration (WebProfileDelete) | 1 | Pass |
-| Integration (MeetingLink) | 3 | Pass |
-| Other | 18 | Pass |
-
-> The suite grows as fixes land — run `php artisan test` for the current count.
-
-### Postman Collection
-
-Import `postman/TheraConnect_API_v1.postman_collection.json` for all 20 endpoints with an 8-step end-to-end flow.
-
-### Browser
+### Web Dashboard Routes
 
 | Page | URL |
 |---|---|
-| Landing (marketing) | [http://localhost:8080/](http://localhost:8080/) |
-| Login | [http://localhost:8080/login](http://localhost:8080/login) |
-| Dashboard (requires login) | [http://localhost:8080/dashboard](http://localhost:8080/dashboard) |
-| Patients | [http://localhost:8080/patients](http://localhost:8080/patients) |
-| Clinicians | [http://localhost:8080/clinicians](http://localhost:8080/clinicians) |
-| Appointments | [http://localhost:8080/appointments](http://localhost:8080/appointments) |
-| API Health Check | [http://localhost:8080/api/v1/health](http://localhost:8080/api/v1/health) |
+| Landing (marketing) | `/` |
+| Login | `/login` |
+| Dashboard (clinician/admin) | `/dashboard` |
+| Patients | `/patients` |
+| Clinicians (admin) | `/clinicians` |
+| Appointments | `/appointments` |
+| Assignments | `/assignments` |
+| Messages (clinician) | `/messages` |
+| Notification logs (admin) | `/notifications/logs` |
+| Activity audit (admin) | `/activity-logs` |
+| Chatbot content (admin) | `/chatbot-content` |
+| Account (own profile/password) | `/account` |
+| Patient portal | `/portal` (patients land here after login) |
 
-### API (PowerShell)
-
-Register a patient, login, and check your profile:
-
-```powershell
-$base = "http://localhost:8080/api/v1"
-
-# Register a new patient
-$r = Invoke-RestMethod -Uri "$base/register" -Method POST -Body (@{
-    name = "Jane Doe"
-    email = "jane@test.com"
-    password = "password123"
-    password_confirmation = "password123"
-} | ConvertTo-Json) -ContentType "application/json"
-
-# Login to get a token
-$login = Invoke-RestMethod -Uri "$base/login" -Method POST -Body (@{
-    email = "jane@test.com"
-    password = "password123"
-} | ConvertTo-Json) -ContentType "application/json"
-$token = $login.data.token
-
-# Use the token for authenticated requests
-Invoke-RestMethod -Uri "$base/me" `
-    -Headers @{Authorization = "Bearer $token"; Accept = "application/json"}
-
-Invoke-RestMethod -Uri "$base/profile" `
-    -Headers @{Authorization = "Bearer $token"; Accept = "application/json"}
-
-# Logout
-Invoke-RestMethod -Uri "$base/logout" -Method POST `
-    -Headers @{Authorization = "Bearer $token"; Accept = "application/json"}
-```
-
-### Using Postman / Insomnia
-
-Import the following endpoints into your API client:
-
-| Method | URL | Auth | Notes |
-|---|---|---|---|
-| `GET` | `/api/v1/health` | None | Health check |
-| `POST` | `/api/v1/register` | None | `{name, email, password, password_confirmation, contact_no?}` |
-| `POST` | `/api/v1/login` | None | `{email, password}` |
-| `POST` | `/api/v1/logout` | Bearer | Revokes all user tokens |
-| `GET` | `/api/v1/me` | Bearer | Current user + patient profile |
-| `GET` | `/api/v1/profile` | Bearer | Patient details |
-| `PUT` | `/api/v1/profile` | Bearer | Update `{date_of_birth?, contact_no?, address?, emergency_contact?}` |
-| `GET` | `/api/v1/schedules?date=` | Bearer | Available time slots per clinician |
-| `GET` | `/api/v1/appointments` | Bearer | Patient's own appointments (paginated) |
-| `POST` | `/api/v1/appointments` | Bearer | `{requested_at, mode, reason?, clinician_id?}` |
-| `GET` | `/api/v1/appointments/{id}` | Bearer | Single appointment with ownership check |
-| `DELETE` | `/api/v1/appointments/{id}` | Bearer | Cancel appointment (soft delete) |
-| `GET` | `/api/v1/assignments` | Bearer | Patient's assignments with submission status |
-| `GET` | `/api/v1/assignments/{id}` | Bearer | Single assignment (incl. `attachment_url`/`attachment_name`), ownership check |
-| `GET` | `/api/v1/assignments/{id}/worksheet` | Bearer | Download clinician's worksheet attachment (private disk, owner only) |
-| `POST` | `/api/v1/assignments/{id}/submit` | Bearer | Multipart `{content?, file?}`; blocked once reviewed |
-| `GET` | `/api/v1/submissions/{id}/file` | Bearer | Download own submission file (private disk, owner only) |
-| `GET` | `/api/v1/notifications` | Bearer | Patient's notifications (paginated) |
-| `POST` | `/api/v1/notifications/{id}/read` | Bearer | Mark notification as read |
-| `POST` | `/api/v1/device-token` | Bearer | Register FCM token `{token, platform}` |
-| `DELETE` | `/api/v1/device-token` | Bearer | Remove FCM token `{token}` |
-
-Add header: `Authorization: Bearer <token>` for authenticated routes.
-Add header: `Accept: application/json` for proper error responses.
+> The patient portal (`/portal/*`) has full feature parity with the Flutter app — appointments (book/list/cancel), assignments (download/submit), messaging, questionnaires (PHQ-9/GAD-7), mood logs, therapy goals, shared notes, chatbot, notifications, and profile management. Thin portal controllers reuse the same Services + Policies as the API.
 
 ## Project Structure
 
@@ -267,106 +165,81 @@ app/
 ├── Http/
 │   ├── Controllers/
 │   │   ├── Api/V1/          # JSON controllers (mobile patient API)
-│   │   └── Web/             # Blade controllers (clinician/admin dashboard)
-│   ├── Middleware/RoleMiddleware.php
+│   │   ├── Web/             # Blade controllers (clinician/admin dashboard)
+│   │   └── Portal/          # Blade controllers (patient browser portal)
+│   ├── Middleware/           # RoleMiddleware, SecurityHeaders
 │   ├── Requests/Api/        # FormRequest validation
 │   └── Resources/           # JSON resource transformers
-├── Models/                  # Eloquent models (10 tables)
-├── Policies/                # Ownership policies
-└── Services/                # Business logic (Phase 4+)
-config/
-├── hashing.php              # bcrypt rounds=12
-├── sanctum.php              # Sanctum configuration
+├── Models/                  # Eloquent models
+├── Policies/                # Ownership policies (Appointment, Assignment, Submission, …)
+├── Services/                # Business logic (Appointment, Assignment, Notification, Chatbot, Fcm, Jitsi, Message, …)
+└── Jobs/                    # SendPushNotification, GenerateAppointmentReminders, …
+config/                      # app, auth, sanctum, cors, filesystems, queue, …
 database/
-├── migrations/              # 13 migration files
-└── seeders/                 # DatabaseSeeder, ChatbotSeeder
+├── migrations/
+└── seeders/                 # DatabaseSeeder, DemoSeeder (idempotent)
 routes/
-├── api.php                  # /api/v1 (Sanctum token auth)
+├── api.php                  # /api/v1 (Sanctum bearer auth)
 └── web.php                  # / (session auth, Blade views)
 resources/views/
-├── layouts/app.blade.php    # Bootstrap 5 + Alpine.js shell
-├── partials/                # navbar, sidebar, flash messages
-├── landing.blade.php        # Marketing landing page
-├── auth/login.blade.php     # Web login form
-└── clinician/               # Dashboard views (Phase 9)
-theraconnect_flutter/        # Flutter mobile app (Phase 10)
+├── layouts/                 # app.blade.php, portal.blade.php
+├── partials/                # navbar, sidebar, flash messages, password-strength
+├── errors/                  # 403, 404, 419, 500 branded pages
+├── clinician/               # Admin/clinician dashboard views
+├── portal/                  # Patient portal views
+└── landing.blade.php        # Marketing landing page
+public/
+├── css/theraconnect.css     # Theme tokens + dark-mode overrides
+└── js/file-upload.js        # Client-side upload size/type validation
+theraconnect_flutter/         # Flutter mobile app
+├── lib/
+│   ├── models/              # Data classes
+│   ├── providers/           # Riverpod state
+│   ├── screens/             # UI
+│   ├── services/            # ApiClient, Auth, Fcm, Cache, …
+│   └── theme/app_theme.dart # light() + dark()
+└── pubspec.yaml
+docker/                      # entrypoint.sh, wait-for-db.sh, php.ini
 ```
 
-## QA Testing Checklist
+## Testing
 
-### Web Dashboard (Browser — sign in as admin or clinician)
-
-| # | Test | Steps | Expected |
-|---|---|---|---|
-| W1 | Landing page | Open `http://localhost:8080/` | Hero section, 3 feature cards, "Sign In" button |
-| W2 | Login page | Click "Sign In" | Email + password form |
-| W3 | Admin login | `admin@theraconnect.test` / `password` | Redirected to dashboard with 3 stat cards |
-| W4 | Clinician login | `clinician@theraconnect.test` / `password` | Dashboard renders, no "Clinicians" sidebar link |
-| W5 | Patient blocked | Try `patient@...` login | Error: "Patients must use the mobile app" |
-| W6 | Dashboard counts | View dashboard | Total patients, pending appointments, today's appointments |
-| W7 | Patient list | Click "Patients" in sidebar | Table of all patients with actions |
-| W8 | Create patient | Click "Add Patient", fill form, submit | Redirect to list with success flash |
-| W9 | Edit patient | Click pencil icon, change name, save | Name updated in list |
-| W10 | View patient | Click eye icon | Details + recent appointments table |
-| W11 | Delete patient | Click trash icon, confirm | Patient removed from list |
-| W12 | Clinicians (admin) | Click "Clinicians" | Table of clinicians |
-| W13 | Create clinician | "Add Clinician", fill form | Redirect to list with success flash |
-| W14 | Appointments list | Click "Appointments" | Table with status filter tabs |
-| W15 | Status filter | Click "Pending" filter | Only pending appointments shown |
-| W16 | Approve appointment | Click green checkmark on pending | Status changes to approved, notification dispatched |
-| W17 | Reject appointment | Click red X on pending, confirm | Status changes to rejected |
-| W18 | Reschedule | Click calendar icon on approved, pick date | Modal opens, date set, appointment rescheduled |
-| W19 | Assignments list | Click "Assignments" | Table with submission count badges |
-| W20 | Create assignment | "New Assignment", pick patient, fill form | Returns to list with success |
-| W21 | View submissions | Click "View" on assignment | Submission table with content, file, status |
-| W22 | Mark reviewed | Click "Mark Reviewed" on submitted | Status badge changes to "Reviewed" |
-| W23 | Notification logs | Click "Notification Logs" | Paginated table of all sent notifications |
-| W24 | Logout | Click "Sign Out" in navbar | Redirected to landing page |
-
-### API (PowerShell — requires patient token)
-
-```powershell
-$base = "http://localhost:8080/api/v1"
+```bash
+php artisan test        # or: vendor/bin/phpunit
+vendor/bin/pint --test  # Laravel Pint style check
 ```
 
-| # | Test | Command | Expected |
-|---|---|---|---|
-| A1 | Health check | `Invoke-RestMethod "$base/health"` | `{"status":"ok"}` |
-| A2 | Register | POST `/register` `{name,email,password,password_confirmation}` | 201 + `{data:{user,token}}` |
-| A3 | Login | POST `/login` `{email,password}` | 200 + `{data:{user,token}}` |
-| A4 | Get profile | GET `/me` with Bearer token | User + patient_profile (no notes field) |
-| A5 | Update profile | PUT `/profile` `{contact_no?, address?}` | Updated patient data |
-| A6 | Logout | POST `/logout` with Bearer token | 204 |
-| A7 | Token revoked | GET `/me` with old token | 401 Unauthorized |
-| A8 | View schedules | GET `/schedules?date=YYYY-MM-DD` | 9+ slot-clinician pairs |
-| A9 | Book appointment | POST `/appointments` `{requested_at, mode, clinician_id?}` | 201 pending |
-| A10 | List appointments | GET `/appointments` | Paginated own appointments |
-| A11 | Cancel appointment | DELETE `/appointments/{id}` | status=cancelled |
-| A12 | Cannot view other's | GET `/appointments/{other_id}` | 403 Forbidden |
-| A13 | List assignments | GET `/assignments` | With submission_status |
-| A14 | Submit assignment | POST `/assignments/{id}/submit` `{content}` | 201 submitted |
-| A15 | Empty submit blocked | POST `/assignments/{id}/submit` empty | 422 content-or-file required |
-| A16 | List notifications | GET `/notifications` | Paginated with meta |
-| A17 | Mark read | POST `/notifications/{id}/read` | read_at updated |
-| A18 | Register device | POST `/device-token` `{token, platform}` | 201 stored |
-| A19 | Remove device | DELETE `/device-token` `{token}` | 204 |
-| A20 | Admin blocked | Admin token → GET `/me` | 403 Forbidden (role:patient) |
+Tests run on an **in-memory SQLite** DB — no MySQL needed. The suite comprises **50 test files** across three buckets:
 
-### Rate Limiting
-
-| # | Test | Expected |
+| Bucket | Files | Coverage |
 |---|---|---|
-| R1 | 6 rapid logins | 5th returns 429 Too Many Requests |
-| R2 | 60 rapid API calls | 61st returns 429 Too Many Requests |
+| `tests/Integration/` | 39 | End-to-end flows for every surface: appointments (booking, reschedule, complete, attendance), assignments, messaging (web + API), notifications, assessments, mood logs, goals, chatbot, avatar uploads, password change, policy scoping, clinician availability, timezone serialization, portal feature parity |
+| `tests/Adversarial/` | 7 | IDOR bypass attempts, information leakage, input resilience (unexpected types, oversized payloads), state-machine logic, throttle/limiter behavior, UX friction, job idempotency |
+| `tests/Unit/` + `tests/Feature/` | 4 | PHPUnit stubs (kept for scaffold) |
 
-### Security
+CI (`.github/workflows/ci.yml`) runs on every PR to `main`: `composer validate --strict`, `composer audit`, `vendor/bin/pint --test`, `php artisan test` against PHP 8.2 + 8.3, plus `flutter analyze` for the mobile app.
 
-| # | Check | Verified |
-|---|---|---|
-| S1 | bcrypt rounds = 12 | `.env` `BCRYPT_ROUNDS=12` |
-| S2 | Sanctum tokens expire after 30 days | `config/sanctum.php` |
-| S3 | `clinic_notes` not visible to patients | Conditional in resources |
-| S4 | `notes` not visible to patients | `PatientResource` gate |
-| S5 | CSRF on all web forms | `@csrf` in every form |
-| S6 | Delete confirmations | Alpine.js `confirm()` dialogs |
-| S7 | Role middleware is authoritative | Server-side, not Blade-only |
+## Deployment
+
+A pilot/demo instance runs on Railway:
+
+- **Live app:** https://theraconnect-demo-production.up.railway.app
+- **Health check:** https://theraconnect-demo-production.up.railway.app/api/v1/health
+- **Repo Railway deploys from:** `jvanclavdiodos/theraconnect-demo`
+- The Flutter app's API base URL lives in `theraconnect_flutter/lib/config/api_config.dart` (point it at the live URL, then `flutter build apk --release`).
+
+Deployment configuration lives in:
+- **`.env.railway.example`** — production-flavored env vars (`APP_DEBUG=false`, `SESSION_ENCRYPT=true`, `FILESYSTEM_DISK=s3`, `QUEUE_CONNECTION=database`, `LOG_STACK=stderr`). Set these in the Railway service's **Variables** tab; the `${{MySQL.*}}` references auto-fill from the Railway MySQL plugin.
+- **`Dockerfile`** — non-root `www-data` container, `HEALTHCHECK` probing `/api/v1/health`, `intl` extension installed, pinned to `php:8.2.25-cli-alpine`.
+- **`docker/entrypoint.sh`** — boot sequence: `storage:link` → wait for DB (PDO probe) → `migrate --force` → `db:seed --force` (idempotent, env-gated on `APP_ENV=local` or `SEED_DEMO=true`, aborts on failure) → `php artisan serve` on `$PORT`.
+- **`railway.worker.json`** / **`railway.scheduler.json`** — auxiliary queue-worker and scheduler Railway services. Both use the shared `docker/wait-for-db.sh` probe. Required for `SendPushNotification` delivery and appointment/assignment reminders.
+- **`docker-compose.yml`** — full local stack: `app`, `mysql`, `queue-worker`, `scheduler` (via `schedule:work`).
+
+### Persistent uploads (S3)
+
+Set `FILESYSTEM_DISK=s3` plus the `AWS_*` env vars. Patient submissions and assignment worksheets are served **only** through authenticated download routes — the bucket must be **private** (block-public-access on). With no S3 creds, the app falls back to the private `local` disk (uploads reset on redeploy).
+
+### Push notifications (FCM)
+
+The push notification code is fully implemented (backend + Flutter foreground/background/tap-to-deeplink) but disabled by default — in-app notifications still work without it. To activate, create a Firebase project, drop in the `google-services.json`, and set `FCM_PROJECT_ID` + `FCM_CREDENTIALS_B64` env vars. See **`FCM_SETUP.md`** for the full 15-minute walkthrough.
+

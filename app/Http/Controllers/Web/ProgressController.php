@@ -9,6 +9,7 @@ use App\Models\Assessment;
 use App\Models\MoodLog;
 use App\Models\Patient;
 use App\Models\TherapyGoal;
+use App\Services\ActivityLogService;
 use App\Services\AssessmentService;
 use App\Services\AttendanceService;
 use App\Services\GoalService;
@@ -92,11 +93,16 @@ class ProgressController extends Controller
         abort_unless($patient->assigned_clinician_id === $clinician->id, 403);
 
         $validated = $request->validate([
-            'instrument' => ['required', 'in:' . implode(',', array_keys(Assessments::INSTRUMENTS))],
+            'instrument' => ['required', 'in:'.implode(',', array_keys(Assessments::INSTRUMENTS))],
         ]);
 
-        $notification = DB::transaction(function () use ($patient, $clinician, $validated) {
+        $notification = DB::transaction(function () use ($request, $patient, $clinician, $validated) {
             $assessment = $this->assessments->assign($patient, $clinician, $validated['instrument']);
+
+            app(ActivityLogService::class)->log(
+                $request->user(), 'assessment.assigned', $assessment,
+                ['instrument' => $validated['instrument'], 'patient_id' => $patient->id]
+            );
 
             return $this->notifications->assessmentAssigned(
                 $patient->user->id,
@@ -107,7 +113,7 @@ class ProgressController extends Controller
         SendPushNotification::dispatch($notification->id)->afterCommit();
 
         return redirect()->route('patients.progress', $patient)
-            ->with('status', Assessments::title($validated['instrument']) . ' assigned to the patient.');
+            ->with('status', Assessments::title($validated['instrument']).' assigned to the patient.');
     }
 
     /** Co-define a therapy goal with the patient. */
@@ -148,7 +154,7 @@ class ProgressController extends Controller
         $this->caseloadClinician($request, $goal->patient);
 
         $validated = $request->validate([
-            'status' => ['required', 'in:' . implode(',', TherapyGoal::STATUSES)],
+            'status' => ['required', 'in:'.implode(',', TherapyGoal::STATUSES)],
         ]);
 
         $this->goals->setStatus($goal, $validated['status']);

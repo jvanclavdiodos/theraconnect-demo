@@ -19,7 +19,7 @@ class PatientAvatarApiTest extends TestCase
 
         $this->withHeaders($headers)
             ->postJson('/api/v1/profile/avatar', [
-                'avatar' => UploadedFile::fake()->create('me.jpg', 60, 'image/jpeg'),
+                'avatar' => UploadedFile::fake()->image('me.jpg', 800, 800),
             ])
             ->assertStatus(200)
             ->assertJsonPath('data.has_avatar', true);

@@ -4,7 +4,6 @@ namespace Tests\Integration;
 
 use App\Models\DeviceToken;
 use App\Models\Notification;
-use App\Models\Appointment;
 use Tests\TestCase;
 
 class NotificationFlowTest extends TestCase

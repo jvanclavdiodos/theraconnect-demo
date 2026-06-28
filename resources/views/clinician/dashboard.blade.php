@@ -10,13 +10,24 @@
 @php
     $hour = (int) now()->format('G');
     $greeting = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
-    $firstName = explode(' ', trim(auth()->user()->name))[0] ?? '';
+
+    // Build a natural greeting name. Clinician names are stored with a title and
+    // credentials (e.g. "Dr. James Rivera, PsyD"), so the old "first token"
+    // approach produced just "Dr.". Drop the trailing ", credentials" suffix,
+    // then greet titled names as "Dr. {surname}" and others by first name.
+    $base = trim(explode(',', trim(auth()->user()->name))[0]);
+    $parts = preg_split('/\s+/', $base, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+    $honorifics = ['dr', 'dr.', 'mr', 'mr.', 'mrs', 'mrs.', 'ms', 'ms.', 'mx', 'mx.', 'prof', 'prof.'];
+    $greetingName = count($parts) > 1 && in_array(mb_strtolower($parts[0]), $honorifics, true)
+        ? $parts[0] . ' ' . end($parts)   // "Dr. Rivera"
+        : ($parts[0] ?? '');               // "James" / "Admin"
+
     $initials = fn($n) => collect(explode(' ', trim($n)))->filter()->take(2)
         ->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
 @endphp
 
 <div class="mb-4">
-    <h1 class="tc-page-title">{{ $greeting }}, {{ $firstName }}</h1>
+    <h1 class="tc-page-title">{{ $greeting }}, {{ $greetingName }}</h1>
     <p class="tc-page-sub">{{ now()->format('l, F j, Y') }} — Here's your clinical overview for today.</p>
 </div>
 

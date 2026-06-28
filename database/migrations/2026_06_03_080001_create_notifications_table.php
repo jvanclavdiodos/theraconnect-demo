@@ -17,10 +17,14 @@ return new class extends Migration
                 'appointment_rejected',
                 'appointment_rescheduled',
                 'appointment_reminder',
+                'appointment_cancelled',
                 'assignment_created',
                 'assignment_deadline',
                 'message_received',
                 'assessment_assigned',
+                'patient_request',
+                'patient_request_approved',
+                'patient_request_denied',
                 'generic',
             ]);
             $table->string('title');

@@ -36,7 +36,7 @@
 
 {{-- Conversation list --}}
 <div class="card shadow-sm mt-4">
-    <div class="card-header bg-white"><strong>Conversations</strong></div>
+    <div class="card-header"><strong>Conversations</strong></div>
     <div class="list-group list-group-flush">
         @forelse($conversations as $conv)
             @php

@@ -5,8 +5,8 @@ namespace Tests;
 use App\Models\Clinician;
 use App\Models\Patient;
 use App\Models\User;
-use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
@@ -21,6 +21,7 @@ abstract class TestCase extends BaseTestCase
             'role' => 'admin',
         ]);
         $admin->save();
+
         return $admin;
     }
 
@@ -71,7 +72,7 @@ abstract class TestCase extends BaseTestCase
     protected function apiHeaders(string $token): array
     {
         return [
-            'Authorization' => 'Bearer ' . $token,
+            'Authorization' => 'Bearer '.$token,
             'Accept' => 'application/json',
         ];
     }

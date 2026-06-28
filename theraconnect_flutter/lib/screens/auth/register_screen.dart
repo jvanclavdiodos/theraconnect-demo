@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../models/patient.dart';
 import '../../providers/auth_provider.dart';
+import '../../widgets/password_field.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -17,7 +19,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final _contactController = TextEditingController();
-  bool _obscurePassword = true;
+  final _personalIssuesController = TextEditingController();
+  String? _gender;
+  String? _education;
+  String? _employment;
+  int? _requestedClinicianId;
   bool _obscureConfirm = true;
 
   @override
@@ -27,8 +33,14 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _contactController.dispose();
+    _personalIssuesController.dispose();
     super.dispose();
   }
+
+  DropdownMenuItem<String> _item(String v) => DropdownMenuItem(value: v, child: Text(v));
+
+  String? _trimOrNull(TextEditingController c) =>
+      c.text.trim().isEmpty ? null : c.text.trim();
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
@@ -38,9 +50,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           _emailController.text.trim(),
           _passwordController.text,
           _confirmPasswordController.text,
-          contactNo: _contactController.text.trim().isEmpty
-              ? null
-              : _contactController.text.trim(),
+          contactNo: _trimOrNull(_contactController),
+          gender: _gender,
+          educationalAttainment: _education,
+          employmentStatus: _employment,
+          personalIssues: _trimOrNull(_personalIssuesController),
+          requestedClinicianId: _requestedClinicianId,
         );
 
     if (error != null && mounted) {
@@ -53,6 +68,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
+    final cliniciansAsync = ref.watch(registrationCliniciansProvider);
 
     ref.listen(authProvider, (_, next) {
       if (next.status == AuthState.authenticated && mounted) {
@@ -132,24 +148,100 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    textInputAction: TextInputAction.next,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock),
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscurePassword ? Icons.visibility : Icons.visibility_off),
-                        onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                  cliniciansAsync.when(
+                    data: (clinicians) => DropdownButtonFormField<int>(
+                      initialValue: _requestedClinicianId,
+                      isExpanded: true,
+                      decoration: const InputDecoration(
+                        labelText: 'Preferred Clinician (optional)',
+                        prefixIcon: Icon(Icons.medical_services_outlined),
+                        border: OutlineInputBorder(),
+                        helperText: 'Sent to the clinician for approval before you\'re connected.',
+                        helperMaxLines: 2,
                       ),
+                      items: [
+                        const DropdownMenuItem<int>(
+                          value: null,
+                          child: Text('No preference for now'),
+                        ),
+                        ...clinicians.map((c) => DropdownMenuItem<int>(
+                              value: c.id,
+                              child: Text(
+                                c.specialization != null
+                                    ? '${c.name} — ${c.specialization}'
+                                    : c.name,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            )),
+                      ],
+                      onChanged: (v) => setState(() => _requestedClinicianId = v),
                     ),
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Password is required';
-                      if (v.length < 8) return 'Password must be at least 8 characters';
-                      return null;
-                    },
+                    loading: () => const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 12),
+                      child: LinearProgressIndicator(),
+                    ),
+                    error: (_, __) => const SizedBox.shrink(),
+                  ),
+                  const SizedBox(height: 24),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text('About you (optional)',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            )),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    initialValue: _gender,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Gender',
+                      prefixIcon: Icon(Icons.wc),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: Patient.genders.map(_item).toList(),
+                    onChanged: (v) => setState(() => _gender = v),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _education,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Educational Attainment',
+                      prefixIcon: Icon(Icons.school),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: Patient.educationLevels.map(_item).toList(),
+                    onChanged: (v) => setState(() => _education = v),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    initialValue: _employment,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Employment Status',
+                      prefixIcon: Icon(Icons.work_outline),
+                      border: OutlineInputBorder(),
+                    ),
+                    items: Patient.employmentStatuses.map(_item).toList(),
+                    onChanged: (v) => setState(() => _employment = v),
+                  ),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                    controller: _personalIssuesController,
+                    maxLines: 3,
+                    maxLength: 2000,
+                    textInputAction: TextInputAction.newline,
+                    decoration: const InputDecoration(
+                      labelText: 'What brings you here? (optional)',
+                      prefixIcon: Icon(Icons.favorite_border),
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  PasswordField(
+                    controller: _passwordController,
+                    label: 'Password',
                   ),
                   const SizedBox(height: 16),
                   TextFormField(

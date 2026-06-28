@@ -46,8 +46,6 @@ class AppointmentPolicy
      *
      * Admins/clinicians bypass this check — they may cancel any appointment
      * via the web dashboard.
-     *
-     * @return bool
      */
     public function delete(User $user, Appointment $appointment): bool
     {

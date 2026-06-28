@@ -5,9 +5,13 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
+use App\Http\Resources\PatientResource;
 use App\Http\Resources\UserResource;
+use App\Jobs\SendPushNotification;
+use App\Models\Clinician;
 use App\Models\Patient;
 use App\Models\User;
+use App\Services\PatientRequestService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -15,9 +19,9 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request): JsonResponse
+    public function register(RegisterRequest $request, PatientRequestService $patientRequests): JsonResponse
     {
-        $user = DB::transaction(function () use ($request) {
+        $user = DB::transaction(function () use ($request, $patientRequests) {
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -25,10 +29,26 @@ class AuthController extends Controller
                 'role' => 'patient',
             ]);
 
-            Patient::create([
+            $patient = Patient::create([
                 'user_id' => $user->id,
                 'contact_no' => $request->contact_no,
+                'gender' => $request->gender,
+                'educational_attainment' => $request->educational_attainment,
+                'employment_status' => $request->employment_status,
+                'personal_issues' => $request->personal_issues,
             ]);
+
+            if ($request->filled('requested_clinician_id')) {
+                // Capture the notification so the push fires after commit —
+                // matches PatientRequestController@approve/deny. Without this
+                // the clinician only learns about the request on dashboard
+                // refresh, never via push.
+                $notification = $patientRequests->submit(
+                    $patient,
+                    Clinician::findOrFail($request->requested_clinician_id)
+                );
+                SendPushNotification::dispatch($notification->id)->afterCommit();
+            }
 
             return $user;
         });
@@ -45,9 +65,20 @@ class AuthController extends Controller
 
     public function login(LoginRequest $request): JsonResponse
     {
-        $user = User::where('email', $request->email)->first();
+        // Lowercase the email so login is case-insensitive regardless of DB
+        // collation. Pairs with the User::setEmailAttribute mutator that
+        // lowercases on write (all seeded demo accounts are already lower).
+        $email = strtolower($request->email);
 
-        if (! $user || ! Hash::check($request->password, $user->password)) {
+        $user = User::where('email', $email)->first();
+
+        // Anti-enumeration: always perform a Hash::check — against the user's
+        // real hash if found, or a freshly-minted dummy hash if the email
+        // doesn't exist — so the 401 timing is identical in both cases and
+        // an attacker can't infer account existence via response latency.
+        $storedHash = $user?->password ?? Hash::make(str()->random(32));
+
+        if (! $user || ! Hash::check($request->password, $storedHash)) {
             return response()->json([
                 'message' => 'The provided credentials are incorrect.',
             ], 401);
@@ -90,7 +121,7 @@ class AuthController extends Controller
             'data' => [
                 'user' => new UserResource($user),
                 'patient_profile' => $user->patient
-                    ? new \App\Http\Resources\PatientResource($user->patient)
+                    ? new PatientResource($user->patient)
                     : null,
             ],
         ]);

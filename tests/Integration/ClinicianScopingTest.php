@@ -201,7 +201,7 @@ class ClinicianScopingTest extends TestCase
         $this->actingAs($a['user'], 'web')->post('/patients', [
             'name' => 'New Patient',
             'email' => 'newp@test.com',
-            'password' => 'password123',
+            'password' => 'Password123',
             'assigned_clinician_id' => $b['clinician']->id, // attempt to assign to B
         ])->assertRedirect(route('patients.index'));
 

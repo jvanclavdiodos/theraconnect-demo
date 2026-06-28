@@ -32,11 +32,10 @@ class NotificationNotifier extends StateNotifier<AsyncValue<List<NotificationIte
       _cache.put('notifications', result.notifications.map((n) => n.toJson()).toList());
       state = AsyncValue.data(result.notifications);
     } catch (e) {
-      if (e is ApiError) {
-        state = AsyncValue.error(e.userMessage, StackTrace.current);
-      } else {
-        state = AsyncValue.error(e.toString(), StackTrace.current);
-      }
+      // Store a clean, user-safe message (real reason for ApiError, generic
+      // fallback otherwise) so the screen can show it directly without
+      // re-wrapping and masking it.
+      state = AsyncValue.error(ApiError.fromException(e).userMessage, StackTrace.current);
     }
   }
 

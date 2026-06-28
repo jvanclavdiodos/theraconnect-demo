@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\ConversationResource;
 use App\Http\Resources\MessageResource;
 use App\Models\Conversation;
+use App\Services\ActivityLogService;
 use App\Services\MessageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -78,6 +79,8 @@ class ConversationController extends Controller
 
         $message = $this->messages->send($conversation, $request->user(), $validated['body'])
             ->load('sender');
+
+        app(ActivityLogService::class)->log($request->user(), 'message.sent', $message);
 
         return response()->json(['data' => new MessageResource($message)], 201);
     }

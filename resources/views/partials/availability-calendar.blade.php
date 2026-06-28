@@ -59,6 +59,12 @@
                     <div class="text-muted text-center py-5">Pick a day on the calendar.</div>
                 </template>
 
+                <template x-if="selectedDate && loadError">
+                    <div class="alert alert-danger py-2 small mb-2" role="alert">
+                        Couldn't load day details. <button type="button" class="btn btn-link btn-sm p-0 align-baseline" @click="selectDay(selectedDate, selectedIsPast)">Retry</button>
+                    </div>
+                </template>
+
                 <template x-if="selectedDate && dayData">
                     <div>
                         <div class="d-flex align-items-center justify-content-between mb-2">
@@ -139,7 +145,7 @@ function availabilityCalendar() {
     return {
         year: 0, month: 0, monthLabel: '',
         weeks: [],
-        selectedDate: null, selectedIsPast: false, dayData: null,
+        selectedDate: null, selectedIsPast: false, dayData: null, loadError: false,
         urls: {
             month: "{{ route('availability.month') }}",
             day: "{{ route('availability.day') }}",
@@ -165,9 +171,18 @@ function availabilityCalendar() {
                 { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
         },
         async loadMonth() {
-            const res = await fetch(`${this.urls.month}?month=${this.ym()}`, { headers: { 'Accept': 'application/json' } });
-            const data = await res.json();
-            this.buildGrid(data.days || {});
+            try {
+                const res = await fetch(`${this.urls.month}?month=${this.ym()}`, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                this.buildGrid(data.days || {});
+            } catch (e) {
+                // Network failure or 5xx: leave the previous month's grid in
+                // place but clear the count dots so the clinician sees the
+                // calendar is stale rather than a frozen/hung UI. Toggling
+                // months will retry.
+                this.weeks = this.weeks.map(week => week.map(cell => ({ ...cell, count: 0, blocked: false })));
+            }
         },
         buildGrid(daysMap) {
             const first = new Date(this.year, this.month - 1, 1);
@@ -199,8 +214,17 @@ function availabilityCalendar() {
             this.selectedDate = date;
             this.selectedIsPast = isPast;
             this.dayData = null;
-            const res = await fetch(`${this.urls.day}?date=${date}`, { headers: { 'Accept': 'application/json' } });
-            this.dayData = await res.json();
+            this.loadError = false;
+            try {
+                const res = await fetch(`${this.urls.day}?date=${date}`, { headers: { 'Accept': 'application/json' } });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                this.dayData = await res.json();
+            } catch (e) {
+                // Show the retry banner above the day panel rather than
+                // leaving the clinician staring at a perpetual spinner / empty
+                // state with no indication that the fetch failed.
+                this.loadError = true;
+            }
         },
         async post(url, body) {
             const res = await fetch(url, {

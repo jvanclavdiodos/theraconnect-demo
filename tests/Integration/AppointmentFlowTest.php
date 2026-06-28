@@ -2,8 +2,15 @@
 
 namespace Tests\Integration;
 
+use App\Exceptions\SlotUnavailableException;
 use App\Models\Appointment;
+use App\Models\Assignment;
+use App\Models\Clinician;
+use App\Models\Notification;
+use App\Models\User;
 use App\Services\AppointmentService;
+use App\Services\NotificationService;
+use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
 
 class AppointmentFlowTest extends TestCase
@@ -151,10 +158,13 @@ class AppointmentFlowTest extends TestCase
         $patientA = $this->createPatient('dbl-a@test.com');
         $patientB = $this->createPatient('dbl-b@test.com');
 
+        // A future whole-hour slot (relative, so the test never rots).
+        $slot = now()->addDays(7)->setTime(9, 0)->format('Y-m-d H:i:s');
+
         // Patient A books the 09:00 slot
         $this->withHeaders($this->apiHeaders($this->getApiToken($patientA['user'])))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-06-20 09:00:00',
+                'requested_at' => $slot,
                 'mode' => 'in_person',
                 'clinician_id' => $clinician['clinician']->id,
             ])
@@ -163,14 +173,14 @@ class AppointmentFlowTest extends TestCase
         // Patient B attempts the same clinician + slot
         $this->withHeaders($this->apiHeaders($this->getApiToken($patientB['user'])))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-06-20 09:00:00',
+                'requested_at' => $slot,
                 'mode' => 'in_person',
                 'clinician_id' => $clinician['clinician']->id,
             ])
             ->assertStatus(422)
             ->assertJsonPath('errors.requested_at.0', 'That time slot is already booked.');
 
-        $this->assertEquals(1, \App\Models\Appointment::count());
+        $this->assertEquals(1, Appointment::count());
     }
 
     public function test_schedule_slots_contain_correct_data(): void
@@ -331,12 +341,15 @@ class AppointmentFlowTest extends TestCase
         $patientA = $this->createPatient('rsched-a@test.com');
         $patientB = $this->createPatient('rsched-b@test.com');
 
-        // Patient A holds an approved booking at 14:00 on 2026-07-01.
+        // A future day (relative, so the test never rots).
+        $day = now()->addDays(7)->format('Y-m-d');
+
+        // Patient A holds an approved booking at 14:00.
         Appointment::create([
             'patient_id' => $patientA['patient']->id,
             'clinician_id' => $clinician['clinician']->id,
-            'requested_at' => '2026-07-01 14:00:00',
-            'scheduled_at' => '2026-07-01 14:00:00',
+            'requested_at' => "$day 14:00:00",
+            'scheduled_at' => "$day 14:00:00",
             'mode' => 'in_person',
             'status' => 'approved',
         ]);
@@ -345,14 +358,14 @@ class AppointmentFlowTest extends TestCase
         $b = Appointment::create([
             'patient_id' => $patientB['patient']->id,
             'clinician_id' => $clinician['clinician']->id,
-            'requested_at' => '2026-07-01 10:00:00',
-            'scheduled_at' => '2026-07-01 10:00:00',
+            'requested_at' => "$day 10:00:00",
+            'scheduled_at' => "$day 10:00:00",
             'mode' => 'in_person',
             'status' => 'approved',
         ]);
 
-        $this->expectException(\App\Exceptions\SlotUnavailableException::class);
-        app(AppointmentService::class)->reschedule($b, '2026-07-01 14:00:00');
+        $this->expectException(SlotUnavailableException::class);
+        app(AppointmentService::class)->reschedule($b, "$day 14:00:00");
     }
 
     /**
@@ -375,12 +388,12 @@ class AppointmentFlowTest extends TestCase
         ]);
 
         // Swap NotificationService for a fake that throws on appointmentApproved.
-        $fakeNotif = $this->partialMock(\App\Services\NotificationService::class);
+        $fakeNotif = $this->partialMock(NotificationService::class);
         $fakeNotif->shouldReceive('appointmentApproved')
             ->once()
             ->andThrow(new \RuntimeException('notif insert failed'));
 
-        $this->app->instance(\App\Services\NotificationService::class, $fakeNotif);
+        $this->app->instance(NotificationService::class, $fakeNotif);
 
         // Admin approves via the web route (session-authenticated).
         $admin = $this->createAdmin();
@@ -396,8 +409,8 @@ class AppointmentFlowTest extends TestCase
         $this->assertEquals('pending', $appointment->fresh()->status);
 
         // And no notification row + no queued push job.
-        $this->assertEquals(0, \App\Models\Notification::where('user_id', $patient['user']->id)->count());
-        $this->assertEquals(0, \Illuminate\Support\Facades\DB::table('jobs')->count());
+        $this->assertEquals(0, Notification::where('user_id', $patient['user']->id)->count());
+        $this->assertEquals(0, DB::table('jobs')->count());
     }
 
     /**
@@ -411,12 +424,12 @@ class AppointmentFlowTest extends TestCase
         $clinician = $this->createClinician();
         $patient = $this->createPatient('web-assign@test.com');
 
-        $fakeNotif = $this->partialMock(\App\Services\NotificationService::class);
+        $fakeNotif = $this->partialMock(NotificationService::class);
         $fakeNotif->shouldReceive('assignmentCreated')
             ->once()
             ->andThrow(new \RuntimeException('notif insert failed'));
 
-        $this->app->instance(\App\Services\NotificationService::class, $fakeNotif);
+        $this->app->instance(NotificationService::class, $fakeNotif);
 
         try {
             $this->actingAs($admin, 'web')
@@ -431,9 +444,9 @@ class AppointmentFlowTest extends TestCase
             // expected
         }
 
-        $this->assertEquals(0, \App\Models\Assignment::where('title', 'Atomic Test Assignment')->count());
-        $this->assertEquals(0, \App\Models\Notification::where('user_id', $patient['user']->id)->count());
-        $this->assertEquals(0, \Illuminate\Support\Facades\DB::table('jobs')->count());
+        $this->assertEquals(0, Assignment::where('title', 'Atomic Test Assignment')->count());
+        $this->assertEquals(0, Notification::where('user_id', $patient['user']->id)->count());
+        $this->assertEquals(0, DB::table('jobs')->count());
     }
 
     /**
@@ -486,6 +499,128 @@ class AppointmentFlowTest extends TestCase
             ->assertStatus(403);
 
         $this->assertEquals('rejected', $appointment->fresh()->status);
+    }
+
+    /**
+     * Approving an appointment must link the patient to that clinician so they
+     * appear in the caseload and messaging becomes available.
+     */
+    public function test_approving_appointment_assigns_patient_to_clinician(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'mode' => 'in_person',
+            'status' => 'pending',
+        ]);
+
+        $this->assertNull($patient['patient']->fresh()->assigned_clinician_id);
+
+        app(AppointmentService::class)->approve($appointment);
+
+        $this->assertEquals(
+            $clinician['clinician']->id,
+            $patient['patient']->fresh()->assigned_clinician_id
+        );
+    }
+
+    /**
+     * If the patient already has an assigned clinician (e.g. via the sign-up
+     * request flow), approving an appointment with a different clinician must
+     * NOT overwrite the existing care relationship.
+     */
+    public function test_approving_appointment_does_not_overwrite_existing_assignment(): void
+    {
+        $userA = User::create(['name' => 'Dr. A', 'email' => 'dr-a@test.com', 'password' => 'password', 'role' => 'clinician']);
+        $clinicianA = Clinician::create(['user_id' => $userA->id, 'license_no' => 'LIC-A', 'specialization' => 'Test']);
+
+        $userB = User::create(['name' => 'Dr. B', 'email' => 'dr-b@test.com', 'password' => 'password', 'role' => 'clinician']);
+        $clinicianB = Clinician::create(['user_id' => $userB->id, 'license_no' => 'LIC-B', 'specialization' => 'Test']);
+
+        $patient = $this->createPatient();
+        $patient['patient']->update(['assigned_clinician_id' => $clinicianA->id]);
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinicianB->id,
+            'requested_at' => '2030-12-31 10:00:00',
+            'mode' => 'in_person',
+            'status' => 'pending',
+        ]);
+
+        app(AppointmentService::class)->approve($appointment);
+
+        $this->assertEquals(
+            $clinicianA->id,
+            $patient['patient']->fresh()->assigned_clinician_id,
+            'Existing assignment to clinician A must not be overwritten.'
+        );
+    }
+
+    /**
+     * After a clinician approves an appointment, the patient should appear in
+     * that clinician's active patient list.
+     */
+    public function test_approved_patient_appears_in_clinician_patient_list(): void
+    {
+        $admin = $this->createAdmin();
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'mode' => 'in_person',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($admin, 'web')
+            ->patch("/appointments/{$appointment->id}/approve")
+            ->assertRedirect();
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get('/patients')
+            ->assertOk()
+            ->assertSee($patient['user']->name);
+    }
+
+    /**
+     * After appointment approval the clinician must be able to open a message
+     * thread with the patient (previously forbidden because the caseload link
+     * was never written).
+     */
+    public function test_clinician_can_message_patient_after_appointment_approval(): void
+    {
+        $admin = $this->createAdmin();
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'mode' => 'in_person',
+            'status' => 'pending',
+        ]);
+
+        // Before approval the clinician has no caseload relationship — messaging is blocked.
+        $this->actingAs($clinician['user'], 'web')
+            ->post('/messages/open', ['patient_id' => $patient['patient']->id])
+            ->assertStatus(403);
+
+        $this->actingAs($admin, 'web')
+            ->patch("/appointments/{$appointment->id}/approve")
+            ->assertRedirect();
+
+        // After approval the patient is on the caseload — messaging must succeed.
+        $this->actingAs($clinician['user'], 'web')
+            ->post('/messages/open', ['patient_id' => $patient['patient']->id])
+            ->assertRedirect();
     }
 
     /**

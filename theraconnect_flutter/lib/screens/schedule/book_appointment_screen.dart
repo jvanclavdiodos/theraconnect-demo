@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/schedule_slot.dart';
 import '../../providers/appointment_provider.dart';
+import '../../utils/date_format.dart';
 
 class BookAppointmentScreen extends ConsumerStatefulWidget {
   const BookAppointmentScreen({super.key});
@@ -100,7 +101,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
       );
     }
 
-    final (slot, _) = parsed;
+    final (slot, date) = parsed;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Book Appointment')),
@@ -112,6 +113,8 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
+                  Text(formatYmdDate(date), style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
                   Text(slot.slot, style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 4),
                   Text(slot.clinicianName, style: Theme.of(context).textTheme.bodyLarge),

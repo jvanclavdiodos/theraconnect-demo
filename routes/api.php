@@ -1,6 +1,21 @@
 <?php
 
-use Illuminate\Http\Request;
+use App\Http\Controllers\Api\V1\AppointmentController;
+use App\Http\Controllers\Api\V1\AssessmentController;
+use App\Http\Controllers\Api\V1\AssignmentController;
+use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\ChatbotController;
+use App\Http\Controllers\Api\V1\ClinicianController;
+use App\Http\Controllers\Api\V1\ConversationController;
+use App\Http\Controllers\Api\V1\DeviceTokenController;
+use App\Http\Controllers\Api\V1\GoalController;
+use App\Http\Controllers\Api\V1\MoodLogController;
+use App\Http\Controllers\Api\V1\NotificationController;
+use App\Http\Controllers\Api\V1\PasswordController;
+use App\Http\Controllers\Api\V1\PatientNoteController;
+use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\SubmissionController;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -16,82 +31,106 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
 
-    // Health check (public)
+    // Health check (public) — verifies the framework boots AND the database is
+    // reachable. The Dockerfile HEALTHCHECK, Railway healthcheckPath, and
+    // docker-compose healthcheck all probe this endpoint; without a DB probe a
+    // deployment with a dead database would pass every health check.
     Route::get('/health', function () {
-        return response()->json(['status' => 'ok', 'timestamp' => now()]);
+        try {
+            DB::select('SELECT 1');
+        } catch (Throwable $e) {
+            return response()->json(['status' => 'unhealthy', 'error' => 'db'], 503);
+        }
+
+        return response()->json(['status' => 'ok']);
     });
 
-    // Auth (public, throttled)
-    Route::middleware('throttle:auth')->group(function () {
-        Route::post('/register', [\App\Http\Controllers\Api\V1\AuthController::class, 'register']);
-        Route::post('/login', [\App\Http\Controllers\Api\V1\AuthController::class, 'login']);
+    // Auth (public, throttled). Two limiters applied as separate middleware so
+    // they don't share a quota:
+    //   throttle:login         — 5/min/IP (catches distributed attacking IPs)
+    //   throttle:account-login — 5/min keyed by email|IP (catches brute-force
+    //                            against one account from rotating IPs).
+    // Register gets its own tighter bucket so a registration flood can't lock
+    // out legitimate logins.
+    Route::middleware(['throttle:login', 'throttle:account-login'])->group(function () {
+        Route::post('/login', [AuthController::class, 'login']);
     });
+    Route::middleware(['throttle:register'])->group(function () {
+        Route::post('/register', [AuthController::class, 'register']);
+    });
+
+    // Clinician directory (public, throttled) — needed pre-auth so the register
+    // screen can offer a preferred-clinician picker. Exposes only safe public
+    // fields (id, name, specialization); also serves the authed booking flow.
+    Route::middleware('throttle:60,1')
+        ->get('/clinicians', [ClinicianController::class, 'index']);
 
     // Authenticated routes — patient-only per §1.6
     Route::middleware(['auth:sanctum', 'role:patient'])->group(function () {
 
         // Profile
-        Route::post('/logout', [\App\Http\Controllers\Api\V1\AuthController::class, 'logout']);
-        Route::get('/me', [\App\Http\Controllers\Api\V1\AuthController::class, 'me']);
+        Route::post('/logout', [AuthController::class, 'logout'])->middleware('throttle:10,1');
+        Route::get('/me', [AuthController::class, 'me']);
+        Route::put('/auth/password', [PasswordController::class, 'update'])->middleware('throttle:password-change');
 
         // Notifications
         Route::middleware('throttle:api')->group(function () {
-            Route::get('/notifications', [\App\Http\Controllers\Api\V1\NotificationController::class, 'index']);
-            Route::post('/notifications/{id}/read', [\App\Http\Controllers\Api\V1\NotificationController::class, 'markRead']);
+            Route::get('/notifications', [NotificationController::class, 'index']);
+            Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 
             // Device tokens
-            Route::post('/device-token', [\App\Http\Controllers\Api\V1\DeviceTokenController::class, 'store']);
-            Route::delete('/device-token', [\App\Http\Controllers\Api\V1\DeviceTokenController::class, 'destroy']);
+            Route::post('/device-token', [DeviceTokenController::class, 'store']);
+            Route::delete('/device-token', [DeviceTokenController::class, 'destroy']);
 
             // Profile
-            Route::get('/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'show']);
-            Route::put('/profile', [\App\Http\Controllers\Api\V1\ProfileController::class, 'update']);
-            Route::post('/profile/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'updateAvatar']);
-            Route::get('/profile/avatar', [\App\Http\Controllers\Api\V1\ProfileController::class, 'avatar']);
+            Route::get('/profile', [ProfileController::class, 'show']);
+            Route::put('/profile', [ProfileController::class, 'update']);
+            Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->middleware('throttle:10,1');
+            Route::get('/profile/avatar', [ProfileController::class, 'avatar']);
 
-            // Clinicians (read-only list for clinician-first booking)
-            Route::get('/clinicians', [\App\Http\Controllers\Api\V1\ClinicianController::class, 'index']);
+            // (Clinician directory lives on the public route above — it is also
+            // used by the pre-auth register screen.)
 
             // Appointments
-            Route::get('/schedules', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'schedules']);
-            Route::get('/schedules/availability', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'availability']);
-            Route::get('/appointments', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'index']);
-            Route::post('/appointments', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'store']);
-            Route::get('/appointments/{id}', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'show']);
-            Route::delete('/appointments/{id}', [\App\Http\Controllers\Api\V1\AppointmentController::class, 'destroy']);
+            Route::get('/schedules', [AppointmentController::class, 'schedules']);
+            Route::get('/schedules/availability', [AppointmentController::class, 'availability']);
+            Route::get('/appointments', [AppointmentController::class, 'index']);
+            Route::post('/appointments', [AppointmentController::class, 'store']);
+            Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
+            Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
 
             // Assignments
-            Route::get('/assignments', [\App\Http\Controllers\Api\V1\AssignmentController::class, 'index']);
-            Route::get('/assignments/{id}', [\App\Http\Controllers\Api\V1\AssignmentController::class, 'show']);
-            Route::get('/assignments/{id}/worksheet', [\App\Http\Controllers\Api\V1\AssignmentController::class, 'downloadWorksheet']);
-            Route::post('/assignments/{id}/submit', [\App\Http\Controllers\Api\V1\SubmissionController::class, 'store']);
-            Route::get('/submissions/{id}/file', [\App\Http\Controllers\Api\V1\SubmissionController::class, 'downloadFile']);
+            Route::get('/assignments', [AssignmentController::class, 'index']);
+            Route::get('/assignments/{id}', [AssignmentController::class, 'show']);
+            Route::get('/assignments/{id}/worksheet', [AssignmentController::class, 'downloadWorksheet']);
+            Route::post('/assignments/{id}/submit', [SubmissionController::class, 'store']);
+            Route::get('/submissions/{id}/file', [SubmissionController::class, 'downloadFile']);
 
             // Notes shared by the clinician (read-only)
-            Route::get('/notes', [\App\Http\Controllers\Api\V1\PatientNoteController::class, 'index']);
+            Route::get('/notes', [PatientNoteController::class, 'index']);
 
             // Therapy progress — standardized questionnaires (PHQ-9 / GAD-7)
-            Route::get('/assessments', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'index']);
-            Route::get('/assessments/{assessment}', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'show']);
-            Route::post('/assessments/{assessment}/submit', [\App\Http\Controllers\Api\V1\AssessmentController::class, 'submit']);
+            Route::get('/assessments', [AssessmentController::class, 'index']);
+            Route::get('/assessments/{assessment}', [AssessmentController::class, 'show']);
+            Route::post('/assessments/{assessment}/submit', [AssessmentController::class, 'submit']);
 
             // Therapy progress — quick mood check-ins (1–10)
-            Route::get('/mood-logs', [\App\Http\Controllers\Api\V1\MoodLogController::class, 'index']);
-            Route::post('/mood-logs', [\App\Http\Controllers\Api\V1\MoodLogController::class, 'store']);
+            Route::get('/mood-logs', [MoodLogController::class, 'index']);
+            Route::post('/mood-logs', [MoodLogController::class, 'store']);
 
             // Therapy goals (read-only; clinician-authored, GAS-rated)
-            Route::get('/goals', [\App\Http\Controllers\Api\V1\GoalController::class, 'index']);
+            Route::get('/goals', [GoalController::class, 'index']);
 
             // Messaging (patient <-> assigned clinician)
-            Route::get('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'index']);
-            Route::post('/conversations', [\App\Http\Controllers\Api\V1\ConversationController::class, 'store']);
-            Route::get('/conversations/{conversation}/messages', [\App\Http\Controllers\Api\V1\ConversationController::class, 'messages']);
-            Route::post('/conversations/{conversation}/messages', [\App\Http\Controllers\Api\V1\ConversationController::class, 'send']);
+            Route::get('/conversations', [ConversationController::class, 'index']);
+            Route::post('/conversations', [ConversationController::class, 'store']);
+            Route::get('/conversations/{conversation}/messages', [ConversationController::class, 'messages']);
+            Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'send']);
         });
 
         // Chatbot (separate throttle: 30/min/user)
         Route::middleware('throttle:chatbot')->group(function () {
-            Route::post('/chatbot/message', [\App\Http\Controllers\Api\V1\ChatbotController::class, 'message']);
+            Route::post('/chatbot/message', [ChatbotController::class, 'message']);
         });
     });
 });

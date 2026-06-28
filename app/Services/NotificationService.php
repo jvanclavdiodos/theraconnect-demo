@@ -81,6 +81,23 @@ class NotificationService
         );
     }
 
+    /**
+     * Sent to the assigned clinician when a patient cancels their own
+     * appointment, so the clinician's calendar isn't left expecting a
+     * no-show. The patient already knows (they performed the action); this
+     * is the symmetric notification to the other party.
+     */
+    public function appointmentCancelledByPatient(int $clinicianUserId, string $patientName, string $requestedAt): Notification
+    {
+        return $this->create(
+            $clinicianUserId,
+            'appointment_cancelled',
+            'Appointment Cancelled',
+            "{$patientName} cancelled their appointment for {$requestedAt}.",
+            null
+        );
+    }
+
     public function appointmentReminder(int $userId, int $appointmentId, string $time): Notification
     {
         return $this->create(
@@ -89,6 +106,51 @@ class NotificationService
             'Appointment Reminder',
             "Reminder: you have an appointment tomorrow at {$time}.",
             ['appointment_id' => $appointmentId]
+        );
+    }
+
+    /**
+     * Sent to a clinician when a self-registering patient asks to be added to
+     * their caseload, so the clinician can approve or deny the request.
+     */
+    public function patientRequestSubmitted(int $clinicianUserId, string $patientName): Notification
+    {
+        return $this->create(
+            $clinicianUserId,
+            'patient_request',
+            'New patient request',
+            "{$patientName} requested to be added to your caseload. Review and approve or decline.",
+            null
+        );
+    }
+
+    /**
+     * Sent to the patient when a clinician approves their request — they are
+     * now connected and can book appointments and message the clinician.
+     */
+    public function patientRequestApproved(int $patientUserId, string $clinicianName): Notification
+    {
+        return $this->create(
+            $patientUserId,
+            'patient_request_approved',
+            'Clinician request approved',
+            "You're now connected with {$clinicianName}. You can book appointments and send messages.",
+            null
+        );
+    }
+
+    /**
+     * Sent to the patient when a clinician declines their request, so they can
+     * choose another clinician or contact the clinic.
+     */
+    public function patientRequestDenied(int $patientUserId): Notification
+    {
+        return $this->create(
+            $patientUserId,
+            'patient_request_denied',
+            'Clinician request update',
+            'Your clinician request was not approved. Please choose another clinician or contact the clinic.',
+            null
         );
     }
 

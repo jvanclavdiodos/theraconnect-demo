@@ -32,9 +32,10 @@
             @csrf
             <div class="mb-2">
                 <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp"
+                       data-validate-file data-max-bytes="4194304" data-allowed-extensions="jpg,jpeg,png,webp"
                        class="form-control @error('avatar') is-invalid @enderror" required>
                 @error('avatar') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                <div class="form-text">JPG, PNG, or WEBP, up to 4&nbsp;MB.</div>
+                <div class="form-text">JPG, PNG, or WEBP, up to 4&nbsp;MB. Square, max 1024×1024 pixels.</div>
             </div>
             <button type="submit" class="btn btn-primary btn-sm">Upload picture</button>
             @if ($user->hasAvatar())
@@ -46,6 +47,34 @@
                 @csrf @method('DELETE')
             </form>
         @endif
+    </div>
+</div>
+
+@push('scripts')
+    <script src="{{ asset('js/file-upload.js') }}" defer></script>
+@endpush
+
+<div class="card shadow-sm mt-3" style="max-width: 540px;" x-data="passwordField({ requireConfirm: true })">
+    <div class="card-header bg-white"><strong>Change password</strong></div>
+    <div class="card-body">
+        <form action="{{ route('account.password.update') }}" method="POST">
+            @csrf @method('PUT')
+            <div class="mb-3">
+                <label for="current_password" class="form-label">Current password</label>
+                <input type="password" id="current_password" name="current_password"
+                       class="form-control @error('current_password') is-invalid @enderror"
+                       autocomplete="current-password" required>
+                @error('current_password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            </div>
+
+            @include('partials.password-strength', [
+                'label' => 'New password',
+                'confirm' => true,
+                'confirmLabel' => 'Confirm new password',
+            ])
+
+            <button type="submit" class="btn btn-primary btn-sm" :disabled="!canSubmit">Update password</button>
+        </form>
     </div>
 </div>
 @endsection

@@ -2,6 +2,7 @@
 
 namespace Tests\Integration;
 
+use App\Models\Patient;
 use Tests\TestCase;
 
 class PatientProfileFieldsTest extends TestCase
@@ -14,7 +15,7 @@ class PatientProfileFieldsTest extends TestCase
             ->post('/patients', [
                 'name' => 'New Patient',
                 'email' => 'newp@test.com',
-                'password' => 'password123',
+                'password' => 'Password123',
                 'gender' => 'Female',
                 'educational_attainment' => 'College',
                 'employment_status' => 'Student',
@@ -26,8 +27,12 @@ class PatientProfileFieldsTest extends TestCase
             'gender' => 'Female',
             'educational_attainment' => 'College',
             'employment_status' => 'Student',
-            'personal_issues' => 'Anxiety around exams.',
         ]);
+        // personal_issues is encrypted at rest — verify via model
+        $this->assertSame(
+            'Anxiety around exams.',
+            Patient::latest()->first()->personal_issues
+        );
     }
 
     public function test_invalid_option_is_rejected(): void
@@ -38,7 +43,7 @@ class PatientProfileFieldsTest extends TestCase
             ->post('/patients', [
                 'name' => 'Bad',
                 'email' => 'bad@test.com',
-                'password' => 'password123',
+                'password' => 'Password123',
                 'gender' => 'Martian',
             ])
             ->assertSessionHasErrors('gender');

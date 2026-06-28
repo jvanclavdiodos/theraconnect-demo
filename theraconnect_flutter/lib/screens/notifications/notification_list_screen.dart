@@ -95,7 +95,14 @@ class NotificationListScreen extends ConsumerWidget {
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (e, _) => Center(child: Text(ApiError.fromException(e).userMessage)),
+          // Belt-and-suspenders: the provider already pre-sanitizes the error
+          // to a String before storing it, but routing it through
+          // ApiError.fromException here makes the screen robust to future
+          // provider refactors that might store the raw exception — never
+          // leak internal stack traces / API paths to a patient.
+          error: (e, _) => Center(
+            child: Text(ApiError.fromException(e).userMessage),
+          ),
         ),
       ),
     );

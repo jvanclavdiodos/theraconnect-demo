@@ -3,10 +3,10 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\UpdateAvatarRequest;
 use App\Http\Requests\Api\UpdateProfileRequest;
 use App\Http\Resources\PatientResource;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -41,20 +41,21 @@ class ProfileController extends Controller
     }
 
     /** Upload/replace the patient's own profile picture. */
-    public function updateAvatar(Request $request): JsonResponse
+    public function updateAvatar(UpdateAvatarRequest $request): JsonResponse
     {
-        $request->validate([
-            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
-        ]);
-
         $user = auth()->user();
 
-        if ($user->avatar_path) {
-            Storage::disk('local')->delete($user->avatar_path);
-        }
-
-        $path = $request->file('avatar')->store('avatars', 'local');
+        // Store the new avatar BEFORE updating the DB path or deleting the
+        // old file. File ops can't roll back inside a transaction — if the
+        // store fails mid-way, the old avatar stays intact and the user
+        // keeps their existing picture rather than ending up with none.
+        $oldPath = $user->avatar_path;
+        $path = $request->file('avatar')->store('avatars');
         $user->update(['avatar_path' => $path]);
+
+        if ($oldPath) {
+            Storage::disk()->delete($oldPath);
+        }
 
         return response()->json([
             'data' => new PatientResource($user->patient->fresh()->load('user')),
@@ -67,10 +68,10 @@ class ProfileController extends Controller
         $user = auth()->user();
 
         abort_unless(
-            $user->avatar_path && Storage::disk('local')->exists($user->avatar_path),
+            $user->avatar_path && Storage::disk()->exists($user->avatar_path),
             404
         );
 
-        return Storage::disk('local')->response($user->avatar_path);
+        return Storage::disk()->response($user->avatar_path);
     }
 }

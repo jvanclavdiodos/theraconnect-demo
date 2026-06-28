@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\InvalidStateException;
 use App\Exceptions\SlotUnavailableException;
 use App\Models\Appointment;
 use App\Models\Clinician;
@@ -28,10 +29,10 @@ class AppointmentService
             ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
             ->where(function ($q) use ($dayStart, $dayEnd) {
                 $q->whereBetween('scheduled_at', [$dayStart, $dayEnd])
-                  ->orWhere(function ($q2) use ($dayStart, $dayEnd) {
-                      $q2->whereNull('scheduled_at')
-                         ->whereBetween('requested_at', [$dayStart, $dayEnd]);
-                  });
+                    ->orWhere(function ($q2) use ($dayStart, $dayEnd) {
+                        $q2->whereNull('scheduled_at')
+                            ->whereBetween('requested_at', [$dayStart, $dayEnd]);
+                    });
             })
             ->get(['clinician_id', 'scheduled_at', 'requested_at']);
 
@@ -85,10 +86,10 @@ class AppointmentService
             ->when($ignoreAppointmentId, fn ($q) => $q->where('id', '!=', $ignoreAppointmentId))
             ->where(function ($q) use ($at) {
                 $q->where('scheduled_at', $at)
-                  ->orWhere(function ($q2) use ($at) {
-                      $q2->whereNull('scheduled_at')
-                         ->where('requested_at', $at);
-                  });
+                    ->orWhere(function ($q2) use ($at) {
+                        $q2->whereNull('scheduled_at')
+                            ->where('requested_at', $at);
+                    });
             })
             ->whereNotIn('status', ['cancelled', 'rejected', 'completed']);
 
@@ -117,7 +118,7 @@ class AppointmentService
                 }
 
                 if (! $this->isSlotAvailable($clinicianId, $data['requested_at'], lock: true)) {
-                    throw new SlotUnavailableException();
+                    throw new SlotUnavailableException;
                 }
             }
 
@@ -162,17 +163,49 @@ class AppointmentService
 
     public function approve(Appointment $appointment, ?string $scheduledAt = null): Appointment
     {
+        // State guard: only `pending` (first approval) and `rescheduled`
+        // (re-approval after the patient moved the slot) may transition to
+        // `approved`. Previously the service happily flipped a `completed`,
+        // `cancelled`, `rejected`, or `no_show` appointment back to
+        // `approved` — desyncing attendance metrics, regenerating a meeting
+        // link for a closed case, and corrupting clinical reporting.
+        // Mirrors the precondition check that the `complete` action already
+        // enforced (WebAppointmentController::complete:96).
+        if (! in_array($appointment->status, ['pending', 'rescheduled'], true)) {
+            throw new InvalidStateException(
+                "An appointment in the '{$appointment->status}' state cannot be approved."
+            );
+        }
+
         $appointment->update([
             'status' => 'approved',
             'scheduled_at' => $scheduledAt ?? $appointment->requested_at,
             'meeting_link' => $this->resolveMeetingLink($appointment),
         ]);
 
+        // Link the patient to this clinician the first time an appointment is
+        // approved. Guards against overwriting a pre-existing care relationship
+        // (e.g. patient already assigned via the sign-up request flow).
+        if ($appointment->clinician_id && ! $appointment->patient->assigned_clinician_id) {
+            $appointment->patient->update(['assigned_clinician_id' => $appointment->clinician_id]);
+        }
+
         return $appointment->fresh();
     }
 
     public function reject(Appointment $appointment): Appointment
     {
+        // State guard: only `pending` appointments may be rejected. Rejecting
+        // a `completed`/`cancelled`/`no_show`/`rejected` appointment rewrites
+        // a finalized record (desyncs attendance / clinical reporting).
+        // `rescheduled`/`approved` appointments are kept out of the reject
+        // path too — those would need a cancellation flow instead.
+        if ($appointment->status !== 'pending') {
+            throw new InvalidStateException(
+                "An appointment in the '{$appointment->status}' state cannot be rejected."
+            );
+        }
+
         $appointment->update(['status' => 'rejected']);
 
         return $appointment->fresh();
@@ -187,6 +220,18 @@ class AppointmentService
      */
     public function reschedule(Appointment $appointment, string $scheduledAt): Appointment
     {
+        // State guard: only `approved` and `rescheduled` appointments may be
+        // rescheduled. Previously the service revived a `cancelled`/
+        // `completed`/`rejected`/`no_show` appointment via reschedule,
+        // resurrecting a finalized record (desyncs attendance / reporting).
+        // Mirrors the source-state check the `complete` action already
+        // enforced (WebAppointmentController::complete:96).
+        if (! in_array($appointment->status, ['approved', 'rescheduled'], true)) {
+            throw new InvalidStateException(
+                "An appointment in the '{$appointment->status}' state cannot be rescheduled."
+            );
+        }
+
         return DB::transaction(function () use ($appointment, $scheduledAt) {
             if ($appointment->clinician_id) {
                 if (! $this->availability->isAvailable($appointment->clinician_id, Carbon::parse($scheduledAt))) {
@@ -206,6 +251,33 @@ class AppointmentService
 
             return $appointment->fresh();
         });
+    }
+
+    /**
+     * Open, conflict-free, future whole-hour slots ("HH:00") for the
+     * appointment's clinician on $date — used to populate the staff reschedule
+     * picker so only a valid time can be chosen. Excludes the appointment being
+     * moved from conflict detection, and drops past times when $date is today.
+     *
+     * @return array<int, string>
+     */
+    public function availableSlotsForReschedule(Appointment $appointment, string $date): array
+    {
+        $clinician = $appointment->clinician()
+            ->with(['weeklyAvailabilities', 'dateOverrides'])
+            ->first();
+
+        if (! $clinician) {
+            return [];
+        }
+
+        $day = Carbon::parse($date);
+
+        return array_values(array_filter(
+            $this->availability->availableSlots($clinician, $day),
+            fn ($slot) => Carbon::parse("$date $slot")->isFuture()
+                && $this->isSlotAvailable($clinician->id, "$date $slot:00", $appointment->id)
+        ));
     }
 
     /**

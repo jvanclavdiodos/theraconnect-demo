@@ -39,11 +39,11 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<List<Appointment>>> {
       _cache.put('appointments', result.appointments.map((a) => a.toJson()).toList());
       state = AsyncValue.data(result.appointments);
     } catch (e) {
-      if (e is ApiError) {
-        state = AsyncValue.error(e.userMessage, StackTrace.current);
-      } else {
-        state = AsyncValue.error(e.toString(), StackTrace.current);
-      }
+      // ApiError.fromException returns the structured backend message when the
+      // API client parsed the response into an ApiError, or a clean generic
+      // "Something went wrong." for any other exception type (TypeError, etc.)
+      // — never leak internal type names to the UI.
+      state = AsyncValue.error(ApiError.fromException(e).userMessage, StackTrace.current);
     }
   }
 
@@ -97,11 +97,7 @@ class ScheduleNotifier extends StateNotifier<AsyncValue<List<ScheduleSlot>>> {
       final slots = await _api.getSchedules(date);
       state = AsyncValue.data(slots);
     } catch (e) {
-      if (e is ApiError) {
-        state = AsyncValue.error(e.userMessage, StackTrace.current);
-      } else {
-        state = AsyncValue.error(e.toString(), StackTrace.current);
-      }
+      state = AsyncValue.error(ApiError.fromException(e).userMessage, StackTrace.current);
     }
   }
 }

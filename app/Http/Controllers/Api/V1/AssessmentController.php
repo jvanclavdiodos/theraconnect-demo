@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\AssessmentResource;
 use App\Models\Assessment;
+use App\Services\ActivityLogService;
 use App\Services\AssessmentService;
 use App\Support\Assessments;
 use Illuminate\Http\JsonResponse;
@@ -69,6 +70,8 @@ class AssessmentController extends Controller
         ]);
 
         $assessment = $this->assessments->submit($assessment, $validated['responses']);
+
+        app(ActivityLogService::class)->log($request->user(), 'assessment.submitted', $assessment);
 
         return response()->json([
             'data' => new AssessmentResource($assessment),

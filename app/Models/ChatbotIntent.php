@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class ChatbotIntent extends Model
 {
     use SoftDeletes;
+
     protected $fillable = [
         'intent_key',
         'display_name',

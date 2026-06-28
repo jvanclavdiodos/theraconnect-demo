@@ -21,7 +21,7 @@ return new class extends Migration
         }
 
         DB::statement(
-            "ALTER TABLE appointments MODIFY COLUMN status ENUM(".
+            'ALTER TABLE appointments MODIFY COLUMN status ENUM('.
             "'pending','approved','rejected','rescheduled','completed','cancelled','no_show'".
             ") NOT NULL DEFAULT 'pending'"
         );
@@ -34,7 +34,7 @@ return new class extends Migration
         }
 
         DB::statement(
-            "ALTER TABLE appointments MODIFY COLUMN status ENUM(".
+            'ALTER TABLE appointments MODIFY COLUMN status ENUM('.
             "'pending','approved','rejected','rescheduled','completed','cancelled'".
             ") NOT NULL DEFAULT 'pending'"
         );

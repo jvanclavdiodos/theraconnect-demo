@@ -13,6 +13,7 @@ use App\Models\Patient;
 use App\Models\Submission;
 use App\Models\TherapyGoal;
 use App\Models\User;
+use App\Rules\StrongPassword;
 use App\Services\JitsiService;
 use App\Support\Assessments;
 use Illuminate\Database\Seeder;
@@ -28,11 +29,42 @@ class DemoSeeder extends Seeder
             return;
         }
 
+        // Demo password: defaults to `password` for local dev (matches the
+        // README + setup.ps1 demo-accounts table). On a demo Railway instance
+        // set DEMO_PASSWORD to a strong unique value — all seeded accounts
+        // inherit it. Fail loud rather than silently seeding a weak password
+        // to a public instance.
+        //
+        // The StrongPassword check only fires when seeding a non-local
+        // environment (i.e. a public demo deploy gated by SEED_DEMO=true in
+        // docker/entrypoint.sh). Local dev intentionally keeps the weak
+        // default 'password' for ergonomic demo logins documented in the
+        // README — without this exemption the seeder would always throw,
+        // silently breaking `php artisan migrate:fresh --seed` (the failure
+        // was previously swallowed by setup.ps1's `2>&1 | Out-Null`).
+        $demoPassword = env('DEMO_PASSWORD', 'password');
+
+        if (! app()->environment('local')) {
+            $failed = false;
+            (new StrongPassword)->validate('password', $demoPassword, function () use (&$failed) {
+                $failed = true;
+            });
+            if ($failed) {
+                throw new RuntimeException(
+                    'DEMO_PASSWORD must satisfy StrongPassword (8-20 chars, >=1 '
+                    .'uppercase letter, >=1 digit, no spaces). Refusing to seed a '
+                    .'weak demo password to a potentially public instance.'
+                );
+            }
+        }
+
+        $demoPasswordHash = Hash::make($demoPassword);
+
         // ── Admin ──────────────────────────────────────────
         User::create([
             'name' => 'Admin User',
             'email' => 'admin@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'admin',
         ]);
 
@@ -40,7 +72,7 @@ class DemoSeeder extends Seeder
         $c1User = User::create([
             'name' => 'Dr. Sarah Chen, MD',
             'email' => 'clinician@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'clinician',
         ]);
         $c1 = Clinician::create([
@@ -53,7 +85,7 @@ class DemoSeeder extends Seeder
         $c2User = User::create([
             'name' => 'Dr. James Rivera, PsyD',
             'email' => 'dr.rivera@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'clinician',
         ]);
         $c2 = Clinician::create([
@@ -68,7 +100,7 @@ class DemoSeeder extends Seeder
         $p1User = User::create([
             'name' => 'Jane Doe',
             'email' => 'patient@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'patient',
         ]);
         $p1 = Patient::create([
@@ -84,7 +116,7 @@ class DemoSeeder extends Seeder
         $p2User = User::create([
             'name' => 'Michael Torres',
             'email' => 'michael@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'patient',
         ]);
         $p2 = Patient::create([
@@ -100,7 +132,7 @@ class DemoSeeder extends Seeder
         $p3User = User::create([
             'name' => 'Emily Watson',
             'email' => 'emily@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'patient',
         ]);
         $p3 = Patient::create([
@@ -116,7 +148,7 @@ class DemoSeeder extends Seeder
         $p4User = User::create([
             'name' => 'Sophia Nguyen',
             'email' => 'sophia@theraconnect.test',
-            'password' => Hash::make('password'),
+            'password' => $demoPasswordHash,
             'role' => 'patient',
         ]);
         $p4 = Patient::create([
@@ -126,6 +158,33 @@ class DemoSeeder extends Seeder
             'contact_no' => '555-0203',
             'address' => '32 Maple Lane, Springfield',
             'emergency_contact' => 'Linh Nguyen - 555-0303',
+        ]);
+
+        // ── Pending clinician request ──────────────────────
+        // Olivia self-registered and asked to join Dr. Chen's caseload; she is
+        // unassigned until Dr. Chen approves (shows in "Pending requests").
+        $p5User = User::create([
+            'name' => 'Olivia Reyes',
+            'email' => 'olivia@theraconnect.test',
+            'password' => $demoPasswordHash,
+            'role' => 'patient',
+        ]);
+        Patient::create([
+            'user_id' => $p5User->id,
+            'requested_clinician_id' => $c1->id,
+            'clinician_request_status' => Patient::REQUEST_PENDING,
+            'contact_no' => '555-0204',
+            'gender' => 'Female',
+            'personal_issues' => 'Looking for help managing anxiety and stress.',
+        ]);
+        Notification::create([
+            'user_id' => $c1User->id,
+            'type' => 'patient_request',
+            'title' => 'New patient request',
+            'body' => 'Olivia Reyes requested to be added to your caseload. Review and approve or decline.',
+            'data' => null,
+            'channel' => 'fcm',
+            'sent_at' => now()->subHours(2),
         ]);
 
         // ── Appointments ───────────────────────────────────
@@ -554,8 +613,8 @@ class DemoSeeder extends Seeder
             'user_id' => $p1User->id,
             'type' => 'appointment_approved',
             'title' => 'Appointment Approved',
-            'body' => 'Your appointment on ' . $now->copy()->addDays(5)->format('M j') . ' at 9:00 AM is confirmed.',
-            'data' => json_encode(['appointment_id' => 5]),
+            'body' => 'Your appointment on '.$now->copy()->addDays(5)->format('M j').' at 9:00 AM is confirmed.',
+            'data' => ['appointment_id' => 5],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subHours(3),
         ]);
@@ -564,7 +623,7 @@ class DemoSeeder extends Seeder
             'type' => 'assignment_created',
             'title' => 'New Assignment',
             'body' => 'Dr. Chen assigned you: Daily Mood Journal.',
-            'data' => json_encode(['assignment_id' => $a1->id]),
+            'data' => ['assignment_id' => $a1->id],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subDays(7),
             'read_at' => $now->copy()->subDays(6),
@@ -574,7 +633,7 @@ class DemoSeeder extends Seeder
             'type' => 'assessment_assigned',
             'title' => 'New Questionnaire',
             'body' => 'Dr. Chen has assigned you a GAD-7 (Anxiety) questionnaire. Please complete it when you can.',
-            'data' => json_encode([]),
+            'data' => null,
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subHours(6),
         ]);
@@ -583,7 +642,7 @@ class DemoSeeder extends Seeder
             'type' => 'appointment_rejected',
             'title' => 'Appointment Update',
             'body' => 'Your requested appointment was not approved. Please rebook or contact the clinic.',
-            'data' => json_encode(['appointment_id' => 11]),
+            'data' => ['appointment_id' => 11],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subDays(2),
         ]);
@@ -592,7 +651,7 @@ class DemoSeeder extends Seeder
             'type' => 'assignment_deadline',
             'title' => 'Assignment Due Soon',
             'body' => 'Anxiety Trigger Log is due in 24 hours.',
-            'data' => json_encode(['assignment_id' => $a4->id]),
+            'data' => ['assignment_id' => $a4->id],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subHours(12),
         ]);
@@ -601,7 +660,7 @@ class DemoSeeder extends Seeder
             'type' => 'appointment_reminder',
             'title' => 'Appointment Reminder',
             'body' => 'Reminder: you have an appointment tomorrow at 9:00 AM with Dr. Chen.',
-            'data' => json_encode(['appointment_id' => 5]),
+            'data' => ['appointment_id' => 5],
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subHours(20),
             'read_at' => $now->copy()->subHours(19),
@@ -611,7 +670,7 @@ class DemoSeeder extends Seeder
             'type' => 'assessment_assigned',
             'title' => 'New Questionnaire',
             'body' => 'Dr. Rivera has assigned you a PHQ-9 (Depression) questionnaire. Please complete it when you can.',
-            'data' => json_encode([]),
+            'data' => null,
             'channel' => 'fcm',
             'sent_at' => $now->copy()->subDays(1),
         ]);

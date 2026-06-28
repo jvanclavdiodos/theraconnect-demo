@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\DeviceTokenResource;
 use App\Models\DeviceToken;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -26,11 +27,7 @@ class DeviceTokenController extends Controller
         );
 
         return response()->json([
-            'data' => [
-                'id' => $deviceToken->id,
-                'platform' => $deviceToken->platform,
-                'last_used_at' => $deviceToken->last_used_at,
-            ],
+            'data' => new DeviceTokenResource($deviceToken),
         ], 201);
     }
 

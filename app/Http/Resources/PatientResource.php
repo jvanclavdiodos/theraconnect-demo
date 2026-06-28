@@ -12,6 +12,11 @@ class PatientResource extends JsonResource
         return [
             'id' => $this->id,
             'user_id' => $this->user_id,
+            // Clinician connection state — lets the app show a "pending approval"
+            // banner instead of failing silently when messaging/booking.
+            'assigned_clinician_id' => $this->assigned_clinician_id,
+            'requested_clinician_id' => $this->requested_clinician_id,
+            'clinician_request_status' => $this->clinician_request_status,
             'has_avatar' => $this->relationLoaded('user') ? (bool) $this->user?->avatar_path : false,
             'avatar_url' => url('/api/v1/profile/avatar'),
             'date_of_birth' => $this->date_of_birth,

@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers\Web;
 
+use App\Exceptions\InvalidStateException;
 use App\Exceptions\SlotUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Jobs\SendPushNotification;
 use App\Models\Appointment;
 use App\Services\AppointmentService;
 use App\Services\NotificationService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +26,8 @@ class WebAppointmentController extends Controller
     public function index(Request $request): View
     {
         $query = Appointment::with(['patient.user', 'clinician.user'])
+            ->whereNotNull('patient_id')
+            ->whereHas('patient')
             ->latest('requested_at');
 
         // Clinicians see only their own caseload; admins see every appointment.
@@ -32,8 +36,12 @@ class WebAppointmentController extends Controller
             $query->where('clinician_id', $user->clinician->id);
         }
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        $validStatus = $request->validate([
+            'status' => ['nullable', 'in:pending,approved,rejected,completed,cancelled,rescheduled,no_show'],
+        ])['status'] ?? null;
+
+        if ($validStatus) {
+            $query->where('status', $validStatus);
         }
 
         $appointments = $query->paginate(20);
@@ -45,15 +53,19 @@ class WebAppointmentController extends Controller
     {
         Gate::authorize('manage', $appointment);
 
-        $notification = DB::transaction(function () use ($appointment) {
-            $this->appointmentService->approve($appointment);
+        try {
+            $notification = DB::transaction(function () use ($appointment) {
+                $this->appointmentService->approve($appointment);
 
-            return $this->notificationService->appointmentApproved(
-                $appointment->patient->user->id,
-                $appointment->scheduled_at->format('M d, Y h:i A'),
-                $appointment->meeting_link
-            );
-        });
+                return $this->notificationService->appointmentApproved(
+                    $appointment->patient->user->id,
+                    $appointment->scheduled_at->format('M d, Y h:i A'),
+                    $appointment->meeting_link
+                );
+            });
+        } catch (InvalidStateException $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
+        }
 
         SendPushNotification::dispatch($notification->id)->afterCommit();
 
@@ -65,13 +77,17 @@ class WebAppointmentController extends Controller
     {
         Gate::authorize('manage', $appointment);
 
-        $notification = DB::transaction(function () use ($appointment) {
-            $this->appointmentService->reject($appointment);
+        try {
+            $notification = DB::transaction(function () use ($appointment) {
+                $this->appointmentService->reject($appointment);
 
-            return $this->notificationService->appointmentRejected(
-                $appointment->patient->user->id
-            );
-        });
+                return $this->notificationService->appointmentRejected(
+                    $appointment->patient->user->id
+                );
+            });
+        } catch (InvalidStateException $e) {
+            return back()->withErrors(['status' => $e->getMessage()]);
+        }
 
         SendPushNotification::dispatch($notification->id)->afterCommit();
 
@@ -94,8 +110,13 @@ class WebAppointmentController extends Controller
             ]);
         }
 
-        // Default to 'attended' so the existing one-click "close case" still works.
-        $outcome = $request->input('outcome', 'attended');
+        // Default to 'attended' so the existing one-click "close case" still
+        // works. Validate the outcome so a crafted payload can't set an
+        // unsupported status that would otherwise silently fall through to
+        // "attended" below.
+        $outcome = $request->validate([
+            'outcome' => ['nullable', 'string', 'in:attended,no_show'],
+        ])['outcome'] ?? 'attended';
 
         if ($outcome === 'no_show') {
             $this->appointmentService->markNoShow($appointment);
@@ -108,6 +129,23 @@ class WebAppointmentController extends Controller
 
         return redirect()->route('appointments.index')
             ->with('status', 'Appointment marked as completed.');
+    }
+
+    /**
+     * Open slots for the appointment's clinician on a given date, so the
+     * reschedule picker only offers valid times (mirrors the patient booking UX).
+     */
+    public function rescheduleSlots(Request $request, Appointment $appointment): JsonResponse
+    {
+        Gate::authorize('manage', $appointment);
+
+        $validated = $request->validate([
+            'date' => ['required', 'date_format:Y-m-d'],
+        ]);
+
+        return response()->json([
+            'slots' => $this->appointmentService->availableSlotsForReschedule($appointment, $validated['date']),
+        ]);
     }
 
     public function reschedule(Request $request, Appointment $appointment): RedirectResponse
@@ -147,7 +185,7 @@ class WebAppointmentController extends Controller
 
                 return $created;
             });
-        } catch (SlotUnavailableException $e) {
+        } catch (SlotUnavailableException | InvalidStateException $e) {
             return back()->withErrors([
                 'scheduled_at' => $e->getMessage(),
             ]);

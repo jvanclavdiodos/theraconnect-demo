@@ -14,7 +14,7 @@
 
                     <div class="mb-3">
                         <label for="email" class="form-label">Email</label>
-                        <input type="email" id="email" name="email" class="form-control" required autofocus>
+                        <input type="email" id="email" name="email" class="form-control" value="{{ old('email') }}" required autofocus>
                     </div>
 
                     <div class="mb-3">
@@ -24,6 +24,14 @@
 
                     <button type="submit" class="btn btn-primary w-100">Sign In</button>
                 </form>
+
+                <p class="text-center small mt-3 mb-1">
+                    New patient? <a href="{{ route('register') }}">Create an account</a>
+                </p>
+                <p class="text-center text-muted small mb-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Forgot your password? Contact your clinic administrator to have it reset.
+                </p>
             </div>
         </div>
     </div>

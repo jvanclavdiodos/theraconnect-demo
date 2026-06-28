@@ -56,16 +56,32 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Patient App Download URL
+    |--------------------------------------------------------------------------
+    |
+    | Public link to the patient mobile app (e.g. a Play Store listing or a
+    | hosted APK). The landing page's "Download the App" button points here
+    | when set; when left null it falls back to scrolling to the on-page
+    | "For Patients" section instead of a dead link.
+    |
+    */
+
+    'download_url' => env('APP_DOWNLOAD_URL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |
     | Here you may specify the default timezone for your application, which
-    | will be used by the PHP date and date-time functions. The timezone
-    | is set to "UTC" by default as it is suitable for most use cases.
+    | will be used by the PHP date and date-time functions. The clinic operates
+    | in a single timezone (the Philippines), so the app runs on Asia/Manila:
+    | `now()`, scheduling, "today", and all displayed times are PH-local.
+    | (Tests pin this to UTC for determinism — see phpunit.xml.)
     |
     */
 
-    'timezone' => env('APP_TIMEZONE', 'UTC'),
+    'timezone' => env('APP_TIMEZONE', 'Asia/Manila'),
 
     /*
     |--------------------------------------------------------------------------
