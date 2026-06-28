@@ -32,6 +32,16 @@
   --tc-surface: #ffffff;
   --tc-surface-muted: #F8FAFB;
 
+  /* Sidebar — a deliberately DARK surface in BOTH themes (the sidebar's brand,
+     active-teal pill and light nav text all assume a dark backdrop). It must
+     NOT use --tc-slate, which is a TEXT token that inverts to light in dark
+     mode; doing so flipped the sidebar to a light background with light text
+     (invisible). This token is defined once and intentionally NOT overridden in
+     the dark block, so the sidebar stays dark either way. --tc-sidebar-label is
+     the muted label/sub-text colour, fixed bright enough to clear AA on it. */
+  --tc-sidebar-bg: #1A2332;
+  --tc-sidebar-label: #94A3B8;
+
   /* Status — amber / green / red / blue (each: base / soft bg / dark text) */
   --tc-amber: #D97706;       --tc-amber-bg: #FEF3C7;  --tc-amber-text: #92400E;
   --tc-green: #059669;       --tc-green-bg: #D1FAE5;  --tc-green-text: #065F46;
@@ -121,7 +131,7 @@ a:hover { color: var(--tc-teal-dark); }
 
 /* ----------------------------------------------------------------- Sidebar */
 #sidebar-wrapper {
-  background: var(--tc-slate) !important;
+  background: var(--tc-sidebar-bg) !important;
   color: #cbd5e1;
 }
 
@@ -144,11 +154,11 @@ a:hover { color: var(--tc-teal-dark); }
   flex-shrink: 0;
 }
 .tc-brand .tc-brand-name { color: #fff; font-weight: 700; font-size: 0.95rem; line-height: 1.1; }
-.tc-brand .tc-brand-sub { color: var(--tc-slate-light); font-size: 0.69rem; }
+.tc-brand .tc-brand-sub { color: var(--tc-sidebar-label); font-size: 0.69rem; }
 
 .tc-nav-group { padding: 0.5rem 0.75rem 0; }
 .tc-nav-group-label {
-  color: var(--tc-slate-light);
+  color: var(--tc-sidebar-label);
   font-size: 0.69rem;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -203,7 +213,7 @@ a:hover { color: var(--tc-teal-dark); }
   font-size: 0.78rem; font-weight: 600; flex-shrink: 0;
 }
 .tc-user-chip .tc-user-name { color: #fff; font-size: 0.8rem; font-weight: 500; line-height: 1.2; }
-.tc-user-chip .tc-user-role { color: var(--tc-slate-light); font-size: 0.69rem; }
+.tc-user-chip .tc-user-role { color: var(--tc-sidebar-label); font-size: 0.69rem; }
 
 /* Make the sidebar a flex column so the footer sticks to the bottom */
 #sidebar-wrapper { display: flex; flex-direction: column; }
