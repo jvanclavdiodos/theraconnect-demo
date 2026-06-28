@@ -27,7 +27,7 @@
             <p class="text-muted text-center mb-0">No messages yet. Say hello below.</p>
         @endforelse
     </div>
-    <div class="card-footer bg-white">
+    <div class="card-footer">
         <form action="{{ route('messages.store', $conversation) }}" method="POST">
             @csrf
             <div class="input-group">
