@@ -77,7 +77,13 @@
 // the conversation history in client-side state so each send appends to the
 // transcript instead of triggering a full page reload (the prior session-
 // flash approach lost all history after every message).
-window.Alpine?.data('chatSession', (opts) => ({
+//
+// Register inside `alpine:init` — Alpine core is loaded with `defer`, so at
+// the time this inline script runs `window.Alpine` is not yet defined. Using
+// `window.Alpine?.data(...)` here silently no-ops and the component never gets
+// registered (x-data="chatSession(...)" then resolves to undefined → dead UI).
+document.addEventListener('alpine:init', () => {
+    window.Alpine.data('chatSession', (opts) => ({
     messages: opts.seed ? [opts.seed] : [],
     draft: '',
     awaiting: false,
@@ -132,7 +138,8 @@ window.Alpine?.data('chatSession', (opts) => ({
             this.awaiting = false;
         }
     },
-}));
+    }));
+});
 </script>
 @endpush
 @endsection
