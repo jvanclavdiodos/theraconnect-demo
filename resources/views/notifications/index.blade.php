@@ -33,7 +33,7 @@
 <div class="card">
     <div class="list-group list-group-flush">
         @forelse($notifications as $n)
-            <div class="list-group-item d-flex align-items-start gap-3 {{ $n->read_at ? '' : 'bg-light' }}">
+            <div class="list-group-item d-flex align-items-start gap-3 {{ $n->read_at ? '' : 'tc-notification-unread' }}">
                 <i class="bi {{ $icon($n->type) }} {{ $n->read_at ? 'text-secondary' : 'text-primary' }} mt-1 fs-5"></i>
                 <div class="flex-grow-1 min-w-0">
                     <div class="fw-semibold">{{ $n->title }}</div>
