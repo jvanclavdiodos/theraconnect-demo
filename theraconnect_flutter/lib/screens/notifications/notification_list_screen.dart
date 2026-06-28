@@ -37,12 +37,12 @@ class NotificationListScreen extends ConsumerWidget {
               return ListView(
                 children: [
                   SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-                  const Center(
+                  Center(
                     child: Column(
                       children: [
-                        Icon(Icons.notifications_off, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text('No notifications', style: TextStyle(fontSize: 16)),
+                        Icon(Icons.notifications_off, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        const SizedBox(height: 16),
+                        const Text('No notifications', style: TextStyle(fontSize: 16)),
                       ],
                     ),
                   ),
@@ -65,7 +65,7 @@ class NotificationListScreen extends ConsumerWidget {
                           : Theme.of(context).colorScheme.primaryContainer,
                       child: Icon(
                         _iconForType(n.type),
-                        color: n.isRead ? Colors.grey : Theme.of(context).colorScheme.primary,
+                        color: n.isRead ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.primary,
                       ),
                     ),
                     title: Text(

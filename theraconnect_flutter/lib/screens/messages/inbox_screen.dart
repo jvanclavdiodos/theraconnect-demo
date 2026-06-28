@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/api_response.dart';
 import '../../providers/message_provider.dart';
+import '../../providers/profile_provider.dart';
 
 class InboxScreen extends ConsumerWidget {
   const InboxScreen({super.key});
@@ -26,17 +27,48 @@ class InboxScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final convsAsync = ref.watch(conversationsProvider);
+    final patient = ref.watch(profileProvider).valueOrNull;
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Messages')),
       body: convsAsync.when(
         data: (convs) {
           if (convs.isEmpty) {
+            // No assigned clinician — explain rather than silently failing.
+            if (patient != null && patient.assignedClinicianId == null) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.chat_bubble_outline, size: 56, color: scheme.onSurfaceVariant),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No assigned clinician yet',
+                        style: Theme.of(context).textTheme.titleMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Once a clinician is assigned to you, you can start a conversation here.',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: scheme.onSurfaceVariant,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            // Assigned but no thread yet.
             return Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.chat_bubble_outline, size: 48, color: Colors.grey),
+                  Icon(Icons.chat_bubble_outline, size: 48, color: scheme.onSurfaceVariant),
                   const SizedBox(height: 12),
                   const Text('No messages yet.'),
                   const SizedBox(height: 12),
@@ -57,8 +89,8 @@ class InboxScreen extends ConsumerWidget {
                 final c = convs[i];
                 return ListTile(
                   leading: CircleAvatar(
-                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                    child: Icon(Icons.person, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                    backgroundColor: scheme.primaryContainer,
+                    child: Icon(Icons.person, color: scheme.onPrimaryContainer),
                   ),
                   title: Text(c.clinicianName ?? 'Clinician'),
                   subtitle: Text(

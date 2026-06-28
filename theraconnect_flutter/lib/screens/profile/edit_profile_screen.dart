@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/patient.dart';
 import '../../providers/profile_provider.dart';
+import '../../theme/app_theme.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -56,6 +57,7 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    final colorScheme = Theme.of(context).colorScheme;
 
     setState(() => _saving = true);
 
@@ -74,11 +76,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
       setState(() => _saving = false);
       if (error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.red),
+          SnackBar(content: Text(error), backgroundColor: colorScheme.error),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated!'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Profile updated!'), backgroundColor: AppTheme.success),
         );
         context.pop();
       }
@@ -186,7 +188,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               onPressed: _saving ? null : _save,
               style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
               child: _saving
-                  ? const CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
+                  ? CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    )
                   : const Text('Save Changes'),
             ),
           ],

@@ -143,7 +143,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
               color: Theme.of(context).colorScheme.surfaceContainerLow,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
+                  color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.1),
                   blurRadius: 4,
                   offset: const Offset(0, -1),
                 ),
@@ -169,10 +169,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                   FilledButton(
                     onPressed: _sending ? null : _sendMessage,
                     child: _sending
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 18,
                             width: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary),
                           )
                         : const Icon(Icons.send),
                   ),

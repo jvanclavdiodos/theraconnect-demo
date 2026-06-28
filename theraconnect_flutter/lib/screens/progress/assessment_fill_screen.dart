@@ -23,11 +23,13 @@ class _AssessmentFillScreenState extends ConsumerState<AssessmentFillScreen> {
   bool _submitting = false;
 
   Future<void> _submit(AssessmentDetail detail) async {
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (_answers.length != detail.items.length) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please answer every question.'),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: const Text('Please answer every question.'),
+          backgroundColor: colorScheme.error,
         ),
       );
       return;
@@ -53,7 +55,7 @@ class _AssessmentFillScreenState extends ConsumerState<AssessmentFillScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(ApiError.fromException(e).userMessage),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -190,8 +192,10 @@ class _AssessmentFillScreenState extends ConsumerState<AssessmentFillScreen> {
               style: FilledButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48)),
               child: _submitting
-                  ? const CircularProgressIndicator(
-                      strokeWidth: 2, color: Colors.white)
+                  ? CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    )
                   : Text('Submit (${_answers.length}/${detail.items.length})'),
             ),
           ),

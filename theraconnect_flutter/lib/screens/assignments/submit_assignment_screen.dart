@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import '../../models/api_response.dart';
 import '../../models/assignment.dart';
 import '../../providers/assignment_provider.dart';
+import '../../theme/app_theme.dart';
 
 class SubmitAssignmentScreen extends ConsumerStatefulWidget {
   final int assignmentId;
@@ -39,9 +40,11 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
 
   Future<void> _submit() async {
     final content = _contentController.text.trim();
+    final colorScheme = Theme.of(context).colorScheme;
+
     if (content.isEmpty && _filePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please provide text or a file.'), backgroundColor: Colors.red),
+        SnackBar(content: const Text('Please provide text or a file.'), backgroundColor: colorScheme.error),
       );
       return;
     }
@@ -58,13 +61,13 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
       setState(() => _submitting = false);
       if (error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.red),
+          SnackBar(content: Text(error), backgroundColor: colorScheme.error),
         );
       } else {
         ref.invalidate(assignmentDetailProvider(widget.assignmentId));
         ref.read(assignmentsProvider.notifier).loadAssignments();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Assignment submitted!'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Assignment submitted!'), backgroundColor: AppTheme.success),
         );
         context.pop();
       }
@@ -131,7 +134,7 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
             onPressed: _submitting ? null : _submit,
             style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
             child: _submitting
-                ? const CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
+                ? CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary)
                 : const Text('Submit Assignment'),
           ),
         ],

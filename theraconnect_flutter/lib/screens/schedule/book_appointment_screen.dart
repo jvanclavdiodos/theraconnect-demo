@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/schedule_slot.dart';
 import '../../providers/appointment_provider.dart';
+import '../../theme/app_theme.dart';
 import '../../utils/date_format.dart';
 
 class BookAppointmentScreen extends ConsumerStatefulWidget {
@@ -45,9 +46,9 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please pick a slot from the schedule first.'),
-            backgroundColor: Colors.orange,
+          SnackBar(
+            content: const Text('Please pick a slot from the schedule first.'),
+            backgroundColor: AppTheme.warning,
           ),
         );
         context.go('/schedule');
@@ -59,6 +60,7 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
     final parsed = _parseExtra();
     if (parsed == null) return;
     final (slot, date) = parsed;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final slotStart = slot.slot.split('-')[0];
     final requestedAt = '$date $slotStart:00';
@@ -76,11 +78,14 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
       setState(() => _submitting = false);
       if (error != null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(error), backgroundColor: Colors.red),
+          SnackBar(content: Text(error), backgroundColor: colorScheme.error),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Appointment booked successfully!'), backgroundColor: Colors.green),
+          const SnackBar(
+            content: Text('Appointment booked successfully!'),
+            backgroundColor: AppTheme.success,
+          ),
         );
         context.pop();
       }
@@ -147,7 +152,10 @@ class _BookAppointmentScreenState extends ConsumerState<BookAppointmentScreen> {
             onPressed: _submitting ? null : _book,
             style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
             child: _submitting
-                ? const CircularProgressIndicator(strokeWidth: 2, color: Colors.white)
+                ? CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  )
                 : const Text('Confirm Booking'),
           ),
         ],

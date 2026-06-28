@@ -2,6 +2,9 @@ class Patient {
   final int id;
   final int userId;
   final bool hasAvatar;
+  final int? assignedClinicianId;
+  final int? requestedClinicianId;
+  final String? clinicianRequestStatus;
   final String? dateOfBirth;
   final String? gender;
   final String? educationalAttainment;
@@ -18,6 +21,9 @@ class Patient {
     required this.id,
     required this.userId,
     this.hasAvatar = false,
+    this.assignedClinicianId,
+    this.requestedClinicianId,
+    this.clinicianRequestStatus,
     this.dateOfBirth,
     this.gender,
     this.educationalAttainment,
@@ -36,6 +42,9 @@ class Patient {
       id: json['id'] as int,
       userId: json['user_id'] as int,
       hasAvatar: json['has_avatar'] as bool? ?? false,
+      assignedClinicianId: json['assigned_clinician_id'] as int?,
+      requestedClinicianId: json['requested_clinician_id'] as int?,
+      clinicianRequestStatus: json['clinician_request_status'] as String?,
       dateOfBirth: json['date_of_birth'] as String?,
       gender: json['gender'] as String?,
       educationalAttainment: json['educational_attainment'] as String?,
@@ -55,6 +64,9 @@ class Patient {
       'id': id,
       'user_id': userId,
       'has_avatar': hasAvatar,
+      'assigned_clinician_id': assignedClinicianId,
+      'requested_clinician_id': requestedClinicianId,
+      'clinician_request_status': clinicianRequestStatus,
       'date_of_birth': dateOfBirth,
       'gender': gender,
       'educational_attainment': educationalAttainment,

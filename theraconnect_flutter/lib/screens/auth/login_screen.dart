@@ -26,6 +26,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _login() async {
     if (!_formKey.currentState!.validate()) return;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final error = await ref.read(authProvider.notifier).login(
           _emailController.text.trim(),
@@ -34,7 +35,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (error != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
+        SnackBar(content: Text(error), backgroundColor: colorScheme.error),
       );
     }
   }
@@ -135,10 +136,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       minimumSize: const Size(double.infinity, 48),
                     ),
                     child: authState.status == AuthState.loading
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary),
                           )
                         : Text(l.loginButton),
                   ),

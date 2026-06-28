@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
+import '../../providers/theme_provider.dart';
+import '../../models/patient.dart';
 import 'profile_avatar.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -12,12 +14,15 @@ class ProfileScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authProvider);
     final profile = ref.watch(profileProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Profile')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          // ── Avatar + name card ────────────────────────────────────────────
           Card(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -28,12 +33,20 @@ class ProfileScreen extends ConsumerWidget {
                   Text(authState.user?.name ?? '', style: Theme.of(context).textTheme.titleLarge),
                   Text(authState.user?.email ?? '', style: Theme.of(context).textTheme.bodyMedium),
                   const SizedBox(height: 4),
-                  Chip(label: Text('Patient', style: const TextStyle(fontSize: 12))),
+                  const Chip(label: Text('Patient', style: TextStyle(fontSize: 12))),
                 ],
               ),
             ),
           ),
+
+          // ── Clinician request status banner ───────────────────────────────
+          profile.whenOrNull(
+            data: (patient) => _ClinicianRequestBanner(patient: patient, colorScheme: colorScheme),
+          ) ?? const SizedBox.shrink(),
+
           const SizedBox(height: 16),
+
+          // ── Account actions card ──────────────────────────────────────────
           Card(
             child: Column(
               children: [
@@ -85,6 +98,50 @@ class ProfileScreen extends ConsumerWidget {
             ),
           ),
           const SizedBox(height: 16),
+
+          // ── Appearance card ───────────────────────────────────────────────
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('Appearance', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  SegmentedButton<ThemeMode>(
+                    segments: const [
+                      ButtonSegment(
+                        value: ThemeMode.light,
+                        icon: Icon(Icons.light_mode_outlined),
+                        label: Text('Light'),
+                      ),
+                      ButtonSegment(
+                        value: ThemeMode.system,
+                        icon: Icon(Icons.brightness_auto_outlined),
+                        label: Text('System'),
+                      ),
+                      ButtonSegment(
+                        value: ThemeMode.dark,
+                        icon: Icon(Icons.dark_mode_outlined),
+                        label: Text('Dark'),
+                      ),
+                    ],
+                    selected: {themeMode},
+                    onSelectionChanged: (s) =>
+                        ref.read(themeModeProvider.notifier).setMode(s.first),
+                    style: ButtonStyle(
+                      minimumSize: WidgetStateProperty.all(
+                        const Size.fromHeight(42),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // ── Personal info card ────────────────────────────────────────────
           profile.when(
             data: (patient) {
               if (patient == null) return const SizedBox.shrink();
@@ -154,6 +211,8 @@ class ProfileScreen extends ConsumerWidget {
             error: (_, __) => const SizedBox.shrink(),
           ),
           const SizedBox(height: 24),
+
+          // ── Sign out ──────────────────────────────────────────────────────
           OutlinedButton.icon(
             onPressed: () async {
               await ref.read(authProvider.notifier).logout();
@@ -161,15 +220,58 @@ class ProfileScreen extends ConsumerWidget {
                 context.go('/login');
               }
             },
-            icon: const Icon(Icons.logout, color: Colors.red),
-            label: const Text('Sign Out', style: TextStyle(color: Colors.red)),
+            icon: Icon(Icons.logout, color: colorScheme.error),
+            label: Text('Sign Out', style: TextStyle(color: colorScheme.error)),
             style: OutlinedButton.styleFrom(
               minimumSize: const Size(double.infinity, 48),
-              foregroundColor: Colors.red,
-              side: const BorderSide(color: Colors.red),
+              foregroundColor: colorScheme.error,
+              side: BorderSide(color: colorScheme.error),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ClinicianRequestBanner extends StatelessWidget {
+  final Patient? patient;
+  final ColorScheme colorScheme;
+
+  const _ClinicianRequestBanner({required this.patient, required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    if (patient == null) return const SizedBox.shrink();
+
+    final status = patient!.clinicianRequestStatus;
+    if (status == null || patient!.assignedClinicianId != null) {
+      return const SizedBox.shrink();
+    }
+
+    final (icon, color, message) = switch (status) {
+      'pending' => (
+          Icons.hourglass_top_outlined,
+          Colors.amber.shade700,
+          'Your clinician request is pending approval.',
+        ),
+      'denied' => (
+          Icons.info_outline,
+          colorScheme.error,
+          'Your clinician request was not approved. Please contact the clinic.',
+        ),
+      _ => (Icons.info_outline, colorScheme.primary, 'Clinician status: $status'),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Card(
+        color: color.withValues(alpha: 0.12),
+        elevation: 0,
+        child: ListTile(
+          leading: Icon(icon, color: color),
+          title: Text(message, style: TextStyle(color: color, fontSize: 13)),
+        ),
       ),
     );
   }

@@ -27,6 +27,10 @@ class AppTheme {
   static const Color amber = Color(0xFFD97706);
   static const Color blue = Color(0xFF2563EB);
 
+  // Semantic aliases for SnackBar/feedback contexts
+  static const Color success = green;
+  static const Color warning = amber;
+
   static ThemeData light() {
     final scheme = ColorScheme.fromSeed(
       seedColor: teal,

@@ -44,6 +44,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _register() async {
     if (!_formKey.currentState!.validate()) return;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final error = await ref.read(authProvider.notifier).register(
           _nameController.text.trim(),
@@ -60,7 +61,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     if (error != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
+        SnackBar(content: Text(error), backgroundColor: colorScheme.error),
       );
     }
   }
@@ -270,10 +271,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                       minimumSize: const Size(double.infinity, 48),
                     ),
                     child: authState.status == AuthState.loading
-                        ? const SizedBox(
+                        ? SizedBox(
                             height: 20,
                             width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary),
                           )
                         : const Text('Create Account'),
                   ),

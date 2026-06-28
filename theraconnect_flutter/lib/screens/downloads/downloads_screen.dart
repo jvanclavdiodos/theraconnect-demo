@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 import '../../models/downloaded_file.dart';
 import '../../providers/download_provider.dart';
+import '../../theme/app_theme.dart';
 
 class DownloadsScreen extends ConsumerWidget {
   const DownloadsScreen({super.key});
@@ -89,8 +90,8 @@ class _DownloadTile extends ConsumerWidget {
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
-        color: Colors.red,
-        child: const Icon(Icons.delete, color: Colors.white),
+        color: Theme.of(context).colorScheme.error,
+        child: Icon(Icons.delete, color: Theme.of(context).colorScheme.onError),
       ),
       onDismissed: (_) {
         ref.read(downloadsProvider.notifier).remove(file);
@@ -119,7 +120,7 @@ class _DownloadTile extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('File is no longer available — download it again.'),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppTheme.warning,
           ),
         );
       }

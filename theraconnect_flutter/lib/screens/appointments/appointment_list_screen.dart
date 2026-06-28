@@ -4,32 +4,26 @@ import 'package:go_router/go_router.dart';
 import '../../models/api_response.dart';
 import '../../models/appointment.dart';
 import '../../providers/appointment_provider.dart';
+import '../../theme/app_theme.dart';
 import '../../utils/date_format.dart';
 
 class AppointmentListScreen extends ConsumerWidget {
   const AppointmentListScreen({super.key});
 
-  Color _statusColor(Appointment a, ThemeData theme) {
-    switch (a.status) {
-      case 'approved':
-        return Colors.green;
-      case 'pending':
-        return Colors.orange;
-      case 'rejected':
-      case 'cancelled':
-        return theme.colorScheme.error;
-      case 'rescheduled':
-        return Colors.blue;
-      case 'completed':
-        return Colors.grey;
-      default:
-        return theme.colorScheme.primary;
-    }
-  }
+  Color _statusColor(Appointment a, ColorScheme scheme) => switch (a.status) {
+    'approved'    => AppTheme.green,
+    'pending'     => AppTheme.amber,
+    'rescheduled' => AppTheme.blue,
+    'completed'   => scheme.primary,
+    'rejected'    => scheme.error,
+    'cancelled'   => scheme.error,
+    _             => scheme.onSurfaceVariant,
+  };
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final appointments = ref.watch(appointmentsProvider);
+    final scheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(title: const Text('My Appointments')),
@@ -41,14 +35,14 @@ class AppointmentListScreen extends ConsumerWidget {
               return ListView(
                 children: [
                   SizedBox(height: MediaQuery.of(context).size.height * 0.3),
-                  const Center(
+                  Center(
                     child: Column(
                       children: [
-                        Icon(Icons.event_busy, size: 64, color: Colors.grey),
-                        SizedBox(height: 16),
-                        Text('No appointments yet', style: TextStyle(fontSize: 16)),
-                        SizedBox(height: 8),
-                        Text('Book an appointment from the Schedule tab'),
+                        Icon(Icons.event_busy, size: 64, color: scheme.onSurfaceVariant),
+                        const SizedBox(height: 16),
+                        const Text('No appointments yet', style: TextStyle(fontSize: 16)),
+                        const SizedBox(height: 8),
+                        const Text('Book an appointment from the Schedule tab'),
                       ],
                     ),
                   ),
@@ -60,12 +54,13 @@ class AppointmentListScreen extends ConsumerWidget {
               itemCount: data.length,
               itemBuilder: (context, index) {
                 final a = data[index];
+                final statusColor = _statusColor(a, scheme);
                 return Card(
                   margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                   child: ListTile(
                     leading: CircleAvatar(
-                      backgroundColor: _statusColor(a, Theme.of(context)).withOpacity(0.15),
-                      child: Icon(Icons.event, color: _statusColor(a, Theme.of(context))),
+                      backgroundColor: statusColor.withValues(alpha: 0.15),
+                      child: Icon(Icons.event, color: statusColor),
                     ),
                     title: Text(formatApptDateTime(a.scheduledAt ?? a.requestedAt)),
                     subtitle: Text(a.clinicianName ?? 'Unassigned'),
@@ -74,7 +69,7 @@ class AppointmentListScreen extends ConsumerWidget {
                       children: [
                         Chip(
                           label: Text(a.statusLabel, style: const TextStyle(fontSize: 12)),
-                          backgroundColor: _statusColor(a, Theme.of(context)).withOpacity(0.1),
+                          backgroundColor: statusColor.withValues(alpha: 0.1),
                         ),
                         const SizedBox(width: 4),
                         const Icon(Icons.chevron_right),

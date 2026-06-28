@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
+import '../../theme/app_theme.dart';
 import '../../widgets/password_field.dart';
 
 class ChangePasswordScreen extends ConsumerStatefulWidget {
@@ -29,6 +30,7 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final colorScheme = Theme.of(context).colorScheme;
 
     setState(() => _submitting = true);
     final error = await ref.read(authProvider.notifier).changePassword(
@@ -41,13 +43,13 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
+        SnackBar(content: Text(error), backgroundColor: colorScheme.error),
       );
       return;
     }
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Password updated.'), backgroundColor: Colors.green),
+      const SnackBar(content: Text('Password updated.'), backgroundColor: AppTheme.success),
     );
     Navigator.of(context).pop();
   }
@@ -108,10 +110,13 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   onPressed: _submitting ? null : _submit,
                   style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
                   child: _submitting
-                      ? const SizedBox(
+                      ? SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Theme.of(context).colorScheme.onPrimary,
+                          ),
                         )
                       : const Text('Update Password'),
                 ),

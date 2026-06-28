@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/profile_provider.dart';
+import '../../theme/app_theme.dart';
 
 /// Circular profile picture. By default it shows a tap-to-change camera button
 /// (profile screen); set [editable] to false for a read-only display (e.g. the
@@ -48,6 +49,7 @@ class _ProfileAvatarState extends ConsumerState<ProfileAvatar> {
     final path = result?.files.single.path;
     if (path == null) return;
 
+    final colorScheme = Theme.of(context).colorScheme;
     setState(() => _uploading = true);
     final error = await ref.read(profileProvider.notifier).uploadAvatar(path);
     if (!mounted) return;
@@ -55,12 +57,12 @@ class _ProfileAvatarState extends ConsumerState<ProfileAvatar> {
 
     if (error != null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error), backgroundColor: Colors.red),
+        SnackBar(content: Text(error), backgroundColor: colorScheme.error),
       );
     } else {
       _load(); // refetch the new image
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile picture updated!'), backgroundColor: Colors.green),
+        const SnackBar(content: Text('Profile picture updated!'), backgroundColor: AppTheme.success),
       );
     }
   }
@@ -103,7 +105,7 @@ class _ProfileAvatarState extends ConsumerState<ProfileAvatar> {
                 child: Padding(
                   padding: const EdgeInsets.all(6),
                   child: _uploading
-                      ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onPrimary))
                       : Icon(Icons.camera_alt, size: 16, color: scheme.onPrimary),
                 ),
               ),

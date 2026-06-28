@@ -6,6 +6,7 @@ import '../../models/assignment.dart';
 import '../../models/api_response.dart';
 import '../../providers/assignment_provider.dart';
 import '../../providers/download_provider.dart';
+import '../../theme/app_theme.dart';
 import 'submission_preview.dart';
 
 class AssignmentDetailScreen extends ConsumerStatefulWidget {
@@ -23,6 +24,7 @@ class _AssignmentDetailScreenState
   bool _downloading = false;
 
   Future<void> _downloadWorksheet(Assignment a) async {
+    final colorScheme = Theme.of(context).colorScheme;
     setState(() => _downloading = true);
     try {
       final fileName = (a.attachmentName == null || a.attachmentName!.isEmpty)
@@ -37,7 +39,7 @@ class _AssignmentDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Saved to Downloads/TheraConnect'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.success,
           ),
         );
       }
@@ -46,7 +48,7 @@ class _AssignmentDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Saved, but could not open it: ${result.message}'),
-            backgroundColor: Colors.orange,
+            backgroundColor: AppTheme.warning,
           ),
         );
       }
@@ -58,7 +60,7 @@ class _AssignmentDetailScreenState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Download failed: $msg'),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -207,8 +209,8 @@ class _AssignmentDetailScreenState
                             ? Icons.check_circle
                             : Icons.cancel,
                         color: assignment.isSubmitted
-                            ? Colors.green
-                            : Colors.grey),
+                            ? AppTheme.green
+                            : Theme.of(context).colorScheme.onSurfaceVariant),
                   ]),
                   const SizedBox(height: 4),
                   Row(children: [
@@ -220,8 +222,8 @@ class _AssignmentDetailScreenState
                             ? Icons.check_circle
                             : Icons.cancel,
                         color: assignment.isReviewed
-                            ? Colors.green
-                            : Colors.grey),
+                            ? AppTheme.green
+                            : Theme.of(context).colorScheme.onSurfaceVariant),
                   ]),
                 ],
               ),

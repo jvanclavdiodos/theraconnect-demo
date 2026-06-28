@@ -6,6 +6,7 @@ import '../../models/mood_log.dart';
 import '../../providers/mood_provider.dart';
 import '../../providers/assessment_provider.dart';
 import '../../providers/goals_provider.dart';
+import '../../theme/app_theme.dart';
 
 /// "My progress" — a quick mood check-in (1–10) with a recent trend, plus a
 /// shortcut to the questionnaires. The clinician sees the same data on the web
@@ -29,6 +30,7 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
   }
 
   Future<void> _logMood() async {
+    final colorScheme = Theme.of(context).colorScheme;
     setState(() => _logging = true);
     try {
       await ref.read(moodApiProvider).logMood(
@@ -41,7 +43,7 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Mood logged. Thanks for checking in!'),
-            backgroundColor: Colors.green,
+            backgroundColor: AppTheme.success,
           ),
         );
       }
@@ -50,7 +52,7 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(ApiError.fromException(e).userMessage),
-            backgroundColor: Colors.red,
+            backgroundColor: colorScheme.error,
           ),
         );
       }
@@ -127,11 +129,13 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
                     FilledButton.icon(
                       onPressed: _logging ? null : _logMood,
                       icon: _logging
-                          ? const SizedBox(
+                          ? SizedBox(
                               width: 16,
                               height: 16,
                               child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white))
+                                strokeWidth: 2,
+                                color: Theme.of(context).colorScheme.onPrimary,
+                              ))
                           : const Icon(Icons.add),
                       label: const Text('Log mood'),
                       style: FilledButton.styleFrom(
@@ -211,11 +215,11 @@ String _moodLabel(int score) {
 }
 
 Color _moodColor(int score) {
-  if (score <= 2) return Colors.red;
-  if (score <= 4) return Colors.deepOrange;
-  if (score <= 6) return Colors.amber.shade700;
-  if (score <= 8) return Colors.lightGreen.shade700;
-  return Colors.green;
+  if (score <= 2) return AppTheme.red;
+  if (score <= 4) return AppTheme.amber;
+  if (score <= 6) return const Color(0xFFF59E0B); // amber-500
+  if (score <= 8) return AppTheme.green;
+  return const Color(0xFF34D399); // emerald-400
 }
 
 /// Read-only list of the patient's therapy goals with the clinician's latest
@@ -246,7 +250,7 @@ class _GoalsSection extends ConsumerWidget {
                           ? Icons.check_circle
                           : Icons.flag_outlined,
                       color: g.status == 'met'
-                          ? Colors.green
+                          ? AppTheme.green
                           : Theme.of(context).colorScheme.primary,
                     ),
                     title: Text(g.description),
