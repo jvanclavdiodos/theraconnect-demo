@@ -15,12 +15,6 @@
                 $navUnread = \App\Models\Notification::where('user_id', auth()->id())
                     ->whereNull('read_at')->count();
             @endphp
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    @click="$store.theme.toggle()"
-                    :aria-label="$store.theme.current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-                    title="Toggle dark mode">
-                <i class="bi" :class="$store.theme.current === 'dark' ? 'bi-sun' : 'bi-moon-stars'" aria-hidden="true"></i>
-            </button>
             <a href="{{ route('notifications.index') }}" class="btn btn-outline-secondary btn-sm position-relative" title="Notifications" aria-label="Notifications">
                 <i class="bi bi-bell"></i>
                 @if($navUnread > 0)

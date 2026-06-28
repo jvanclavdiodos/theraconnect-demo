@@ -16,12 +16,6 @@
 
     <div class="ms-auto d-flex align-items-center gap-3">
         @auth
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    @click="$store.theme.toggle()"
-                    :aria-label="$store.theme.current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-                    title="Toggle dark mode">
-                <i class="bi" :class="$store.theme.current === 'dark' ? 'bi-sun' : 'bi-moon-stars'" aria-hidden="true"></i>
-            </button>
             <a href="{{ route('portal.notifications.index') }}" class="btn btn-outline-secondary btn-sm position-relative" title="Notifications" aria-label="Notifications">
                 <i class="bi bi-bell"></i>
                 @if($unreadNotifications > 0)
