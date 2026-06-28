@@ -31,7 +31,13 @@ class MessageController extends Controller
             ->with('user')
             ->get();
 
-        return view('messages.index', compact('conversations', 'caseload'));
+        $pendingRequests = Patient::where('requested_clinician_id', $clinician->id)
+            ->where('clinician_request_status', Patient::REQUEST_PENDING)
+            ->with('user')
+            ->latest()
+            ->get();
+
+        return view('messages.index', compact('conversations', 'caseload', 'pendingRequests'));
     }
 
     /** Open (or create) the thread with a caseload patient. */

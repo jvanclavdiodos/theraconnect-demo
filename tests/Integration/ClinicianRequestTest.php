@@ -106,6 +106,18 @@ class ClinicianRequestTest extends TestCase
             ->assertSee('Pending clinician requests')
             ->assertSee('Jane Patient');
 
+        $this->actingAs($clinician['user'], 'web')
+            ->get('/messages')
+            ->assertStatus(200)
+            ->assertSee('patient request')
+            ->assertSee('Review requests');
+
+        $this->actingAs($patient['user'], 'web')
+            ->get('/portal/messages')
+            ->assertStatus(200)
+            ->assertSee('pending approval')
+            ->assertSee($clinician['user']->name);
+
         // Messaging is still blocked because they are unassigned.
         $this->actingAs($clinician['user'], 'web')
             ->post('/messages/open', ['patient_id' => $patient['patient']->id])
