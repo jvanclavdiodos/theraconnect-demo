@@ -150,7 +150,9 @@ class ChatbotFlowTest extends TestCase
             ->get('/portal/chatbot')
             ->assertStatus(200)
             ->assertSee('Joy')
-            ->assertSee('alpine:init');
+            ->assertSee('alpine:init')
+            ->assertSee('x-text="replyText(m)"', false)
+            ->assertDontSee('flex-column-reverse', false);
     }
 
     public function test_portal_chatbot_message_returns_json_exchange(): void
@@ -163,8 +165,13 @@ class ChatbotFlowTest extends TestCase
             ]);
 
         $response->assertStatus(200)
-            ->assertJsonStructure(['question', 'answer' => ['reply', 'intent_key', 'is_fallback']])
+            ->assertJsonStructure([
+                'question',
+                'answer' => ['reply', 'intent_key', 'is_fallback'],
+                'data' => ['reply', 'intent_key', 'is_fallback'],
+            ])
             ->assertJsonPath('answer.intent_key', 'clinic_hours')
+            ->assertJsonPath('data.intent_key', 'clinic_hours')
             ->assertJsonPath('answer.is_fallback', false);
     }
 

@@ -34,6 +34,7 @@ class PortalChatbotController extends Controller
             return response()->json([
                 'question' => $validated['message'],
                 'answer' => $result,
+                'data' => $result,
             ]);
         }
 
