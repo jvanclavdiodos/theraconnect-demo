@@ -40,7 +40,7 @@
                         {{-- Joy reply, left-aligned --}}
                         <div class="d-flex justify-content-start align-items-end gap-2 mb-2">
                             <img src="{{ asset('img/joy-avatar.svg') }}" alt="Joy avatar" width="28" height="28" style="border-radius:8px;flex:0 0 auto;">
-                            <div class="p-2 px-3 rounded-3 bg-light" x-text="m.answer?.reply || m.reply || \"I'm not sure how to help with that yet.\"" style="max-width:75%;"></div>
+                            <div class="p-2 px-3 rounded-3 bg-body-secondary" x-text="m.answer?.reply || m.reply || \"I'm not sure how to help with that yet.\"" style="max-width:75%;"></div>
                         </div>
                     </div>
                 </template>
@@ -49,7 +49,7 @@
                 <template x-if="awaiting">
                     <div class="d-flex justify-content-start align-items-end gap-2 mb-2">
                         <img src="{{ asset('img/joy-avatar.svg') }}" alt="Joy avatar" width="28" height="28" style="border-radius:8px;flex:0 0 auto;">
-                        <div class="p-2 px-3 rounded-3 bg-light">
+                        <div class="p-2 px-3 rounded-3 bg-body-secondary">
                             <span class="spinner-border spinner-border-sm" role="status" aria-label="Joy is typing"></span>
                         </div>
                     </div>
