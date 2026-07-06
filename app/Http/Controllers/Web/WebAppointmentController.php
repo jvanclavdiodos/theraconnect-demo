@@ -27,8 +27,7 @@ class WebAppointmentController extends Controller
     {
         $query = Appointment::with(['patient.user', 'clinician.user'])
             ->whereNotNull('patient_id')
-            ->whereHas('patient')
-            ->latest('requested_at');
+            ->whereHas('patient');
 
         // Clinicians see only their own caseload; admins see every appointment.
         $user = $request->user();
@@ -36,17 +35,32 @@ class WebAppointmentController extends Controller
             $query->where('clinician_id', $user->clinician->id);
         }
 
-        $validStatus = $request->validate([
+        $validated = $request->validate([
             'status' => ['nullable', 'in:pending,approved,rejected,completed,cancelled,rescheduled,no_show'],
-        ])['status'] ?? null;
+            'mode' => ['nullable', 'in:online,in_person'],
+            'sort' => ['nullable', 'in:requested_at'],
+            'direction' => ['nullable', 'in:asc,desc'],
+        ]);
+
+        $validStatus = $validated['status'] ?? null;
+        $validMode = $validated['mode'] ?? null;
+        $sortDirection = $validated['direction'] ?? 'desc';
 
         if ($validStatus) {
             $query->where('status', $validStatus);
         }
 
-        $appointments = $query->paginate(20);
+        if ($validMode) {
+            $query->where('mode', $validMode);
+        }
 
-        return view('appointments.index', compact('appointments'));
+        $appointments = $query
+            ->orderBy('requested_at', $sortDirection)
+            ->orderBy('id', $sortDirection)
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('appointments.index', compact('appointments', 'validStatus', 'validMode', 'sortDirection'));
     }
 
     public function approve(Appointment $appointment): RedirectResponse
@@ -185,7 +199,7 @@ class WebAppointmentController extends Controller
 
                 return $created;
             });
-        } catch (SlotUnavailableException | InvalidStateException $e) {
+        } catch (SlotUnavailableException|InvalidStateException $e) {
             return back()->withErrors([
                 'scheduled_at' => $e->getMessage(),
             ]);

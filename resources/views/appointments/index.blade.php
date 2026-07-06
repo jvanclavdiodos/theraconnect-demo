@@ -15,6 +15,13 @@
         'rejected' => 'Rejected', 'completed' => 'Completed', 'cancelled' => 'Cancelled',
         'no_show' => 'No-show',
     ];
+    $modeFilters = [
+        '' => 'All modes',
+        'online' => 'Online',
+        'in_person' => 'Offline',
+    ];
+    $nextDirection = ($sortDirection ?? 'desc') === 'desc' ? 'asc' : 'desc';
+    $sortIcon = ($sortDirection ?? 'desc') === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up';
 @endphp
 
 <div class="mb-4">
@@ -25,8 +32,25 @@
 {{-- Filter pills --}}
 <div class="tc-filters mb-4">
     @foreach ($filters as $key => $label)
-        <a href="{{ $key ? route('appointments.index', ['status' => $key]) : route('appointments.index') }}"
+        <a href="{{ route('appointments.index', array_filter([
+                'status' => $key ?: null,
+                'mode' => $validMode ?? null,
+                'sort' => request('sort'),
+                'direction' => request('direction'),
+            ])) }}"
            class="tc-filter {{ (request('status') ?? '') === $key ? 'active' : '' }}">{{ $label }}</a>
+    @endforeach
+</div>
+
+<div class="tc-filters mb-4">
+    @foreach ($modeFilters as $key => $label)
+        <a href="{{ route('appointments.index', array_filter([
+                'status' => $validStatus ?? null,
+                'mode' => $key ?: null,
+                'sort' => request('sort'),
+                'direction' => request('direction'),
+            ])) }}"
+           class="tc-filter {{ (request('mode') ?? '') === $key ? 'active' : '' }}">{{ $label }}</a>
     @endforeach
 </div>
 
@@ -37,7 +61,18 @@
                 <tr>
                     <th>Patient</th>
                     <th>Clinician</th>
-                    <th>Requested</th>
+                    <th>
+                        <a class="d-inline-flex align-items-center gap-1 text-reset text-decoration-none"
+                           href="{{ route('appointments.index', array_filter([
+                               'status' => $validStatus ?? null,
+                               'mode' => $validMode ?? null,
+                               'sort' => 'requested_at',
+                               'direction' => $nextDirection,
+                           ])) }}">
+                            Requested
+                            <i class="bi {{ $sortIcon }}" aria-hidden="true"></i>
+                        </a>
+                    </th>
                     <th>Mode</th>
                     <th>Status</th>
                     <th class="text-end">Actions</th>
