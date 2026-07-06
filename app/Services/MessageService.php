@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Jobs\SendPushNotification;
 use App\Models\Clinician;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -65,7 +64,7 @@ class MessageService
             return [$message, $notification];
         });
 
-        SendPushNotification::dispatch($notification->id)->afterCommit();
+        $this->notifications->dispatchDeliveries($notification);
 
         return $message;
     }

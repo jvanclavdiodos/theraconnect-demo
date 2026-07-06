@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Web;
 use App\Exceptions\InvalidStateException;
 use App\Exceptions\SlotUnavailableException;
 use App\Http\Controllers\Controller;
-use App\Jobs\SendPushNotification;
 use App\Models\Appointment;
 use App\Services\AppointmentService;
 use App\Services\NotificationService;
@@ -81,7 +80,7 @@ class WebAppointmentController extends Controller
             return back()->withErrors(['status' => $e->getMessage()]);
         }
 
-        SendPushNotification::dispatch($notification->id)->afterCommit();
+        $this->notificationService->dispatchDeliveries($notification);
 
         return redirect()->route('appointments.index')
             ->with('status', 'Appointment approved.');
@@ -103,7 +102,7 @@ class WebAppointmentController extends Controller
             return back()->withErrors(['status' => $e->getMessage()]);
         }
 
-        SendPushNotification::dispatch($notification->id)->afterCommit();
+        $this->notificationService->dispatchDeliveries($notification);
 
         return redirect()->route('appointments.index')
             ->with('status', 'Appointment rejected.');
@@ -206,7 +205,7 @@ class WebAppointmentController extends Controller
         }
 
         foreach ($notifications as $notification) {
-            SendPushNotification::dispatch($notification->id)->afterCommit();
+            $this->notificationService->dispatchDeliveries($notification);
         }
 
         return redirect()->route('appointments.index')

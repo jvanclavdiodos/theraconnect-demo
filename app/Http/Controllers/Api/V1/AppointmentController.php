@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreAppointmentRequest;
 use App\Http\Resources\AppointmentResource;
 use App\Http\Resources\ScheduleSlotResource;
-use App\Jobs\SendPushNotification;
 use App\Models\Appointment;
 use App\Services\AppointmentService;
 use App\Services\AvailabilityService;
@@ -146,7 +145,7 @@ class AppointmentController extends Controller
                         $appt->requested_at->format('M d, Y h:i A'),
                     );
 
-                    SendPushNotification::dispatch($notification->id)->afterCommit();
+                    $this->notificationService->dispatchDeliveries($notification);
                 }
 
                 return $appt;
@@ -205,7 +204,7 @@ class AppointmentController extends Controller
                     $appointment->patient->user->name,
                     $appointment->requested_at->format('M d, Y h:i A'),
                 );
-                SendPushNotification::dispatch($notification->id)->afterCommit();
+                $this->notificationService->dispatchDeliveries($notification);
             }
 
             return $appointment;

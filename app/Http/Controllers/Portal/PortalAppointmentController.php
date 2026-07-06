@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Portal;
 
 use App\Exceptions\SlotUnavailableException;
 use App\Http\Controllers\Controller;
-use App\Jobs\SendPushNotification;
 use App\Models\Appointment;
 use App\Models\Clinician;
 use App\Services\AppointmentService;
@@ -126,7 +125,7 @@ class PortalAppointmentController extends Controller
                         $appt->patient->user->name,
                         $appt->requested_at->format('M d, Y h:i A'),
                     );
-                    SendPushNotification::dispatch($notification->id)->afterCommit();
+                    $this->notifications->dispatchDeliveries($notification);
                 }
 
                 return $appt;
@@ -161,7 +160,7 @@ class PortalAppointmentController extends Controller
                     $appointment->patient->user->name,
                     $appointment->requested_at->format('M d, Y h:i A'),
                 );
-                SendPushNotification::dispatch($notification->id)->afterCommit();
+                $this->notifications->dispatchDeliveries($notification);
             }
         });
 

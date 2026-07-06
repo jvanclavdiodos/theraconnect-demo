@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\SendPushNotification;
 use App\Models\Appointment;
 use App\Models\Assessment;
 use App\Models\MoodLog;
@@ -110,7 +109,7 @@ class ProgressController extends Controller
             );
         });
 
-        SendPushNotification::dispatch($notification->id)->afterCommit();
+        $this->notifications->dispatchDeliveries($notification);
 
         return redirect()->route('patients.progress', $patient)
             ->with('status', Assessments::title($validated['instrument']).' assigned to the patient.');

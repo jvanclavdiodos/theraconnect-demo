@@ -2,10 +2,27 @@
 
 namespace App\Services;
 
+use App\Jobs\SendEmailNotification;
+use App\Jobs\SendPushNotification;
 use App\Models\Notification;
 
 class NotificationService
 {
+    public const EMAIL_TYPES = [
+        'appointment_requested',
+        'appointment_approved',
+        'appointment_rejected',
+        'appointment_rescheduled',
+        'appointment_cancelled',
+        'appointment_reminder',
+        'patient_request',
+        'patient_request_approved',
+        'patient_request_denied',
+        'assessment_assigned',
+        'assignment_created',
+        'assignment_deadline',
+    ];
+
     public function create(int $userId, string $type, string $title, string $body, ?array $data = null): Notification
     {
         return Notification::create([
@@ -16,6 +33,20 @@ class NotificationService
             'data' => $data,
             'channel' => 'fcm',
         ]);
+    }
+
+    public function dispatchDeliveries(Notification $notification): void
+    {
+        SendPushNotification::dispatch($notification->id)->afterCommit();
+
+        if ($this->shouldEmail($notification)) {
+            SendEmailNotification::dispatch($notification->id)->afterCommit();
+        }
+    }
+
+    public function shouldEmail(Notification $notification): bool
+    {
+        return in_array($notification->type, self::EMAIL_TYPES, true);
     }
 
     public function appointmentApproved(int $userId, string $scheduledAt, ?string $meetingLink = null): Notification

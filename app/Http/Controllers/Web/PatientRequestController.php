@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Jobs\SendPushNotification;
 use App\Models\Patient;
 use App\Services\ActivityLogService;
+use App\Services\NotificationService;
 use App\Services\PatientRequestService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,7 +19,10 @@ use Illuminate\Support\Facades\Gate;
  */
 class PatientRequestController extends Controller
 {
-    public function __construct(private PatientRequestService $patientRequests) {}
+    public function __construct(
+        private PatientRequestService $patientRequests,
+        private NotificationService $notifications,
+    ) {}
 
     public function approve(Request $request, Patient $patient): RedirectResponse
     {
@@ -29,7 +32,7 @@ class PatientRequestController extends Controller
             return $this->patientRequests->approve($patient);
         });
 
-        SendPushNotification::dispatch($notification->id)->afterCommit();
+        $this->notifications->dispatchDeliveries($notification);
 
         app(ActivityLogService::class)->log($request->user(), 'patient.request_approved', $patient);
 
@@ -45,7 +48,7 @@ class PatientRequestController extends Controller
             return $this->patientRequests->deny($patient);
         });
 
-        SendPushNotification::dispatch($notification->id)->afterCommit();
+        $this->notifications->dispatchDeliveries($notification);
 
         app(ActivityLogService::class)->log($request->user(), 'patient.request_denied', $patient);
 

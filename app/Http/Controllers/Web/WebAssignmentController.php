@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreAssignmentRequest;
-use App\Jobs\SendPushNotification;
 use App\Models\Assignment;
 use App\Models\Clinician;
 use App\Models\Patient;
@@ -95,7 +94,7 @@ class WebAssignmentController extends Controller
             );
         });
 
-        SendPushNotification::dispatch($notification->id)->afterCommit();
+        $this->notificationService->dispatchDeliveries($notification);
 
         return redirect()->route('assignments.index')
             ->with('status', 'Assignment created successfully.');

@@ -15,6 +15,9 @@ class Notification extends Model
         'data',
         'channel',
         'sent_at',
+        'email_sent_at',
+        'email_failed_at',
+        'email_error',
         'read_at',
     ];
 
@@ -23,6 +26,8 @@ class Notification extends Model
         return [
             'data' => 'array',
             'sent_at' => 'datetime',
+            'email_sent_at' => 'datetime',
+            'email_failed_at' => 'datetime',
             'read_at' => 'datetime',
         ];
     }

@@ -45,7 +45,7 @@ class GenerateAppointmentReminders implements ShouldQueue
                 $time
             );
 
-            SendPushNotification::dispatch($notification->id)->afterCommit();
+            $service->dispatchDeliveries($notification);
         }
     }
 }

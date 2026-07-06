@@ -41,7 +41,7 @@ class GenerateAssignmentReminders implements ShouldQueue
                 $assignment->due_date->format('M d, Y')
             );
 
-            SendPushNotification::dispatch($notification->id)->afterCommit();
+            $service->dispatchDeliveries($notification);
         }
     }
 }
