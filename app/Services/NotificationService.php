@@ -5,6 +5,9 @@ namespace App\Services;
 use App\Jobs\SendEmailNotification;
 use App\Jobs\SendPushNotification;
 use App\Models\Notification;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Throwable;
 
 class NotificationService
 {
@@ -37,16 +40,37 @@ class NotificationService
 
     public function dispatchDeliveries(Notification $notification): void
     {
-        SendPushNotification::dispatch($notification->id)->afterCommit();
+        DB::afterCommit(function () use ($notification) {
+            $this->dispatchDeliveryJob('push', $notification, function () use ($notification) {
+                SendPushNotification::dispatch($notification->id);
+            });
 
-        if ($this->shouldEmail($notification)) {
-            SendEmailNotification::dispatch($notification->id)->afterCommit();
-        }
+            if ($this->shouldEmail($notification)) {
+                $this->dispatchDeliveryJob('email', $notification, function () use ($notification) {
+                    SendEmailNotification::dispatch($notification->id);
+                });
+            }
+        });
     }
 
     public function shouldEmail(Notification $notification): bool
     {
         return in_array($notification->type, self::EMAIL_TYPES, true);
+    }
+
+    private function dispatchDeliveryJob(string $channel, Notification $notification, callable $dispatch): void
+    {
+        try {
+            $dispatch();
+        } catch (Throwable $e) {
+            Log::error('Notification delivery dispatch failed', [
+                'notification_id' => $notification->id,
+                'user_id' => $notification->user_id,
+                'type' => $notification->type,
+                'channel' => $channel,
+                'exception' => $e,
+            ]);
+        }
     }
 
     public function appointmentApproved(int $userId, string $scheduledAt, ?string $meetingLink = null): Notification

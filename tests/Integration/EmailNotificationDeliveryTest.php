@@ -5,7 +5,9 @@ namespace Tests\Integration;
 use App\Jobs\SendEmailNotification;
 use App\Jobs\SendPushNotification;
 use App\Mail\NotificationEmail;
+use App\Models\Appointment;
 use App\Models\Conversation;
+use App\Models\Notification;
 use App\Services\MessageService;
 use App\Services\NotificationService;
 use Illuminate\Support\Facades\Mail;
@@ -128,6 +130,71 @@ class EmailNotificationDeliveryTest extends TestCase
 
         $notification->refresh();
         $this->assertNull($notification->email_sent_at);
+        $this->assertNotNull($notification->email_failed_at);
+        $this->assertSame('SMTP transport unavailable', $notification->email_error);
+    }
+
+    public function test_client_booking_succeeds_when_sync_email_delivery_fails(): void
+    {
+        config(['queue.default' => 'sync']);
+
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $token = $this->getApiToken($patient['user']);
+
+        Mail::shouldReceive('to')
+            ->once()
+            ->with($clinician['user']->email)
+            ->andThrow(new RuntimeException('SMTP transport unavailable'));
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->postJson('/api/v1/appointments', [
+                'requested_at' => '2030-12-31 09:00:00',
+                'mode' => 'in_person',
+                'clinician_id' => $clinician['clinician']->id,
+            ])
+            ->assertStatus(201);
+
+        $this->assertDatabaseHas('appointments', [
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'status' => 'pending',
+        ]);
+
+        $notification = Notification::where('type', 'appointment_requested')->firstOrFail();
+        $this->assertNotNull($notification->email_failed_at);
+        $this->assertSame('SMTP transport unavailable', $notification->email_error);
+    }
+
+    public function test_clinician_approval_succeeds_when_sync_email_delivery_fails(): void
+    {
+        config(['queue.default' => 'sync']);
+
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'mode' => 'online',
+            'status' => 'pending',
+        ]);
+
+        Mail::shouldReceive('to')
+            ->once()
+            ->with($patient['user']->email)
+            ->andThrow(new RuntimeException('SMTP transport unavailable'));
+
+        $this->actingAs($clinician['user'], 'web')
+            ->patch("/appointments/{$appointment->id}/approve")
+            ->assertRedirect(route('appointments.index'));
+
+        $this->assertDatabaseHas('appointments', [
+            'id' => $appointment->id,
+            'status' => 'approved',
+        ]);
+
+        $notification = Notification::where('type', 'appointment_approved')->firstOrFail();
         $this->assertNotNull($notification->email_failed_at);
         $this->assertSame('SMTP transport unavailable', $notification->email_error);
     }
