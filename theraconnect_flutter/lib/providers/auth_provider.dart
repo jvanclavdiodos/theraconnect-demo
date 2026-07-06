@@ -1,8 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/clinician.dart';
 import '../models/user.dart';
 import '../models/patient.dart';
 import '../models/api_response.dart';
@@ -13,8 +11,8 @@ import '../services/api/auth_api.dart';
 
 final authServiceProvider = Provider<AuthService>((ref) => AuthService());
 
-final sharedPreferencesProvider =
-    Provider<SharedPreferences>((ref) => throw UnimplementedError('Must be overridden'));
+final sharedPreferencesProvider = Provider<SharedPreferences>(
+    (ref) => throw UnimplementedError('Must be overridden'));
 
 final cacheServiceProvider = Provider<CacheService>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
@@ -31,36 +29,45 @@ final authApiProvider = Provider<AuthApi>((ref) {
   return AuthApi(client);
 });
 
-/// Clinicians offered in the sign-up "preferred clinician" picker. Loaded
-/// pre-auth from the public directory endpoint.
-final registrationCliniciansProvider = FutureProvider<List<Clinician>>((ref) {
-  return ref.watch(authApiProvider).fetchClinicians();
-});
-
 enum AuthState { unauthenticated, loading, authenticated }
 
-class AuthNotifier
-    extends StateNotifier<({AuthState status, User? user, Patient? patient, String? error})> {
+class AuthNotifier extends StateNotifier<
+    ({AuthState status, User? user, Patient? patient, String? error})> {
   final AuthService _authService;
   final CacheService _cacheService;
   final AuthApi _authApi;
 
   AuthNotifier(this._authService, this._cacheService, this._authApi)
-      : super((status: AuthState.unauthenticated, user: null, patient: null, error: null));
+      : super((
+          status: AuthState.unauthenticated,
+          user: null,
+          patient: null,
+          error: null
+        ));
 
   void setApiClient(ApiClient client) {
     client.onUnauthorized = _handleUnauthorized;
   }
 
   void _handleUnauthorized() {
-    state = (status: AuthState.unauthenticated, user: null, patient: null, error: null);
+    state = (
+      status: AuthState.unauthenticated,
+      user: null,
+      patient: null,
+      error: null
+    );
     _cacheService.clear();
   }
 
   Future<void> checkAuth() async {
     final hasToken = await _authService.hasToken();
     if (!hasToken) {
-      state = (status: AuthState.unauthenticated, user: null, patient: null, error: null);
+      state = (
+        status: AuthState.unauthenticated,
+        user: null,
+        patient: null,
+        error: null
+      );
       return;
     }
     try {
@@ -79,7 +86,12 @@ class AuthNotifier
       if (e.statusCode == 401) {
         await _authService.clearToken();
         await _cacheService.clear();
-        state = (status: AuthState.unauthenticated, user: null, patient: null, error: null);
+        state = (
+          status: AuthState.unauthenticated,
+          user: null,
+          patient: null,
+          error: null
+        );
       }
     } on DioException catch (_) {
       // Network errors during checkAuth should not log out
@@ -105,8 +117,12 @@ class AuthNotifier
       );
       return null;
     } on ApiError catch (e) {
-      state =
-          (status: AuthState.unauthenticated, user: null, patient: null, error: e.userMessage);
+      state = (
+        status: AuthState.unauthenticated,
+        user: null,
+        patient: null,
+        error: e.userMessage
+      );
       return e.userMessage;
     } catch (e) {
       // Any non-ApiError (parsing, secure storage, platform) must still reset
@@ -116,19 +132,23 @@ class AuthNotifier
       // Collapse to a patient-friendly message — never leak stack traces /
       // Dio request paths / backend exception text from the caught exception.
       final message = ApiError.fromException(e).userMessage;
-      state = (status: AuthState.unauthenticated, user: null, patient: null, error: message);
+      state = (
+        status: AuthState.unauthenticated,
+        user: null,
+        patient: null,
+        error: message
+      );
       return message;
     }
   }
 
-  Future<String?> register(String name, String email, String password,
-      String passwordConfirmation,
+  Future<String?> register(
+      String name, String email, String password, String passwordConfirmation,
       {String? contactNo,
       String? gender,
       String? educationalAttainment,
       String? employmentStatus,
-      String? personalIssues,
-      int? requestedClinicianId}) async {
+      String? personalIssues}) async {
     state = (status: AuthState.loading, user: null, patient: null, error: null);
     try {
       final result = await _authApi.register(
@@ -141,7 +161,6 @@ class AuthNotifier
         educationalAttainment: educationalAttainment,
         employmentStatus: employmentStatus,
         personalIssues: personalIssues,
-        requestedClinicianId: requestedClinicianId,
       );
       await _authService.saveToken(result.token);
 
@@ -158,23 +177,32 @@ class AuthNotifier
       );
       return null;
     } on ApiError catch (e) {
-      state =
-          (status: AuthState.unauthenticated, user: null, patient: null, error: e.userMessage);
+      state = (
+        status: AuthState.unauthenticated,
+        user: null,
+        patient: null,
+        error: e.userMessage
+      );
       return e.userMessage;
     } catch (e) {
       // Any non-ApiError (parsing, secure storage, platform) must still reset
       // the loading state, otherwise the sign-up spinner hangs forever.
       // See comment in login() — never leak exception text via $e.toString().
       final message = ApiError.fromException(e).userMessage;
-      state = (status: AuthState.unauthenticated, user: null, patient: null, error: message);
+      state = (
+        status: AuthState.unauthenticated,
+        user: null,
+        patient: null,
+        error: message
+      );
       return message;
     }
   }
 
   /// Change the signed-in patient's password. Returns null on success, or a
   /// user-facing error message (wrong current password, weak new password, …).
-  Future<String?> changePassword(
-      String currentPassword, String newPassword, String newPasswordConfirmation) async {
+  Future<String?> changePassword(String currentPassword, String newPassword,
+      String newPasswordConfirmation) async {
     try {
       await _authApi.changePassword(
         currentPassword: currentPassword,
@@ -196,11 +224,21 @@ class AuthNotifier
     } catch (_) {}
     await _authService.clearToken();
     await _cacheService.clear();
-    state = (status: AuthState.unauthenticated, user: null, patient: null, error: null);
+    state = (
+      status: AuthState.unauthenticated,
+      user: null,
+      patient: null,
+      error: null
+    );
   }
 
   void clearError() {
-    state = (status: state.status, user: state.user, patient: state.patient, error: null);
+    state = (
+      status: state.status,
+      user: state.user,
+      patient: state.patient,
+      error: null
+    );
   }
 }
 

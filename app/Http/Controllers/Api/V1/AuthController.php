@@ -7,11 +7,8 @@ use App\Http\Requests\Api\LoginRequest;
 use App\Http\Requests\Api\RegisterRequest;
 use App\Http\Resources\PatientResource;
 use App\Http\Resources\UserResource;
-use App\Jobs\SendPushNotification;
-use App\Models\Clinician;
 use App\Models\Patient;
 use App\Models\User;
-use App\Services\PatientRequestService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -19,9 +16,9 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function register(RegisterRequest $request, PatientRequestService $patientRequests): JsonResponse
+    public function register(RegisterRequest $request): JsonResponse
     {
-        $user = DB::transaction(function () use ($request, $patientRequests) {
+        $user = DB::transaction(function () use ($request) {
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
@@ -29,7 +26,7 @@ class AuthController extends Controller
                 'role' => 'patient',
             ]);
 
-            $patient = Patient::create([
+            Patient::create([
                 'user_id' => $user->id,
                 'contact_no' => $request->contact_no,
                 'gender' => $request->gender,
@@ -37,18 +34,6 @@ class AuthController extends Controller
                 'employment_status' => $request->employment_status,
                 'personal_issues' => $request->personal_issues,
             ]);
-
-            if ($request->filled('requested_clinician_id')) {
-                // Capture the notification so the push fires after commit —
-                // matches PatientRequestController@approve/deny. Without this
-                // the clinician only learns about the request on dashboard
-                // refresh, never via push.
-                $notification = $patientRequests->submit(
-                    $patient,
-                    Clinician::findOrFail($request->requested_clinician_id)
-                );
-                SendPushNotification::dispatch($notification->id)->afterCommit();
-            }
 
             return $user;
         });
@@ -67,15 +52,14 @@ class AuthController extends Controller
     {
         // Lowercase the email so login is case-insensitive regardless of DB
         // collation. Pairs with the User::setEmailAttribute mutator that
-        // lowercases on write (all seeded demo accounts are already lower).
+        // lowercases on write.
         $email = strtolower($request->email);
 
         $user = User::where('email', $email)->first();
 
-        // Anti-enumeration: always perform a Hash::check — against the user's
-        // real hash if found, or a freshly-minted dummy hash if the email
-        // doesn't exist — so the 401 timing is identical in both cases and
-        // an attacker can't infer account existence via response latency.
+        // Anti-enumeration: always perform a Hash::check against the user's
+        // real hash if found, or a freshly-minted dummy hash if the email does
+        // not exist, so 401 timing is similar in both cases.
         $storedHash = $user?->password ?? Hash::make(str()->random(32));
 
         if (! $user || ! Hash::check($request->password, $storedHash)) {
@@ -84,12 +68,8 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // The JSON API is the patient mobile-app surface — only patients are
-        // permitted to mint bearer tokens here. Clinicians/admins must use the
-        // session-authenticated web dashboard (`/login`). Mirrors
-        // AuthenticatedSessionController::store which blocks patients from the
-        // web login. Prevents personal_access_tokens pollution and account
-        // enumeration via the API by non-patient roles.
+        // The JSON API is the patient mobile-app surface; clinicians/admins
+        // must use the session-authenticated web dashboard.
         if ($user->role !== 'patient') {
             return response()->json([
                 'message' => 'This account is not permitted to use the mobile app. Please use the web dashboard.',

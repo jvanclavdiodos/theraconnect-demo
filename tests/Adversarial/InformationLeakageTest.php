@@ -2,6 +2,7 @@
 
 namespace Tests\Adversarial;
 
+use App\Http\Middleware\SecurityHeaders;
 use App\Models\Appointment;
 use Illuminate\Foundation\Exceptions\Handler;
 use Illuminate\Http\Request;
@@ -103,8 +104,10 @@ class InformationLeakageTest extends TestCase
     public function test_clinician_directory_leaks_no_sensitive_fields(): void
     {
         $clinician = $this->createClinician();
+        $patient = $this->createPatient('clinician-dir-auth@test.com');
 
-        $response = $this->getJson('/api/v1/clinicians');
+        $response = $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
+            ->getJson('/api/v1/clinicians');
 
         $response->assertStatus(200);
 
@@ -257,7 +260,7 @@ class InformationLeakageTest extends TestCase
         $request->server->set('HTTPS', 'on');
         $request->headers->set('Accept', 'application/json');
 
-        $middleware = new \App\Http\Middleware\SecurityHeaders();
+        $middleware = new SecurityHeaders;
 
         $response = $middleware->handle($request, fn () => response()->json(['status' => 'ok']));
 

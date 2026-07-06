@@ -8,10 +8,8 @@ use App\Models\User;
 use Tests\TestCase;
 
 /**
- * A self-registered patient picks a clinician at sign-up; that request is
- * pending until the clinician approves it. Approval is what places the patient
- * on the clinician's caseload (patients tab + messaging), which is exactly the
- * gap reported as "new patients not reflecting on the clinician side".
+ * Pending clinician requests still gate caseload assignment, but patients no
+ * longer choose a preferred clinician during self-registration.
  */
 class ClinicianRequestTest extends TestCase
 {
@@ -44,16 +42,20 @@ class ClinicianRequestTest extends TestCase
         return $patient;
     }
 
-    public function test_clinician_directory_is_public(): void
+    public function test_clinician_directory_requires_patient_auth(): void
     {
         $clinician = $this->makeClinician('dir@test.com');
+        $patient = $this->createPatient('dir-patient@test.com');
 
-        $this->getJson('/api/v1/clinicians')
+        $this->getJson('/api/v1/clinicians')->assertUnauthorized();
+
+        $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
+            ->getJson('/api/v1/clinicians')
             ->assertStatus(200)
             ->assertJsonFragment(['id' => $clinician['clinician']->id]);
     }
 
-    public function test_api_registration_with_requested_clinician_creates_pending_request(): void
+    public function test_api_registration_ignores_requested_clinician(): void
     {
         $clinician = $this->makeClinician('apidoc@test.com');
 
@@ -66,18 +68,17 @@ class ClinicianRequestTest extends TestCase
         ])->assertStatus(201);
 
         $patient = Patient::whereHas('user', fn ($q) => $q->where('email', 'apinew@test.com'))->firstOrFail();
-        $this->assertSame($clinician['clinician']->id, $patient->requested_clinician_id);
-        $this->assertSame(Patient::REQUEST_PENDING, $patient->clinician_request_status);
+        $this->assertNull($patient->requested_clinician_id);
+        $this->assertNull($patient->clinician_request_status);
         $this->assertNull($patient->assigned_clinician_id);
 
-        // The clinician was notified of the request.
-        $this->assertDatabaseHas('notifications', [
+        $this->assertDatabaseMissing('notifications', [
             'user_id' => $clinician['user']->id,
             'type' => 'patient_request',
         ]);
     }
 
-    public function test_web_registration_with_requested_clinician_creates_pending_request(): void
+    public function test_web_registration_ignores_requested_clinician(): void
     {
         $clinician = $this->makeClinician('webdoc@test.com');
 
@@ -90,7 +91,8 @@ class ClinicianRequestTest extends TestCase
         ])->assertRedirect(route('portal.dashboard'));
 
         $patient = Patient::whereHas('user', fn ($q) => $q->where('email', 'webnew@test.com'))->firstOrFail();
-        $this->assertSame(Patient::REQUEST_PENDING, $patient->clinician_request_status);
+        $this->assertNull($patient->requested_clinician_id);
+        $this->assertNull($patient->clinician_request_status);
         $this->assertNull($patient->assigned_clinician_id);
     }
 
@@ -99,14 +101,12 @@ class ClinicianRequestTest extends TestCase
         $clinician = $this->makeClinician('owner@test.com');
         $patient = $this->pendingPatient($clinician['clinician']);
 
-        // Shows up as a pending request, not as an active caseload patient.
         $this->actingAs($clinician['user'], 'web')
             ->get('/patients')
             ->assertStatus(200)
             ->assertSee('Pending clinician requests')
             ->assertSee('Jane Patient');
 
-        // Messaging is still blocked because they are unassigned.
         $this->actingAs($clinician['user'], 'web')
             ->post('/messages/open', ['patient_id' => $patient['patient']->id])
             ->assertStatus(403);
@@ -125,7 +125,6 @@ class ClinicianRequestTest extends TestCase
         $this->assertSame($clinician['clinician']->id, $patient['patient']->assigned_clinician_id);
         $this->assertSame(Patient::REQUEST_APPROVED, $patient['patient']->clinician_request_status);
 
-        // Patient was notified, and can now be messaged (on the caseload).
         $this->assertDatabaseHas('notifications', [
             'user_id' => $patient['user']->id,
             'type' => 'patient_request_approved',

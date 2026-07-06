@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Create Account — ' . config('app.name', 'TheraConnect'))
+@section('title', 'Create Account - ' . config('app.name', 'TheraConnect'))
 
 @section('content')
 <div class="row justify-content-center">
@@ -34,29 +34,14 @@
                         @error('contact_no') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
-                    <div class="mb-3">
-                        <label for="requested_clinician_id" class="form-label">Preferred clinician <span class="text-muted">(optional)</span></label>
-                        <select id="requested_clinician_id" name="requested_clinician_id"
-                                class="form-select @error('requested_clinician_id') is-invalid @enderror">
-                            <option value="">— No preference for now —</option>
-                            @foreach($clinicians as $clinician)
-                                <option value="{{ $clinician->id }}" {{ (string) old('requested_clinician_id') === (string) $clinician->id ? 'selected' : '' }}>
-                                    {{ $clinician->user->name }}@if($clinician->specialization) — {{ $clinician->specialization }}@endif
-                                </option>
-                            @endforeach
-                        </select>
-                        <div class="form-text">Your request is sent to the clinician for approval before you're connected.</div>
-                        @error('requested_clinician_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                    </div>
-
                     <hr>
-                    <p class="text-muted small mb-2">About you <span>(optional — you can fill these in later)</span></p>
+                    <p class="text-muted small mb-2">About you <span>(optional - you can fill these in later)</span></p>
 
                     <div class="row g-2">
                         <div class="col-sm-6 mb-3">
                             <label for="gender" class="form-label">Gender</label>
                             <select id="gender" name="gender" class="form-select @error('gender') is-invalid @enderror">
-                                <option value="">—</option>
+                                <option value=""></option>
                                 @foreach(\App\Models\Patient::GENDERS as $g)
                                     <option value="{{ $g }}" {{ old('gender') === $g ? 'selected' : '' }}>{{ $g }}</option>
                                 @endforeach
@@ -66,7 +51,7 @@
                         <div class="col-sm-6 mb-3">
                             <label for="employment_status" class="form-label">Employment status</label>
                             <select id="employment_status" name="employment_status" class="form-select @error('employment_status') is-invalid @enderror">
-                                <option value="">—</option>
+                                <option value=""></option>
                                 @foreach(\App\Models\Patient::EMPLOYMENT_STATUSES as $s)
                                     <option value="{{ $s }}" {{ old('employment_status') === $s ? 'selected' : '' }}>{{ $s }}</option>
                                 @endforeach
@@ -78,7 +63,7 @@
                     <div class="mb-3">
                         <label for="educational_attainment" class="form-label">Educational attainment</label>
                         <select id="educational_attainment" name="educational_attainment" class="form-select @error('educational_attainment') is-invalid @enderror">
-                            <option value="">—</option>
+                            <option value=""></option>
                             @foreach(\App\Models\Patient::EDUCATION_LEVELS as $e)
                                 <option value="{{ $e }}" {{ old('educational_attainment') === $e ? 'selected' : '' }}>{{ $e }}</option>
                             @endforeach
