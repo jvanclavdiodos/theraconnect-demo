@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -63,8 +64,22 @@ class RegisterController extends Controller
             return $user;
         });
 
-        Auth::login($user);
-        $request->session()->regenerate();
+        try {
+            Auth::login($user);
+            $request->session()->regenerate();
+        } catch (\Throwable $exception) {
+            // The account has already committed. Do not turn a session or auth
+            // infrastructure failure into a misleading failed registration.
+            Log::error('Patient registration succeeded but automatic login failed.', [
+                'user_id' => $user->id,
+                'exception' => $exception,
+            ]);
+
+            return redirect()->route('login')->with(
+                'status',
+                'Your account was created. Please sign in to continue.'
+            );
+        }
 
         return redirect()->route('portal.dashboard');
     }

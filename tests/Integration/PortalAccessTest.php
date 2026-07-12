@@ -3,6 +3,9 @@
 namespace Tests\Integration;
 
 use App\Models\User;
+use Illuminate\Contracts\Auth\StatefulGuard;
+use Illuminate\Support\Facades\Auth;
+use RuntimeException;
 use Tests\TestCase;
 
 class PortalAccessTest extends TestCase
@@ -82,6 +85,49 @@ class PortalAccessTest extends TestCase
         $this->assertNotNull($user->terms_accepted_at);
         $this->assertSame(\App\Support\TermsOfService::CURRENT_VERSION, $user->terms_version);
         $this->assertNotNull($user->patient);
+    }
+
+    public function test_patient_registration_renders_the_portal_dashboard_after_redirect(): void
+    {
+        $this->followingRedirects()
+            ->post('/register', [
+                'name' => 'Redirect Patient',
+                'email' => 'redirect-patient@test.com',
+                'password' => 'Password123',
+                'password_confirmation' => 'Password123',
+                'accepted_terms' => true,
+            ])
+            ->assertOk()
+            ->assertSee('overview');
+    }
+
+    public function test_registration_recovers_when_automatic_login_fails_after_account_creation(): void
+    {
+        $guestGuard = \Mockery::mock(StatefulGuard::class);
+        $guestGuard->shouldReceive('check')->once()->andReturnFalse();
+
+        Auth::shouldReceive('guard')
+            ->with(null)
+            ->once()
+            ->andReturn($guestGuard);
+        Auth::shouldReceive('login')
+            ->once()
+            ->andThrow(new RuntimeException('Session storage unavailable.'));
+
+        $this->post('/register', [
+            'name' => 'Fallback Patient',
+            'email' => 'fallback-patient@test.com',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
+            'accepted_terms' => true,
+        ])
+            ->assertRedirect(route('login'))
+            ->assertSessionHas('status', 'Your account was created. Please sign in to continue.');
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'fallback-patient@test.com',
+            'role' => 'patient',
+        ]);
     }
 
     public function test_web_registration_captures_profile_fields(): void
