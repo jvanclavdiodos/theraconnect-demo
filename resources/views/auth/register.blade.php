@@ -10,7 +10,7 @@
                 <h4 class="card-title text-center mb-1">Create your account</h4>
                 <p class="text-center text-muted small mb-4">For patients of the clinic.</p>
 
-                <form id="registration-form" method="POST" action="{{ route('register') }}" x-data="{ ...passwordField({ requireConfirm: true }), termsAccepted: {{ old('accepted_terms') ? 'true' : 'false' }} }" @terms-accepted="termsAccepted = true">
+                <form id="registration-form" method="POST" action="{{ route('register') }}" x-data="Object.assign(passwordField({ requireConfirm: true }), { termsAccepted: {{ old('accepted_terms') ? 'true' : 'false' }} })" @terms-accepted="termsAccepted = true" @terms-revoked="termsAccepted = false">
                     @csrf
 
                     <div class="mb-3">
@@ -84,8 +84,8 @@
 
                     <div class="form-check mb-3">
                         <input type="hidden" name="accepted_terms" :value="termsAccepted ? '1' : '0'">
-                        <input class="form-check-input @error('accepted_terms') is-invalid @enderror" type="checkbox" id="accepted_terms" :checked="termsAccepted" aria-haspopup="dialog">
-                        <label class="form-check-label small" for="accepted_terms">
+                        <input class="form-check-input @error('accepted_terms') is-invalid @enderror" type="checkbox" id="accepted_terms" :checked="termsAccepted" aria-label="Agree to the TheraConnect User Agreement" aria-haspopup="dialog">
+                        <label class="form-check-label small">
                             By creating an account, I agree to the
                             <button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-bs-toggle="modal" data-bs-target="#user-agreement-modal">TheraConnect User Agreement</button>.
                         </label>
@@ -135,9 +135,16 @@
 
         const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
 
-        checkbox.addEventListener('click', function (event) {
-            event.preventDefault();
-            modal.show();
+        checkbox.addEventListener('change', function () {
+            if (checkbox.checked) {
+                // Consent is granted only by the modal's explicit I Agree action.
+                checkbox.checked = false;
+                modal.show();
+                return;
+            }
+
+            acceptedTerms.value = '0';
+            form.dispatchEvent(new CustomEvent('terms-revoked', { bubbles: true }));
         });
 
         agreeButton.addEventListener('click', function () {

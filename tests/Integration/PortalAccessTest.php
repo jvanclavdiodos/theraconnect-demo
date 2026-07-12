@@ -61,7 +61,9 @@ class PortalAccessTest extends TestCase
         $this->get('/register')
             ->assertOk()
             ->assertSee('id="user-agreement-modal"', false)
-            ->assertSee('id="accept-user-agreement"', false);
+            ->assertSee('id="accept-user-agreement"', false)
+            ->assertSee('Object.assign(passwordField', false)
+            ->assertSee('terms-revoked', false);
     }
 
     public function test_patient_can_self_register_and_land_in_portal(): void
