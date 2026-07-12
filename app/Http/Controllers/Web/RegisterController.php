@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Patient;
 use App\Models\User;
 use App\Rules\StrongPassword;
+use App\Support\TermsOfService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -31,6 +32,7 @@ class RegisterController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'confirmed', new StrongPassword],
+            'accepted_terms' => ['required', 'accepted'],
             // Optional patient profile fields captured at sign-up.
             'contact_no' => ['nullable', 'string', 'max:20'],
             'gender' => ['nullable', 'string', Rule::in(Patient::GENDERS)],
@@ -45,6 +47,8 @@ class RegisterController extends Controller
                 'email' => $validated['email'],
                 'password' => $validated['password'],
                 'role' => 'patient',
+                'terms_accepted_at' => now(),
+                'terms_version' => TermsOfService::CURRENT_VERSION,
             ]);
 
             Patient::create([

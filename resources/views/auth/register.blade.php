@@ -10,7 +10,7 @@
                 <h4 class="card-title text-center mb-1">Create your account</h4>
                 <p class="text-center text-muted small mb-4">For patients of the clinic.</p>
 
-                <form method="POST" action="{{ route('register') }}" x-data="passwordField({ requireConfirm: true })">
+                <form method="POST" action="{{ route('register') }}" x-data="{ ...passwordField({ requireConfirm: true }), termsOpen: false, termsAccepted: {{ old('accepted_terms') ? 'true' : 'false' }} }">
                     @csrf
 
                     <div class="mb-3">
@@ -82,7 +82,35 @@
 
                     @include('partials.password-strength', ['confirm' => true])
 
-                    <button type="submit" class="btn btn-primary w-100" :disabled="!canSubmit">Create account</button>
+                    <div class="form-check mb-3">
+                        <input type="hidden" name="accepted_terms" :value="termsAccepted ? '1' : '0'">
+                        <input class="form-check-input @error('accepted_terms') is-invalid @enderror" type="checkbox" id="accepted_terms" :checked="termsAccepted" disabled>
+                        <label class="form-check-label small" for="accepted_terms">
+                            I agree to the
+                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline" @click="termsOpen = true">Terms and Conditions</button>.
+                        </label>
+                        @error('accepted_terms') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" :disabled="!canSubmit || !termsAccepted">Create account</button>
+
+                    <div x-cloak x-show="termsOpen" x-transition.opacity class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="terms-title" @keydown.escape.window="termsOpen = false">
+                        <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+                            <div class="modal-content" x-trap="termsOpen">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="terms-title">TheraConnect Terms and Conditions</h5>
+                                    <button type="button" class="btn-close" aria-label="Close" @click="termsOpen = false"></button>
+                                </div>
+                                <div class="modal-body small">
+                                    @include('partials.terms-and-conditions')
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-outline-secondary" @click="termsOpen = false">Close</button>
+                                    <button type="button" class="btn btn-primary" @click="termsAccepted = true; termsOpen = false">I Agree</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </form>
 
                 <p class="text-center text-muted small mt-3 mb-0">

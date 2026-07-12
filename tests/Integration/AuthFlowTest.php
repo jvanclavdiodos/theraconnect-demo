@@ -15,6 +15,7 @@ class AuthFlowTest extends TestCase
             'email' => 'new@test.com',
             'password' => 'Password123',
             'password_confirmation' => 'Password123',
+            'accepted_terms' => true,
             'contact_no' => '555-1111',
         ]);
 
@@ -26,6 +27,12 @@ class AuthFlowTest extends TestCase
             ->assertJsonPath('data.user.role', 'patient');
 
         $this->assertNotNull($response->json('data.token'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'new@test.com',
+            'terms_version' => \App\Support\TermsOfService::CURRENT_VERSION,
+        ]);
+        $this->assertNotNull(User::where('email', 'new@test.com')->value('terms_accepted_at'));
 
         // Verify patient profile was created
         $this->assertDatabaseHas('patients', [
@@ -40,6 +47,7 @@ class AuthFlowTest extends TestCase
             'email' => 'profile@test.com',
             'password' => 'Password123',
             'password_confirmation' => 'Password123',
+            'accepted_terms' => true,
             'gender' => 'Female',
             'educational_attainment' => 'College',
             'employment_status' => 'Student',
@@ -73,7 +81,20 @@ class AuthFlowTest extends TestCase
     {
         $this->postJson('/api/v1/register', [])
             ->assertStatus(422)
-            ->assertJsonValidationErrors(['name', 'email', 'password']);
+            ->assertJsonValidationErrors(['name', 'email', 'password', 'accepted_terms']);
+    }
+
+    public function test_registration_requires_terms_acceptance(): void
+    {
+        $this->postJson('/api/v1/register', [
+            'name' => 'No Consent',
+            'email' => 'noconsent@test.com',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
+            'accepted_terms' => false,
+        ])->assertStatus(422)->assertJsonValidationErrors('accepted_terms');
+
+        $this->assertDatabaseMissing('users', ['email' => 'noconsent@test.com']);
     }
 
     #[DataProvider('weakPasswords')]
@@ -84,6 +105,7 @@ class AuthFlowTest extends TestCase
             'email' => 'weak@test.com',
             'password' => $password,
             'password_confirmation' => $password,
+            'accepted_terms' => true,
         ])->assertStatus(422)->assertJsonValidationErrors('password');
     }
 
@@ -105,6 +127,7 @@ class AuthFlowTest extends TestCase
             'email' => 'strong@test.com',
             'password' => 'Str0ngPass',
             'password_confirmation' => 'Str0ngPass',
+            'accepted_terms' => true,
         ])->assertStatus(201);
     }
 
@@ -116,6 +139,7 @@ class AuthFlowTest extends TestCase
             'email' => 'short@test.com',
             'password' => 'Ab1',
             'password_confirmation' => 'Ab1',
+            'accepted_terms' => true,
         ])->assertStatus(422)
             ->assertJsonFragment(['The password must be between 8 and 20 characters.']);
     }

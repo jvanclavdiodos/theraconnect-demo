@@ -542,6 +542,7 @@ class IdorBypassTest extends TestCase
             'email' => 'attacker-escalate@test.com',
             'password' => 'StrongPass1',
             'password_confirmation' => 'StrongPass1',
+            'accepted_terms' => true,
             'role' => 'admin',
         ]);
 
@@ -562,6 +563,7 @@ class IdorBypassTest extends TestCase
             'email' => 'attacker-clin@test.com',
             'password' => 'StrongPass1',
             'password_confirmation' => 'StrongPass1',
+            'accepted_terms' => true,
             'role' => 'clinician',
         ])->assertStatus(201);
 

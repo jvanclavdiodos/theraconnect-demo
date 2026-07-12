@@ -60,6 +60,7 @@ class ThrottleLimiterTest extends TestCase
                 'email' => "reg-$i@test.com",
                 'password' => 'StrongPass1',
                 'password_confirmation' => 'StrongPass1',
+                'accepted_terms' => true,
             ]);
         }
 
@@ -68,6 +69,7 @@ class ThrottleLimiterTest extends TestCase
             'email' => 'reg-4@test.com',
             'password' => 'StrongPass1',
             'password_confirmation' => 'StrongPass1',
+            'accepted_terms' => true,
         ])
             ->assertStatus(429);
     }

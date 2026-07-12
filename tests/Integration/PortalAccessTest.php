@@ -63,11 +63,14 @@ class PortalAccessTest extends TestCase
             'email' => 'browser@test.com',
             'password' => 'Password123',
             'password_confirmation' => 'Password123',
+            'accepted_terms' => true,
         ])->assertRedirect(route('portal.dashboard'));
 
         $user = User::where('email', 'browser@test.com')->first();
         $this->assertNotNull($user);
         $this->assertSame('patient', $user->role);
+        $this->assertNotNull($user->terms_accepted_at);
+        $this->assertSame(\App\Support\TermsOfService::CURRENT_VERSION, $user->terms_version);
         $this->assertNotNull($user->patient);
     }
 
@@ -78,6 +81,7 @@ class PortalAccessTest extends TestCase
             'email' => 'webprofile@test.com',
             'password' => 'Password123',
             'password_confirmation' => 'Password123',
+            'accepted_terms' => true,
             'gender' => 'Male',
             'educational_attainment' => 'Postgraduate',
             'employment_status' => 'Employed',
@@ -97,7 +101,20 @@ class PortalAccessTest extends TestCase
     {
         $this->from('/register')->post('/register', [])
             ->assertRedirect('/register')
-            ->assertSessionHasErrors(['name', 'email', 'password']);
+            ->assertSessionHasErrors(['name', 'email', 'password', 'accepted_terms']);
+    }
+
+    public function test_web_registration_requires_terms_acceptance(): void
+    {
+        $this->from('/register')->post('/register', [
+            'name' => 'No Consent',
+            'email' => 'web-noconsent@test.com',
+            'password' => 'Password123',
+            'password_confirmation' => 'Password123',
+            'accepted_terms' => '0',
+        ])->assertRedirect('/register')->assertSessionHasErrors('accepted_terms');
+
+        $this->assertDatabaseMissing('users', ['email' => 'web-noconsent@test.com']);
     }
 
     public function test_web_registration_rejects_weak_password(): void

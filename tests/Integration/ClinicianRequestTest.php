@@ -64,6 +64,7 @@ class ClinicianRequestTest extends TestCase
             'email' => 'apinew@test.com',
             'password' => 'Password1!',
             'password_confirmation' => 'Password1!',
+            'accepted_terms' => true,
             'requested_clinician_id' => $clinician['clinician']->id,
         ])->assertStatus(201);
 
@@ -87,6 +88,7 @@ class ClinicianRequestTest extends TestCase
             'email' => 'webnew@test.com',
             'password' => 'Password1!',
             'password_confirmation' => 'Password1!',
+            'accepted_terms' => true,
             'requested_clinician_id' => $clinician['clinician']->id,
         ])->assertRedirect(route('portal.dashboard'));
 

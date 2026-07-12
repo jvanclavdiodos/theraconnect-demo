@@ -21,6 +21,7 @@ class RegisterRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'confirmed', new StrongPassword],
+            'accepted_terms' => ['required', 'accepted'],
             // Optional patient profile fields captured at sign-up.
             'contact_no' => ['nullable', 'string', 'max:20'],
             'gender' => ['nullable', 'string', Rule::in(Patient::GENDERS)],

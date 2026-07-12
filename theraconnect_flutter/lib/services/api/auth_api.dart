@@ -15,6 +15,7 @@ class AuthApi {
     required String email,
     required String password,
     required String passwordConfirmation,
+    required bool acceptedTerms,
     String? contactNo,
     String? gender,
     String? educationalAttainment,
@@ -27,6 +28,7 @@ class AuthApi {
         'email': email,
         'password': password,
         'password_confirmation': passwordConfirmation,
+        'accepted_terms': acceptedTerms,
         if (contactNo != null) 'contact_no': contactNo,
         if (gender != null) 'gender': gender,
         if (educationalAttainment != null)

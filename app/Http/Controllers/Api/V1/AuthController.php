@@ -9,6 +9,7 @@ use App\Http\Resources\PatientResource;
 use App\Http\Resources\UserResource;
 use App\Models\Patient;
 use App\Models\User;
+use App\Support\TermsOfService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,8 @@ class AuthController extends Controller
                 'email' => $request->email,
                 'password' => $request->password,
                 'role' => 'patient',
+                'terms_accepted_at' => now(),
+                'terms_version' => TermsOfService::CURRENT_VERSION,
             ]);
 
             Patient::create([

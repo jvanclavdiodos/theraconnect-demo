@@ -144,7 +144,8 @@ class AuthNotifier extends StateNotifier<
 
   Future<String?> register(
       String name, String email, String password, String passwordConfirmation,
-      {String? contactNo,
+      {required bool acceptedTerms,
+      String? contactNo,
       String? gender,
       String? educationalAttainment,
       String? employmentStatus,
@@ -156,6 +157,7 @@ class AuthNotifier extends StateNotifier<
         email: email,
         password: password,
         passwordConfirmation: passwordConfirmation,
+        acceptedTerms: acceptedTerms,
         contactNo: contactNo,
         gender: gender,
         educationalAttainment: educationalAttainment,
