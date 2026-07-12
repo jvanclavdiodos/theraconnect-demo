@@ -44,45 +44,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       c.text.trim().isEmpty ? null : c.text.trim();
 
   Future<void> _showTerms() async {
-    var agreed = false;
     final accepted = await showDialog<bool>(
       context: context,
-      builder: (context) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Terms and Conditions'),
-          content: SizedBox(
-            width: 560,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const _TermsContent(),
-                  const SizedBox(height: 12),
-                  CheckboxListTile(
-                    contentPadding: EdgeInsets.zero,
-                    controlAffinity: ListTileControlAffinity.leading,
-                    value: agreed,
-                    onChanged: (value) =>
-                        setDialogState(() => agreed = value ?? false),
-                    title: const Text('I have read and agree to these terms.'),
-                  ),
-                ],
-              ),
-            ),
+      builder: (context) => AlertDialog(
+        title: const Text('TheraConnect User Agreement'),
+        content: const SizedBox(
+          width: 560,
+          child: SingleChildScrollView(
+            child: _TermsContent(),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
-              child: const Text('Close'),
-            ),
-            FilledButton(
-              onPressed:
-                  agreed ? () => Navigator.of(context).pop(true) : null,
-              child: const Text('I Agree'),
-            ),
-          ],
         ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Close'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('I Agree'),
+          ),
+        ],
       ),
     );
 
@@ -92,6 +73,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    if (!_acceptedTerms) {
+      await _showTerms();
+      if (!_acceptedTerms) return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
     final colorScheme = Theme.of(context).colorScheme;
 
@@ -290,25 +276,37 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                     onFieldSubmitted: (_) => _register(),
                   ),
                   const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: _showTerms,
-                    icon: Icon(_acceptedTerms
-                        ? Icons.check_circle_outline
-                        : Icons.description_outlined),
-                    label: Text(_acceptedTerms
-                        ? 'Terms and Conditions accepted'
-                        : 'Read Terms and Conditions'),
-                  ),
-                  if (!_acceptedTerms)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Text(
-                        'You must read and agree to the terms before creating an account.',
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Checkbox(
+                        value: _acceptedTerms,
+                        onChanged: (_) => _showTerms(),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 10),
+                          child: Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            children: [
+                              const Text('By creating an account, I agree to the '),
+                              TextButton(
+                                onPressed: _showTerms,
+                                style: TextButton.styleFrom(
+                                  minimumSize: Size.zero,
+                                  padding: EdgeInsets.zero,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                child: const Text('TheraConnect User Agreement'),
+                              ),
+                              const Text('.'),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
+                    ],
+                  ),
                   const SizedBox(height: 24),
                   FilledButton(
                     onPressed: authState.status == AuthState.loading || !_acceptedTerms

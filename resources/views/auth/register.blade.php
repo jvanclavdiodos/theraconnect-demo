@@ -10,7 +10,7 @@
                 <h4 class="card-title text-center mb-1">Create your account</h4>
                 <p class="text-center text-muted small mb-4">For patients of the clinic.</p>
 
-                <form method="POST" action="{{ route('register') }}" x-data="{ ...passwordField({ requireConfirm: true }), termsOpen: false, termsAccepted: {{ old('accepted_terms') ? 'true' : 'false' }} }">
+                <form method="POST" action="{{ route('register') }}" x-data="{ ...passwordField({ requireConfirm: true }), termsOpen: false, termsAccepted: {{ old('accepted_terms') ? 'true' : 'false' }} }" @submit="if (!termsAccepted) { $event.preventDefault(); termsOpen = true; }">
                     @csrf
 
                     <div class="mb-3">
@@ -84,10 +84,10 @@
 
                     <div class="form-check mb-3">
                         <input type="hidden" name="accepted_terms" :value="termsAccepted ? '1' : '0'">
-                        <input class="form-check-input @error('accepted_terms') is-invalid @enderror" type="checkbox" id="accepted_terms" :checked="termsAccepted" disabled>
+                        <input class="form-check-input @error('accepted_terms') is-invalid @enderror" type="checkbox" id="accepted_terms" :checked="termsAccepted" @click.prevent="termsOpen = true" @keydown.space.prevent="termsOpen = true" @keydown.enter.prevent="termsOpen = true" aria-haspopup="dialog">
                         <label class="form-check-label small" for="accepted_terms">
-                            I agree to the
-                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline" @click="termsOpen = true">Terms and Conditions</button>.
+                            By creating an account, I agree to the
+                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline" @click="termsOpen = true">TheraConnect User Agreement</button>.
                         </label>
                         @error('accepted_terms') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
@@ -98,7 +98,7 @@
                         <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
                             <div class="modal-content" x-trap="termsOpen">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="terms-title">TheraConnect Terms and Conditions</h5>
+                                    <h5 class="modal-title" id="terms-title">TheraConnect User Agreement</h5>
                                     <button type="button" class="btn-close" aria-label="Close" @click="termsOpen = false"></button>
                                 </div>
                                 <div class="modal-body small">
