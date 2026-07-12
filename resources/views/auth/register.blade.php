@@ -94,7 +94,7 @@
 
                     <button type="submit" class="btn btn-primary w-100" :disabled="!canSubmit || !termsAccepted">Create account</button>
 
-                    <div x-cloak x-show="termsOpen" x-transition.opacity class="modal d-block" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="terms-title" @keydown.escape.window="termsOpen = false">
+                    <div x-cloak x-show="termsOpen" x-transition.opacity class="modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="terms-title" @keydown.escape.window="termsOpen = false">
                         <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
                             <div class="modal-content" x-trap="termsOpen">
                                 <div class="modal-header">
