@@ -56,6 +56,14 @@ class PortalAccessTest extends TestCase
         $this->get(route('portal.dashboard'))->assertRedirect(route('login'));
     }
 
+    public function test_registration_page_includes_the_user_agreement_modal(): void
+    {
+        $this->get('/register')
+            ->assertOk()
+            ->assertSee('id="user-agreement-modal"', false)
+            ->assertSee('id="accept-user-agreement"', false);
+    }
+
     public function test_patient_can_self_register_and_land_in_portal(): void
     {
         $this->post('/register', [

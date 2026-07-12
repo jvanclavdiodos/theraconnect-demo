@@ -10,7 +10,7 @@
                 <h4 class="card-title text-center mb-1">Create your account</h4>
                 <p class="text-center text-muted small mb-4">For patients of the clinic.</p>
 
-                <form method="POST" action="{{ route('register') }}" x-data="{ ...passwordField({ requireConfirm: true }), termsOpen: false, termsAccepted: {{ old('accepted_terms') ? 'true' : 'false' }} }" @submit="if (!termsAccepted) { $event.preventDefault(); termsOpen = true; }">
+                <form id="registration-form" method="POST" action="{{ route('register') }}" x-data="{ ...passwordField({ requireConfirm: true }), termsAccepted: {{ old('accepted_terms') ? 'true' : 'false' }} }" @terms-accepted="termsAccepted = true">
                     @csrf
 
                     <div class="mb-3">
@@ -84,29 +84,29 @@
 
                     <div class="form-check mb-3">
                         <input type="hidden" name="accepted_terms" :value="termsAccepted ? '1' : '0'">
-                        <input class="form-check-input @error('accepted_terms') is-invalid @enderror" type="checkbox" id="accepted_terms" :checked="termsAccepted" @click.prevent="termsOpen = true" @keydown.space.prevent="termsOpen = true" @keydown.enter.prevent="termsOpen = true" aria-haspopup="dialog">
+                        <input class="form-check-input @error('accepted_terms') is-invalid @enderror" type="checkbox" id="accepted_terms" :checked="termsAccepted" aria-haspopup="dialog">
                         <label class="form-check-label small" for="accepted_terms">
                             By creating an account, I agree to the
-                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline" @click="termsOpen = true">TheraConnect User Agreement</button>.
+                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-bs-toggle="modal" data-bs-target="#user-agreement-modal">TheraConnect User Agreement</button>.
                         </label>
                         @error('accepted_terms') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100" :disabled="!canSubmit || !termsAccepted">Create account</button>
 
-                    <div x-cloak x-show="termsOpen" x-transition.opacity class="modal" tabindex="-1" role="dialog" aria-modal="true" aria-labelledby="terms-title" @keydown.escape.window="termsOpen = false">
+                    <div class="modal fade" id="user-agreement-modal" tabindex="-1" aria-labelledby="terms-title" aria-hidden="true">
                         <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
-                            <div class="modal-content" x-trap="termsOpen">
+                            <div class="modal-content">
                                 <div class="modal-header">
                                     <h5 class="modal-title" id="terms-title">TheraConnect User Agreement</h5>
-                                    <button type="button" class="btn-close" aria-label="Close" @click="termsOpen = false"></button>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body small">
                                     @include('partials.terms-and-conditions')
                                 </div>
                                 <div class="modal-footer">
-                                    <button type="button" class="btn btn-outline-secondary" @click="termsOpen = false">Close</button>
-                                    <button type="button" class="btn btn-primary" @click="termsAccepted = true; termsOpen = false">I Agree</button>
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-primary" id="accept-user-agreement">I Agree</button>
                                 </div>
                             </div>
                         </div>
@@ -121,3 +121,38 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    (function () {
+        const form = document.getElementById('registration-form');
+        const checkbox = document.getElementById('accepted_terms');
+        const acceptedTerms = form?.querySelector('input[name="accepted_terms"]');
+        const modalElement = document.getElementById('user-agreement-modal');
+        const agreeButton = document.getElementById('accept-user-agreement');
+
+        if (!form || !checkbox || !acceptedTerms || !modalElement || !agreeButton) return;
+
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+
+        checkbox.addEventListener('click', function (event) {
+            event.preventDefault();
+            modal.show();
+        });
+
+        agreeButton.addEventListener('click', function () {
+            checkbox.checked = true;
+            acceptedTerms.value = '1';
+            form.dispatchEvent(new CustomEvent('terms-accepted', { bubbles: true }));
+            modal.hide();
+        });
+
+        form.addEventListener('submit', function (event) {
+            if (acceptedTerms.value !== '1') {
+                event.preventDefault();
+                modal.show();
+            }
+        });
+    })();
+</script>
+@endpush
