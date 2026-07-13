@@ -1,0 +1,86 @@
+# Operations, Configuration, External Services, and Testing
+
+## Configuration Sources
+
+Use `.env.example` and `.env.railway.example` as key inventories only. Do not copy actual `.env` values, credentials, tokens, database passwords, FCM service accounts, or cloud secrets into documentation, tests, or commits.
+
+| Concern | Config/env keys | Code locations |
+|---|---|---|
+| Application | `APP_NAME`, `APP_ENV`, `APP_KEY`, `APP_DEBUG`, `APP_URL`, `APP_TIMEZONE` | `config/app.php` |
+| Database | `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | `config/database.php`, migrations |
+| Browser session | `SESSION_DRIVER`, `SESSION_CONNECTION`, `SESSION_TABLE`, `SESSION_SECURE_COOKIE`, `SESSION_ENCRYPT`, `SESSION_LIFETIME` | `config/session.php` |
+| Queue/cache/logging | `QUEUE_CONNECTION`, `DB_QUEUE_*`, `CACHE_STORE`, `LOG_CHANNEL`, `LOG_STACK`, `LOG_LEVEL` | `config/queue.php`, `config/cache.php`, `config/logging.php` |
+| Storage | `FILESYSTEM_DISK`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_ENDPOINT` | `config/filesystems.php` |
+| Mail | `MAIL_*` values | `config/mail.php`, `SendEmailNotification` |
+| CORS/Sanctum | `CORS_ALLOWED_ORIGINS`, `SANCTUM_STATEFUL_DOMAINS`, `SANCTUM_TOKEN_PREFIX` | `config/cors.php`, `config/sanctum.php` |
+| FCM | `FCM_PROJECT_ID`, `FCM_CREDENTIALS`, `FCM_CREDENTIALS_B64` | `config/services.php`, `FcmService`, entrypoint |
+| Jitsi | `JITSI_BASE_URL`, `JITSI_ROOM_PREFIX` | `config/services.php`, `JitsiService` |
+| Gemini | `GEMINI_API_KEY`, `GEMINI_CHATBOT_MODEL` | `config/services.php`, `ChatbotService` |
+| Demo seed | `SEED_DEMO`, `DEMO_PASSWORD` | `docker/entrypoint.sh`, seeders |
+
+## Deployment Shape
+
+### Docker and local development
+
+- `Dockerfile` builds PHP 8.2 Alpine with MySQL/PHP extensions, Composer dependencies, and a non-root `www-data` runtime.
+- `docker/entrypoint.sh` performs storage link, waits for database, migrates, optionally seeds, decodes FCM credentials when configured, and serves the app.
+- `docker-compose.yml` defines app, MySQL, database queue worker, and scheduler containers. `docker-compose.db.yml` provides a database-focused option.
+- The Laravel Composer `dev` script starts PHP server, queue listener, Pail and Vite concurrently; verify Node tooling before relying on Vite because most browser UI is CDN/Blade based.
+
+### Railway
+
+- `railway.json`: web app, Dockerfile build, `/api/v1/health` health check, one replica.
+- `railway.worker.json`: separate `queue:work` process with retry/backoff. Required for queued push/email/reminders under `QUEUE_CONNECTION=database`.
+- `railway.scheduler.json`: Railway cron invokes `php artisan schedule:run` every minute.
+- The web service migration process is in the entrypoint. Confirm the deployed service is the Laravel app service, then run `php artisan migrate --force` in its Railway console only when required by deployment procedure.
+
+## External Services
+
+| Service | Where used | Failure behavior |
+|---|---|---|
+| Firebase Cloud Messaging | Flutter `fcm_service.dart`; Laravel `FcmService`, `SendPushNotification` | Missing config/no token no-ops; invalid tokens are handled/removed; delivery dispatch failures are logged without rolling back workflow. |
+| SMTP/provider via Laravel Mail | `SendEmailNotification`, `NotificationEmail` | Job tracks email failure state and rethrows for queue retry; not all notification types are email eligible. |
+| AWS S3-compatible storage | Laravel filesystem disk for sensitive uploads | Local private disk is fallback. Production needs a private persistent bucket; container storage is ephemeral. |
+| Jitsi | `JitsiService` meeting links in appointments | Generates unguessable room URL; no observed server-side Jitsi authentication/token integration. |
+| Google Gemini API | `ChatbotService` | Optional; 5s connect / 15s total timeout; logs warning and uses database/Jaccard fallback. |
+| MySQL | all durable backend data, queued jobs/cache/sessions when configured | `/api/v1/health` reports 503 if a simple DB query fails. |
+
+## Logging and Error Handling
+
+- `SecurityHeaders` sets defensive headers and HSTS only for secure requests.
+- `bootstrap/app.php` renders branded 403/404/419/429 pages and production 500 responses, while preserving server logs.
+- Expected business exceptions (`InvalidStateException`, `SlotUnavailableException`) should produce validation/user-safe errors in their controllers; do not let them become generic 500s.
+- Notification dispatch is best-effort after commit and logs channel/notification context if enqueueing fails.
+- Registration protects the post-commit automatic-login boundary: an account may be created even if session infrastructure fails, and the controller redirects the user to login with a success message while logging context.
+- Railway should capture logs from stderr (`LOG_STACK=stderr` in the Railway example). Local container file logs are ephemeral in production.
+
+## Background Work
+
+| Schedule | Job | Effect |
+|---|---|---|
+| hourly | `GenerateAssignmentReminders` | creates/dispatches assignment deadline reminders |
+| daily 08:00 | `GenerateAppointmentReminders` | creates/dispatches appointment reminders |
+| daily 02:00 | `MarkOverdueNoShows` | marks eligible appointments no-show |
+| after transaction commit | `SendPushNotification`, `SendEmailNotification` | delivery channels for created notifications |
+
+Queue workers must be running for asynchronous delivery. With `sync`, jobs execute during request processing; with `database` and no worker, business data persists but jobs remain queued.
+
+## Testing Strategy
+
+| Suite | Intent |
+|---|---|
+| `tests/Integration` | end-to-end request/domain behavior across API, web, portal, services, policies, notifications and files |
+| `tests/Adversarial` | IDOR, auth/role bypass, state-transition abuse, malformed input, throttling, information disclosure, idempotency |
+| `tests/Concerns/CreatesActors.php` | reusable patient/clinician/admin fixture setup |
+| `tests/TestCase.php` | database migration setup and base actor/token helpers |
+
+Typical commands:
+
+```powershell
+php artisan test
+php artisan test tests\Integration\AppointmentFlowTest.php
+php artisan test tests\Adversarial\IdorBypassTest.php
+php artisan view:cache
+```
+
+Known local environment caveats observed in this repository: tests that generate image files need PHP GD; some full-suite failures can originate from local extension availability or stale expectations, not the changed feature. Report such failures distinctly from feature-suite results.

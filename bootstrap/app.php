@@ -9,6 +9,7 @@ use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Exceptions\PostTooLargeException;
 use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Http\Request;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -24,6 +25,18 @@ return Application::configure(basePath: dirname(__DIR__))
         // TLS terminates at a reverse proxy. Leave unset for direct-server deployments
         // so X-Forwarded-* headers cannot be spoofed by clients.
         $middleware->trustProxies(at: env('TRUST_PROXIES'));
+
+        // Guest-only routes such as /login and /register are reachable in
+        // browser history after authentication. Laravel's default redirect
+        // prefers the named dashboard route, which is staff-only; patients
+        // must instead return to their portal dashboard.
+        $middleware->redirectUsersTo(function (Request $request): string {
+            return match ($request->user()?->role) {
+                'patient' => route('portal.dashboard'),
+                'admin', 'clinician' => route('dashboard'),
+                default => route('home'),
+            };
+        });
 
         // Strip the PHP `X-Powered-By` header and add defensive headers
         // (X-Content-Type-Options, X-Frame-Options, Referrer-Policy,

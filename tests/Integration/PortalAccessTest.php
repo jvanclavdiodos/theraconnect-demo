@@ -59,6 +59,28 @@ class PortalAccessTest extends TestCase
         $this->get(route('portal.dashboard'))->assertRedirect(route('login'));
     }
 
+    public function test_authenticated_patient_is_redirected_away_from_login_and_registration(): void
+    {
+        $patient = $this->createPatient('back-navigation@test.com');
+
+        $this->actingAs($patient['user'], 'web')
+            ->get(route('login'))
+            ->assertRedirect(route('portal.dashboard'));
+
+        $this->actingAs($patient['user'], 'web')
+            ->get(route('register'))
+            ->assertRedirect(route('portal.dashboard'));
+    }
+
+    public function test_authenticated_staff_is_redirected_from_login_to_staff_dashboard(): void
+    {
+        $clinician = $this->createClinician();
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('login'))
+            ->assertRedirect(route('dashboard'));
+    }
+
     public function test_registration_page_includes_the_user_agreement_modal(): void
     {
         $this->get('/register')
