@@ -3,6 +3,7 @@ class Patient {
   final int userId;
   final bool hasAvatar;
   final int? assignedClinicianId;
+  final List<int> assignedClinicianIds;
   final int? requestedClinicianId;
   final String? clinicianRequestStatus;
   final String? dateOfBirth;
@@ -22,6 +23,7 @@ class Patient {
     required this.userId,
     this.hasAvatar = false,
     this.assignedClinicianId,
+    this.assignedClinicianIds = const [],
     this.requestedClinicianId,
     this.clinicianRequestStatus,
     this.dateOfBirth,
@@ -43,6 +45,10 @@ class Patient {
       userId: json['user_id'] as int,
       hasAvatar: json['has_avatar'] as bool? ?? false,
       assignedClinicianId: json['assigned_clinician_id'] as int?,
+      assignedClinicianIds: (json['assigned_clinician_ids'] as List<dynamic>?)
+              ?.map((id) => id as int)
+              .toList() ??
+          const [],
       requestedClinicianId: json['requested_clinician_id'] as int?,
       clinicianRequestStatus: json['clinician_request_status'] as String?,
       dateOfBirth: json['date_of_birth'] as String?,
@@ -65,6 +71,7 @@ class Patient {
       'user_id': userId,
       'has_avatar': hasAvatar,
       'assigned_clinician_id': assignedClinicianId,
+      'assigned_clinician_ids': assignedClinicianIds,
       'requested_clinician_id': requestedClinicianId,
       'clinician_request_status': clinicianRequestStatus,
       'date_of_birth': dateOfBirth,

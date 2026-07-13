@@ -49,7 +49,7 @@ class WebAssignmentController extends Controller
         // as the author (no clinician picker). An admin picks both.
         if ($user->role === 'clinician' && $user->clinician) {
             $patients = Patient::with('user')
-                ->where('assigned_clinician_id', $user->clinician->id)
+                ->assignedTo($user->clinician)
                 ->orderBy('id')->get();
             $clinicians = collect();
         } else {

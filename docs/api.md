@@ -72,8 +72,8 @@ Base path: `/api/v1`. Routes are defined in `routes/api.php`. The API is a patie
 
 | Method | Route | Request/response focus | Called by |
 |---|---|---|---|
-| GET | `/conversations` | participant conversation list | inbox |
-| POST | `/conversations` | opens/returns patient-clinician conversation | inbox/thread flow |
+| GET | `/conversations` | one conversation for every assigned/approved clinician | inbox |
+| POST | `/conversations` | opens/returns an assigned clinician conversation; `clinician_id` is required when multiple are assigned | legacy inbox/thread flow |
 | GET | `/conversations/{conversation}/messages` | participant message list | thread |
 | POST | `/conversations/{conversation}/messages` | message body | thread send |
 | POST | `/chatbot/message` | patient text | `{reply, intent_key, is_fallback}` | `ChatbotApi.sendMessage` |

@@ -20,7 +20,7 @@ class PatientPolicy
 
         return $user->role === 'clinician'
             && $user->clinician !== null
-            && $patient->assigned_clinician_id === $user->clinician->id;
+            && $patient->isAssignedTo($user->clinician);
     }
 
     /**

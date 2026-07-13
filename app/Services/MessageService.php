@@ -7,6 +7,7 @@ use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Patient;
 use App\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -21,6 +22,38 @@ class MessageService
             'patient_id' => $patient->id,
             'clinician_id' => $clinician->id,
         ]);
+    }
+
+    /** @return Collection<int, Clinician> */
+    public function assignedCliniciansFor(Patient $patient): Collection
+    {
+        $ids = $patient->assignedClinicians()->pluck('clinicians.id');
+
+        if ($patient->assigned_clinician_id) {
+            $ids->push($patient->assigned_clinician_id);
+        }
+
+        return Clinician::with('user')
+            ->whereKey($ids->unique()->values())
+            ->orderBy('id')
+            ->get();
+    }
+
+    /** @return Collection<int, Conversation> */
+    public function ensureAssignedConversations(Patient $patient): Collection
+    {
+        $clinicians = $this->assignedCliniciansFor($patient);
+
+        $clinicians->each(
+            fn (Clinician $clinician) => $this->conversationFor($patient, $clinician)
+        );
+
+        return Conversation::where('patient_id', $patient->id)
+            ->whereIn('clinician_id', $clinicians->pluck('id'))
+            ->with(['clinician.user', 'latestMessage'])
+            ->orderByDesc('last_message_at')
+            ->orderBy('id')
+            ->get();
     }
 
     /**

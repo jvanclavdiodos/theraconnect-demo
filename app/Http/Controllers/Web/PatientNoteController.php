@@ -16,7 +16,7 @@ class PatientNoteController extends Controller
         $clinician = $this->currentClinician($request);
 
         // A clinician may only add notes for a patient on their caseload.
-        abort_unless($patient->assigned_clinician_id === $clinician->id, 403);
+        abort_unless($patient->isAssignedTo($clinician), 403);
 
         $validated = $this->validateNote($request);
 

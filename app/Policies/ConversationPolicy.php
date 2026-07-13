@@ -16,6 +16,8 @@ class ConversationPolicy
     {
         $conversation->loadMissing(['patient', 'clinician']);
 
+        // Thread creation and inbox discovery are assignment-gated. Once a
+        // thread exists, both participants retain access to its history.
         return $conversation->hasParticipant($user);
     }
 }

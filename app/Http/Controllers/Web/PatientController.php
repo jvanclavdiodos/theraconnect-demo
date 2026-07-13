@@ -27,7 +27,7 @@ class PatientController extends Controller
         // Clinicians see only patients assigned to them; admins see all.
         $user = $request->user();
         if ($user->role === 'clinician' && $user->clinician) {
-            $query->where('assigned_clinician_id', $user->clinician->id);
+            $query->assignedTo($user->clinician);
         }
 
         if ($request->filled('search')) {
@@ -80,7 +80,9 @@ class PatientController extends Controller
             'contact_no' => ['nullable', 'string', 'max:20'],
             'address' => ['nullable', 'string', 'max:255'],
             'emergency_contact' => ['nullable', 'string', 'max:255'],
-            'assigned_clinician_id' => ['nullable', 'exists:clinicians,id'],
+            'assigned_clinician_ids' => ['nullable', 'array'],
+            'assigned_clinician_ids.*' => ['integer', 'exists:clinicians,id'],
+            'assigned_clinician_id' => ['nullable', 'integer', 'exists:clinicians,id'],
         ]);
 
         // A clinician always onboards patients onto their OWN caseload — their
@@ -88,11 +90,14 @@ class PatientController extends Controller
         // can't assign a patient to someone else. An admin chooses freely (the
         // form's clinician dropdown), or leaves it unassigned.
         $actor = $request->user();
-        $assignedClinicianId = ($actor->role === 'clinician' && $actor->clinician)
-            ? $actor->clinician->id
-            : ($validated['assigned_clinician_id'] ?? null);
+        $assignedClinicianIds = ($actor->role === 'clinician' && $actor->clinician)
+            ? [$actor->clinician->id]
+            : array_values(array_unique(
+                $validated['assigned_clinician_ids']
+                    ?? (isset($validated['assigned_clinician_id']) ? [$validated['assigned_clinician_id']] : [])
+            ));
 
-        DB::transaction(function () use ($validated, $assignedClinicianId) {
+        DB::transaction(function () use ($validated, $assignedClinicianIds) {
             $user = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
@@ -100,9 +105,9 @@ class PatientController extends Controller
                 'role' => 'patient',
             ]);
 
-            Patient::create([
+            $patient = Patient::create([
                 'user_id' => $user->id,
-                'assigned_clinician_id' => $assignedClinicianId,
+                'assigned_clinician_id' => $assignedClinicianIds[0] ?? null,
                 'date_of_birth' => $validated['date_of_birth'] ?? null,
                 'gender' => $validated['gender'] ?? null,
                 'educational_attainment' => $validated['educational_attainment'] ?? null,
@@ -112,6 +117,8 @@ class PatientController extends Controller
                 'address' => $validated['address'] ?? null,
                 'emergency_contact' => $validated['emergency_contact'] ?? null,
             ]);
+
+            $patient->assignedClinicians()->sync($assignedClinicianIds);
         });
 
         return redirect()->route('patients.index')
@@ -126,7 +133,7 @@ class PatientController extends Controller
 
         $patient->load([
             'user',
-            'assignedClinician.user',
+            'assignedClinicians.user',
             'clinicianNotes' => fn ($q) => $q->with('clinician.user')->latest(),
         ]);
         $appointments = Appointment::where('patient_id', $patient->id)
@@ -140,7 +147,7 @@ class PatientController extends Controller
 
     public function edit(Patient $patient): View
     {
-        $patient->load('user');
+        $patient->load('user', 'assignedClinicians');
         $clinicians = Clinician::with('user')->orderBy('id')->get();
 
         return view('patients.edit', compact('patient', 'clinicians'));
@@ -160,19 +167,26 @@ class PatientController extends Controller
             'address' => ['nullable', 'string', 'max:255'],
             'emergency_contact' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
-            'assigned_clinician_id' => ['nullable', 'exists:clinicians,id'],
+            'assigned_clinician_ids' => ['nullable', 'array'],
+            'assigned_clinician_ids.*' => ['integer', 'exists:clinicians,id'],
+            'assigned_clinician_id' => ['nullable', 'integer', 'exists:clinicians,id'],
         ]);
 
         // Wrap user + profile updates in a transaction so a profile-row
         // failure rolls back the user's name/email change too.
         DB::transaction(function () use ($patient, $validated) {
+            $assignedClinicianIds = array_values(array_unique(
+                $validated['assigned_clinician_ids']
+                    ?? (isset($validated['assigned_clinician_id']) ? [$validated['assigned_clinician_id']] : [])
+            ));
+
             $patient->user->update([
                 'name' => $validated['name'],
                 'email' => $validated['email'],
             ]);
 
             $patient->update([
-                'assigned_clinician_id' => $validated['assigned_clinician_id'] ?? null,
+                'assigned_clinician_id' => $assignedClinicianIds[0] ?? null,
                 'date_of_birth' => $validated['date_of_birth'] ?? null,
                 'gender' => $validated['gender'] ?? null,
                 'educational_attainment' => $validated['educational_attainment'] ?? null,
@@ -183,6 +197,8 @@ class PatientController extends Controller
                 'emergency_contact' => $validated['emergency_contact'] ?? null,
                 'notes' => $validated['notes'] ?? null,
             ]);
+
+            $patient->assignedClinicians()->sync($assignedClinicianIds);
         });
 
         return redirect()->route('patients.index')

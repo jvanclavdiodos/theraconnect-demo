@@ -26,7 +26,7 @@ This index lists observable application features, their primary ownership, and t
 
 | Feature | Entry and UI | Ownership | Data/API | Dependencies and modification hazards |
 |---|---|---|---|---|
-| Patient/caseload management | staff patient list/show/edit/create | `PatientController`, `PatientRequestController`, `PatientRequestService` | patients/users, clinician request fields | `assigned_clinician_id` is the caseload boundary for messaging and many policies. Self-registration does not let a patient choose a clinician. |
+| Patient/caseload management | staff patient list/show/edit/create | `PatientController`, `PatientRequestController`, `PatientRequestService` | patients/users, `clinician_patient`, clinician request fields | The pivot is the authoritative many-to-many caseload boundary for messaging and policies. `assigned_clinician_id` is retained as a legacy primary value. Appointment approval adds the clinician without replacing prior relationships. |
 | Clinician request approval/denial | staff patient request actions | `PatientRequestService`, `PatientPolicy` | patients, notifications | Keep update + notification transactional and dispatch after commit. |
 | Assignments | staff assignment list/create/review; portal/mobile assignment screens | `WebAssignmentController`, `PortalAssignmentController`, API controller, `AssignmentService` | assignments, submissions, private files | Submission/worksheet download and preview are policy-gated. File storage must remain private. |
 | Assessments | clinician progress page; patient portal/mobile | `ProgressController`, portal/API assessment controllers, `AssessmentService`, `Assessments` | assessments | Instruments are constrained to supported values (PHQ-9/GAD-7). Patient can submit only their assignment. |
@@ -38,7 +38,7 @@ This index lists observable application features, their primary ownership, and t
 
 | Feature | Entry and UI | Ownership | Data/API | Dependencies and modification hazards |
 |---|---|---|---|---|
-| Direct messaging | staff and portal messaging views; Flutter inbox/thread | `MessageService`, web/portal/API conversation controllers | conversations, messages | Conversation has patient + clinician participants. Direct-message emails are intentionally disabled for privacy. |
+| Direct messaging | staff and portal messaging views; Flutter inbox/thread | `MessageService`, web/portal/API conversation controllers | conversations, messages, `clinician_patient` | Each assigned patient-clinician pair has one thread. Booking alone grants no access; appointment approval establishes the relationship. Direct-message emails are intentionally disabled for privacy. |
 | In-app notification inbox | staff/portal/Flutter notification lists | notification controllers, `NotificationService` | notifications; notification API | `sent_at` means push delivery state; email has separate timestamps/errors. |
 | Push notifications | mobile FCM lifecycle | `FcmService`, `SendPushNotification`, Flutter `FcmService` | device_tokens, Firebase | Missing FCM configuration should no-op without breaking business workflows. Token register/delete endpoints are patient-only. |
 | Transactional email | queued job/mailable | `SendEmailNotification`, `NotificationEmail` | notifications/email tracking; mail config | Allow-list specific appointment/request/assessment/assignment types. Do not add message body email casually. |

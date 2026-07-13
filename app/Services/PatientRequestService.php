@@ -8,9 +8,9 @@ use App\Models\Patient;
 
 /**
  * Manages a patient's request to be assigned a clinician at sign-up and the
- * clinician's approval/denial of it. Approval is what actually places the
- * patient on the clinician's caseload (sets assigned_clinician_id), which is
- * the boundary the patients tab + messaging scope on.
+ * clinician's approval/denial of it. Approval adds that clinician to the
+ * patient's caseload relationships, which is the boundary the patients tab
+ * and messaging scope use.
  *
  * Each method writes the patient row AND emits a notification, so callers wrap
  * it in DB::transaction and dispatch the returned notification for push
@@ -45,10 +45,8 @@ class PatientRequestService
     {
         $clinician = $patient->requestedClinician;
 
-        $patient->update([
-            'assigned_clinician_id' => $clinician->id,
-            'clinician_request_status' => Patient::REQUEST_APPROVED,
-        ]);
+        $patient->update(['clinician_request_status' => Patient::REQUEST_APPROVED]);
+        $patient->assignClinician($clinician);
 
         return $this->notifications->patientRequestApproved(
             $patient->user->id,

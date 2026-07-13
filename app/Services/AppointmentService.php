@@ -183,11 +183,10 @@ class AppointmentService
             'meeting_link' => $this->resolveMeetingLink($appointment),
         ]);
 
-        // Link the patient to this clinician the first time an appointment is
-        // approved. Guards against overwriting a pre-existing care relationship
-        // (e.g. patient already assigned via the sign-up request flow).
-        if ($appointment->clinician_id && ! $appointment->patient->assigned_clinician_id) {
-            $appointment->patient->update(['assigned_clinician_id' => $appointment->clinician_id]);
+        // Approval establishes a care relationship without replacing any
+        // clinicians already assigned to the patient.
+        if ($appointment->clinician_id) {
+            $appointment->patient->assignClinician($appointment->clinician_id);
         }
 
         return $appointment->fresh();

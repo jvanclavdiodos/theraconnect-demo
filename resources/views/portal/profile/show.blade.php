@@ -25,10 +25,12 @@
                 @endif
                 <h5 class="mb-0">{{ $patient->user->name }}</h5>
                 <div class="text-muted small">{{ $patient->user->email }}</div>
-                @if($patient->assignedClinician)
+                @if($patient->assignedClinicians->isNotEmpty())
                     <hr>
-                    <div class="text-muted small">Your clinician</div>
-                    <div class="fw-semibold">{{ $patient->assignedClinician->user->name }}</div>
+                    <div class="text-muted small mb-1">Your clinicians</div>
+                    @foreach($patient->assignedClinicians as $clinician)
+                        <div class="fw-semibold">{{ $clinician->user->name }}</div>
+                    @endforeach
                 @endif
 
                 <hr>

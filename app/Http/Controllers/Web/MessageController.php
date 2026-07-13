@@ -27,7 +27,7 @@ class MessageController extends Controller
             ->orderByDesc('last_message_at')
             ->get();
 
-        $caseload = Patient::where('assigned_clinician_id', $clinician->id)
+        $caseload = Patient::assignedTo($clinician)
             ->with('user')
             ->get();
 
@@ -42,7 +42,7 @@ class MessageController extends Controller
         $validated = $request->validate(['patient_id' => ['required', 'integer']]);
         $patient = Patient::findOrFail($validated['patient_id']);
 
-        abort_unless($patient->assigned_clinician_id === $clinician->id, 403);
+        abort_unless($patient->isAssignedTo($clinician), 403);
 
         $conversation = $this->messages->conversationFor($patient, $clinician);
 

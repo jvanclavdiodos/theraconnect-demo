@@ -39,15 +39,21 @@
                     <input type="text" id="emergency_contact" name="emergency_contact" class="form-control" value="{{ old('emergency_contact', $patient->emergency_contact) }}">
                 </div>
                 <div class="col-md-6">
-                    <label for="assigned_clinician_id" class="form-label">Assigned Clinician</label>
-                    <select id="assigned_clinician_id" name="assigned_clinician_id" class="form-select">
-                        <option value="">Unassigned</option>
+                    @php
+                        $selectedClinicians = old(
+                            'assigned_clinician_ids',
+                            $patient->assignedClinicians->pluck('id')->all()
+                        );
+                    @endphp
+                    <label for="assigned_clinician_ids" class="form-label">Assigned Clinicians</label>
+                    <select id="assigned_clinician_ids" name="assigned_clinician_ids[]" class="form-select" multiple size="5">
                         @foreach ($clinicians as $clinician)
-                            <option value="{{ $clinician->id }}" {{ old('assigned_clinician_id', $patient->assigned_clinician_id) == $clinician->id ? 'selected' : '' }}>
+                            <option value="{{ $clinician->id }}" @selected(in_array($clinician->id, $selectedClinicians))>
                                 {{ $clinician->user->name }}@if ($clinician->specialization) ({{ $clinician->specialization }})@endif
                             </option>
                         @endforeach
                     </select>
+                    <div class="form-text">Hold Ctrl (Windows) or Command (Mac) to select multiple clinicians.</div>
                 </div>
                 @include('patients._profile_fields', ['patient' => $patient])
 

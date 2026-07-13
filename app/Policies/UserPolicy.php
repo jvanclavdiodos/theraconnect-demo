@@ -22,7 +22,7 @@ class UserPolicy
         }
 
         if ($actor->role === 'clinician' && $actor->clinician && $target->patient) {
-            return $target->patient->assigned_clinician_id === $actor->clinician->id;
+            return $target->patient->isAssignedTo($actor->clinician);
         }
 
         return false;

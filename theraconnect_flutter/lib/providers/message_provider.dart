@@ -7,7 +7,7 @@ final messageApiProvider = Provider<MessageApi>((ref) {
   return MessageApi(ref.watch(apiClientProvider));
 });
 
-/// The patient's conversations (typically just one — with their clinician).
+/// One conversation for each clinician assigned after appointment approval.
 final conversationsProvider =
     FutureProvider.autoDispose<List<Conversation>>((ref) async {
   return ref.watch(messageApiProvider).getConversations();

@@ -86,7 +86,7 @@ Before implementing a new feature:
 |---|---|
 | Patient portal | Session-authenticated browser experience under `/portal`. |
 | Staff dashboard | Session-authenticated web experience for clinicians/admins. |
-| Caseload | Patients with `assigned_clinician_id` set to the clinician; key authorization scope. |
+| Caseload | Many-to-many patient-clinician relationships in `clinician_patient`; key authorization scope. The singular patient field is compatibility-only. |
 | Clinician request | A pending/approved/denied request relationship distinct from caseload until approval. |
 | Assignment | Clinician-created task with optional worksheet/attachment and patient submission. |
 | Assessment | Assigned standardized questionnaire, currently PHQ-9/GAD-7 support. |

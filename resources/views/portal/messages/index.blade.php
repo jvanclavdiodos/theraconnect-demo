@@ -9,12 +9,28 @@
 @section('content')
 <h1 class="tc-page-title mb-3">Messages</h1>
 
+@if($conversations->isNotEmpty())
+    <div class="list-group mb-3">
+        @foreach($conversations as $thread)
+            <a href="{{ route('portal.messages.index', ['conversation' => $thread->id]) }}"
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center {{ $conversation?->id === $thread->id ? 'active' : '' }}">
+                <span>{{ $thread->clinician?->user?->name ?? 'Clinician' }}</span>
+                @if($thread->unreadCountFor(auth()->user()) > 0)
+                    <span class="badge {{ $conversation?->id === $thread->id ? 'text-bg-light' : 'text-bg-primary' }}">
+                        {{ $thread->unreadCountFor(auth()->user()) }}
+                    </span>
+                @endif
+            </a>
+        @endforeach
+    </div>
+@endif
+
 @if(! $conversation)
     <div class="card">
         <div class="card-body tc-empty">
             <div class="tc-empty-icon"><i class="bi bi-chat-dots"></i></div>
-            <div>You don't have an assigned clinician to message yet.</div>
-            <p class="text-muted small mt-1 mb-0">Once a clinician is assigned to you, you can start a conversation here.</p>
+            <div>You don't have an approved clinician to message yet.</div>
+            <p class="text-muted small mt-1 mb-0">A conversation becomes available after a clinician approves your appointment.</p>
         </div>
     </div>
 @else

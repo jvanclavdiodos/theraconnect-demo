@@ -80,7 +80,8 @@ Files stay on the configured private disk and are streamed only through authenti
 ```text
 Patient or clinician thread UI
   -> PortalMessageController / Web MessageController / API ConversationController
-  -> MessageService::conversationFor() (one patient-clinician conversation)
+  -> MessageService::ensureAssignedConversations() (all approved clinicians)
+  -> MessageService::conversationFor() (one conversation per patient-clinician pair)
   -> MessageService::send()
   -> messages row + unread markers + recipient in-app/push notification
 ```
@@ -175,7 +176,7 @@ The mobile app uses Riverpod, primarily `StateNotifierProvider` and `FutureProvi
 
 - `AppointmentPolicy`: patient owns appointment; clinician/admin manages based on caseload/role.
 - `AssignmentPolicy` and `SubmissionPolicy`: patient ownership and clinician assignment ownership.
-- `ConversationPolicy`: only patient and assigned clinician participate.
+- `ConversationPolicy`: only the patient and clinician recorded on an existing thread participate. Thread creation and inbox discovery remain assignment-gated.
 - `PatientPolicy`: clinician visibility and request response is caseload/request scoped.
 - `AssessmentPolicy`, `PatientNotePolicy`, `UserPolicy`: clinical ownership/view boundaries.
 

@@ -14,7 +14,8 @@ User (admin|clinician|patient)
   |       |      \         * PatientNote (clinician-owned)
   |       |       \        * Submission --1 Assignment
   |       |        \       1 Conversation --* Message
-  |       +-- requested/assigned clinician references
+  |       +--* Clinician through clinician_patient
+  |       +-- requested/legacy primary clinician references
   +--* DeviceToken
   +--* Notification
   +--* ActivityLog
@@ -27,8 +28,9 @@ ChatbotIntent --* ChatbotResponse
 | Table / Model | Purpose and important fields | Relationships |
 |---|---|---|
 | `users` / `User` | Identity, email/password, enum role, avatar, soft delete, terms acceptance/version | hasOne patient/clinician; hasMany tokens/deviceTokens/notifications/activity logs |
-| `clinicians` / `Clinician` | Staff clinical profile, license/specialization/contact fields | belongsTo user; hasMany appointments, assignments, availability records |
-| `patients` / `Patient` | Patient profile/demographics, contact and sensitive profile fields; assigned/requested clinician and request status | belongsTo user; belongsTo assigned/requested clinician; hasMany care records |
+| `clinicians` / `Clinician` | Staff clinical profile, license/specialization/contact fields | belongsTo user; belongsToMany patients through `clinician_patient`; hasMany appointments, assignments, availability records |
+| `patients` / `Patient` | Patient profile/demographics, contact and sensitive profile fields; requested clinician and legacy primary clinician fields | belongsTo user; belongsToMany assigned clinicians through `clinician_patient`; hasMany care records |
+| `clinician_patient` | Authoritative many-to-many caseload membership | Unique clinician/patient pair. Backfilled from the legacy assignment and historical approved appointments. |
 | `personal_access_tokens` | Sanctum mobile access tokens | Laravel-managed polymorphic token relation |
 | `sessions` | optional database-backed browser sessions | Laravel framework table |
 
@@ -72,6 +74,7 @@ The migration names are a concise schema/change ledger:
 - `2026_06_19` to `2026_06_28`: clinician assignment/request fields, availability, conversation/messages, notes, profile/avatar, no-show, assessments, mood/goals/activity log, appointment cancelled notification type.
 - `2026_07_06`: email delivery tracking fields on notifications.
 - `2026_07_12`: terms acceptance timestamp/version on users.
+- `2026_07_13`: many-to-many clinician/patient caseload pivot and historical relationship backfill.
 
 When adding a field, create a new forward migration. Do not edit an already-deployed migration or assume Railway’s database can be rebuilt. New migration-sensitive behavior needs an explicit deployment/migration note.
 

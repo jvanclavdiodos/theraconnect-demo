@@ -2,8 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -58,6 +60,46 @@ class Patient extends Model
         return $this->belongsTo(Clinician::class, 'assigned_clinician_id');
     }
 
+    public function assignedClinicians(): BelongsToMany
+    {
+        return $this->belongsToMany(Clinician::class)->withTimestamps();
+    }
+
+    public function assignClinician(Clinician|int $clinician): void
+    {
+        $clinicianId = $clinician instanceof Clinician ? $clinician->id : $clinician;
+
+        $this->assignedClinicians()->syncWithoutDetaching([$clinicianId]);
+
+        // Compatibility for older clients and code during the pivot rollout.
+        if ($this->assigned_clinician_id === null) {
+            $this->update(['assigned_clinician_id' => $clinicianId]);
+        }
+    }
+
+    public function isAssignedTo(Clinician|int $clinician): bool
+    {
+        $clinicianId = $clinician instanceof Clinician ? $clinician->id : $clinician;
+
+        if ($this->relationLoaded('assignedClinicians')
+            && $this->assignedClinicians->contains('id', $clinicianId)) {
+            return true;
+        }
+
+        return $this->assigned_clinician_id === $clinicianId
+            || $this->assignedClinicians()->whereKey($clinicianId)->exists();
+    }
+
+    public function scopeAssignedTo(Builder $query, Clinician|int $clinician): Builder
+    {
+        $clinicianId = $clinician instanceof Clinician ? $clinician->id : $clinician;
+
+        return $query->where(function (Builder $query) use ($clinicianId) {
+            $query->where('assigned_clinician_id', $clinicianId)
+                ->orWhereHas('assignedClinicians', fn (Builder $q) => $q->whereKey($clinicianId));
+        });
+    }
+
     public function requestedClinician(): BelongsTo
     {
         return $this->belongsTo(Clinician::class, 'requested_clinician_id');
@@ -66,6 +108,11 @@ class Patient extends Model
     public function appointments(): HasMany
     {
         return $this->hasMany(Appointment::class);
+    }
+
+    public function conversations(): HasMany
+    {
+        return $this->hasMany(Conversation::class);
     }
 
     public function assignments(): HasMany

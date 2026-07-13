@@ -34,7 +34,7 @@ class ProgressController extends Controller
     {
         Gate::authorize('view', $patient);
 
-        $patient->load('user', 'assignedClinician.user');
+        $patient->load('user', 'assignedClinicians.user');
 
         $attendance = $this->attendance->statsFor($patient);
 
@@ -89,7 +89,7 @@ class ProgressController extends Controller
         abort_unless($clinician !== null, 403, 'No clinician profile.');
 
         // A clinician may only assign to a patient on their caseload.
-        abort_unless($patient->assigned_clinician_id === $clinician->id, 403);
+        abort_unless($patient->isAssignedTo($clinician), 403);
 
         $validated = $request->validate([
             'instrument' => ['required', 'in:'.implode(',', array_keys(Assessments::INSTRUMENTS))],
@@ -170,7 +170,7 @@ class ProgressController extends Controller
     {
         $clinician = $request->user()->clinician;
         abort_unless($clinician !== null, 403, 'No clinician profile.');
-        abort_unless($patient->assigned_clinician_id === $clinician->id, 403);
+        abort_unless($patient->isAssignedTo($clinician), 403);
 
         return $clinician;
     }

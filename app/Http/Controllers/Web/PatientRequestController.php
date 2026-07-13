@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Gate;
 
 /**
  * Clinician/admin handling of a self-registered patient's request to join a
- * clinician's caseload. Approving sets assigned_clinician_id (the boundary the
- * patients tab + messaging scope on); denying leaves the patient unassigned.
+ * clinician's caseload. Approving creates the clinician-patient relationship
+ * used by the patients tab and messaging scope; denying leaves it unchanged.
  */
 class PatientRequestController extends Controller
 {

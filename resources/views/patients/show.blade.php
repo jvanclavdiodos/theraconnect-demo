@@ -86,7 +86,7 @@
 @php
     $isAssignedClinician = auth()->user()->role === 'clinician'
         && auth()->user()->clinician
-        && $patient->assigned_clinician_id === auth()->user()->clinician->id;
+        && $patient->isAssignedTo(auth()->user()->clinician);
     $myClinicianId = auth()->user()->clinician?->id;
 @endphp
 

@@ -21,7 +21,7 @@ class DashboardController extends Controller
             : null;
 
         $totalPatients = $clinicianId
-            ? Patient::where('assigned_clinician_id', $clinicianId)->count()
+            ? Patient::assignedTo($clinicianId)->count()
             : Patient::count();
 
         $appointments = fn () => $clinicianId

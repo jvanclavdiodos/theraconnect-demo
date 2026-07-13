@@ -20,7 +20,7 @@ class PortalProfileController extends Controller
     {
         $patient = $request->user()->patient;
         abort_unless($patient !== null, 404);
-        $patient->load('user', 'assignedClinician.user');
+        $patient->load('user', 'assignedClinicians.user');
 
         return view('portal.profile.show', compact('patient'));
     }

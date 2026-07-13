@@ -20,29 +20,39 @@ class ConversationController extends Controller
     {
         $patient = $this->getPatient();
 
-        $conversations = Conversation::where('patient_id', $patient->id)
-            ->with(['clinician.user', 'latestMessage'])
-            ->orderByDesc('last_message_at')
-            ->get();
+        $conversations = $this->messages->ensureAssignedConversations($patient);
 
         return response()->json([
             'data' => ConversationResource::collection($conversations),
         ]);
     }
 
-    /** Open (or create) the thread with the patient's assigned clinician. */
-    public function store(): JsonResponse
+    /** Open (or create) a thread with one of the patient's assigned clinicians. */
+    public function store(Request $request): JsonResponse
     {
         $patient = $this->getPatient();
+        $clinicians = $this->messages->assignedCliniciansFor($patient);
 
-        if (! $patient->assigned_clinician_id) {
+        if ($clinicians->isEmpty()) {
             return response()->json([
-                'message' => 'You do not have an assigned clinician to message yet.',
-                'errors' => ['clinician' => ['No assigned clinician.']],
+                'message' => 'You do not have an approved clinician to message yet.',
+                'errors' => ['clinician' => ['No approved clinician.']],
             ], 422);
         }
 
-        $conversation = $this->messages->conversationFor($patient, $patient->assignedClinician)
+        $clinicianId = $request->integer('clinician_id') ?: null;
+        $clinician = $clinicianId
+            ? $clinicians->firstWhere('id', $clinicianId)
+            : ($clinicians->count() === 1 ? $clinicians->first() : null);
+
+        if (! $clinician) {
+            return response()->json([
+                'message' => 'Choose an approved clinician to message.',
+                'errors' => ['clinician_id' => ['The selected clinician is not assigned to you.']],
+            ], 422);
+        }
+
+        $conversation = $this->messages->conversationFor($patient, $clinician)
             ->load(['clinician.user', 'latestMessage']);
 
         return response()->json([

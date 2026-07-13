@@ -15,28 +15,26 @@ class PortalMessageController extends Controller
 {
     public function __construct(private MessageService $messages) {}
 
-    /**
-     * The patient has a single thread — with their assigned clinician. Open (or
-     * create) it and show the messages. Patients without an assigned clinician
-     * see a friendly prompt instead.
-     */
+    /** Show one thread per assigned clinician, defaulting to the first thread. */
     public function index(Request $request): View
     {
         $patient = $request->user()->patient;
         abort_unless($patient !== null, 404);
 
-        if (! $patient->assigned_clinician_id) {
-            return view('portal.messages.index', ['conversation' => null]);
+        $conversations = $this->messages->ensureAssignedConversations($patient);
+        $selectedId = $request->integer('conversation');
+        $conversation = $selectedId
+            ? $conversations->firstWhere('id', $selectedId)
+            : $conversations->first();
+
+        abort_if($selectedId && ! $conversation, 404);
+
+        if ($conversation) {
+            $conversation->load(['clinician.user', 'patient.user', 'messages.sender']);
+            $this->messages->markRead($conversation, $request->user());
         }
 
-        $patient->loadMissing('assignedClinician.user');
-        $conversation = $this->messages
-            ->conversationFor($patient, $patient->assignedClinician)
-            ->load(['clinician.user', 'patient.user', 'messages.sender']);
-
-        $this->messages->markRead($conversation, $request->user());
-
-        return view('portal.messages.index', compact('conversation'));
+        return view('portal.messages.index', compact('conversation', 'conversations'));
     }
 
     public function send(Request $request, Conversation $conversation): RedirectResponse
