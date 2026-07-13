@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\NotificationCreated;
 use App\Jobs\SendEmailNotification;
 use App\Jobs\SendPushNotification;
 use App\Models\Notification;
@@ -26,9 +27,11 @@ class NotificationService
         'assignment_deadline',
     ];
 
+    public function __construct(private RealtimeEventDispatcher $realtime) {}
+
     public function create(int $userId, string $type, string $title, string $body, ?array $data = null): Notification
     {
-        return Notification::create([
+        $notification = Notification::create([
             'user_id' => $userId,
             'type' => $type,
             'title' => $title,
@@ -36,6 +39,10 @@ class NotificationService
             'data' => $data,
             'channel' => 'fcm',
         ]);
+
+        $this->realtime->dispatch(new NotificationCreated($notification));
+
+        return $notification;
     }
 
     public function dispatchDeliveries(Notification $notification): void

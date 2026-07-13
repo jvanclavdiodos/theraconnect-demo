@@ -16,6 +16,7 @@
 12. Keep edits narrow. Existing unrelated worktree changes are user-owned; never reset/revert/stage them without explicit instruction.
 13. Run focused tests proportional to affected layers, plus `git diff --check`. State test/environment limitations clearly.
 14. Update `/docs` when adding a feature, endpoint, table, external service, cross-surface contract, or critical change rule.
+15. Keep realtime events private, post-commit, and payload-minimal. Use them to invalidate existing API/provider state; never broadcast message bodies, notes, assessment answers, or credentials.
 
 ## Coding Conventions
 
@@ -52,6 +53,8 @@ User/Patient/Clinician
 ```
 
 High-impact files: `routes/web.php`, `routes/api.php`, `AppServiceProvider.php`, `AppointmentService.php`, `NotificationService.php`, `AvailabilityService.php`, `User.php`, `Patient.php`, `RoleMiddleware.php`, `api_client.dart`, `auth_provider.dart`, and `router.dart`.
+
+Realtime depends on `RealtimeEventDispatcher`, the three broadcast events, `routes/channels.php`, the database queue worker, Reverb, browser Echo, and Flutter `RealtimeService`. Changing an event/channel name requires coordinated backend, Blade JavaScript, Flutter, authorization, and deployment updates.
 
 ## Known Technical Debt and Risk Areas
 

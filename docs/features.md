@@ -40,6 +40,7 @@ This index lists observable application features, their primary ownership, and t
 |---|---|---|---|---|
 | Direct messaging | staff and portal messaging views; Flutter inbox/thread | `MessageService`, web/portal/API conversation controllers | conversations, messages, `clinician_patient` | Each assigned patient-clinician pair has one thread. Booking alone grants no access; appointment approval establishes the relationship. Direct-message emails are intentionally disabled for privacy. |
 | In-app notification inbox | staff/portal/Flutter notification lists | notification controllers, `NotificationService` | notifications; notification API | `sent_at` means push delivery state; email has separate timestamps/errors. |
+| Realtime updates | browser navigation/lists and Flutter providers/active message thread | broadcast events, `RealtimeEventDispatcher`, Echo, Flutter `RealtimeService` | Reverb; `/realtime/config`, `/broadcasting/auth` | Private channels only. Payloads are invalidation metadata, not clinical content. Queue/Reverb failure must never fail the original transaction. |
 | Push notifications | mobile FCM lifecycle | `FcmService`, `SendPushNotification`, Flutter `FcmService` | device_tokens, Firebase | Missing FCM configuration should no-op without breaking business workflows. Token register/delete endpoints are patient-only. |
 | Transactional email | queued job/mailable | `SendEmailNotification`, `NotificationEmail` | notifications/email tracking; mail config | Allow-list specific appointment/request/assessment/assignment types. Do not add message body email casually. |
 | Reminders | scheduler/queue | `GenerateAppointmentReminders`, `GenerateAssignmentReminders` | appointments/assignments/notifications | Requires scheduler and queue worker. Keep idempotency or repeated schedule runs can duplicate notices. |
@@ -76,6 +77,7 @@ This index lists observable application features, their primary ownership, and t
 - `NotificationService` callers across appointments, assignments, assessments, requests, messages and reminder jobs.
 - `notifications` schema and semantics (`sent_at` vs email-specific fields).
 - FCM service/device token API/mobile lifecycle, mail queue worker, notification inboxes and admin log.
+- Reverb user channels, browser counters, and Flutter notification/provider invalidation.
 - `EmailNotificationDeliveryTest`, `JobIdempotencyTest`, appointment notification tests.
 
 ### Changing private upload behavior may affect

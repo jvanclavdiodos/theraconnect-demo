@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\MessageCreated;
 use App\Models\Clinician;
 use App\Models\Conversation;
 use App\Models\Message;
@@ -13,7 +14,10 @@ use Illuminate\Support\Str;
 
 class MessageService
 {
-    public function __construct(private NotificationService $notifications) {}
+    public function __construct(
+        private NotificationService $notifications,
+        private RealtimeEventDispatcher $realtime,
+    ) {}
 
     /** The single ongoing thread for a patient-clinician pair (created on demand). */
     public function conversationFor(Patient $patient, Clinician $clinician): Conversation
@@ -97,6 +101,7 @@ class MessageService
             return [$message, $notification];
         });
 
+        $this->realtime->dispatch(new MessageCreated($message));
         $this->notifications->dispatchDeliveries($notification);
 
         return $message;
@@ -115,6 +120,19 @@ class MessageService
             ->where(function ($q) {
                 $q->whereNull('conversations.clinician_last_read_at')
                     ->orWhereColumn('messages.created_at', '>', 'conversations.clinician_last_read_at');
+            })
+            ->count();
+    }
+
+    public function patientUnreadCount(int $patientId, int $userId): int
+    {
+        return DB::table('messages')
+            ->join('conversations', 'messages.conversation_id', '=', 'conversations.id')
+            ->where('conversations.patient_id', $patientId)
+            ->where('messages.sender_id', '!=', $userId)
+            ->where(function ($query) {
+                $query->whereNull('conversations.patient_last_read_at')
+                    ->orWhereColumn('messages.created_at', '>', 'conversations.patient_last_read_at');
             })
             ->count();
     }

@@ -9,8 +9,8 @@
     $patient = auth()->user()->patient ?? null;
     $unreadMessages = 0;
     if ($patient) {
-        $conv = \App\Models\Conversation::where('patient_id', $patient->id)->first();
-        $unreadMessages = $conv ? $conv->unreadCountFor(auth()->user()) : 0;
+        $unreadMessages = app(\App\Services\MessageService::class)
+            ->patientUnreadCount($patient->id, auth()->id());
     }
 @endphp
 
@@ -49,11 +49,11 @@
             </a>
             <a href="{{ route('portal.messages.index') }}" class="tc-nav-item {{ $isActive('portal.messages.*') }}">
                 <i class="bi bi-chat-dots"></i> <span>Messages</span>
-                @if($unreadMessages > 0)
-                    <span class="badge bg-primary rounded-pill ms-auto">{{ $unreadMessages }}</span>
-                @else
-                    <i class="bi bi-chevron-right tc-nav-chevron"></i>
-                @endif
+                <span data-realtime-message-count data-count="{{ $unreadMessages }}"
+                      class="badge bg-primary rounded-pill ms-auto {{ $unreadMessages > 0 ? '' : 'd-none' }}">
+                    {{ $unreadMessages > 9 ? '9+' : $unreadMessages }}
+                </span>
+                <i class="bi bi-chevron-right tc-nav-chevron {{ $unreadMessages > 0 ? 'd-none' : '' }}"></i>
             </a>
             <a href="{{ route('portal.chatbot.index') }}" class="tc-nav-item {{ $isActive('portal.chatbot.*') }}">
                 <img src="{{ asset('img/joy-avatar.svg') }}" alt="" width="18" height="18" style="border-radius:5px;"> <span>Joy</span>

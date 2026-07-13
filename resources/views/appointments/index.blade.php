@@ -1,4 +1,5 @@
 @extends('layouts.app')
+@section('realtime-resources', 'appointments')
 
 @section('title', 'Appointments — ' . config('app.name'))
 

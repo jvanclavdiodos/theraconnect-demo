@@ -1,5 +1,16 @@
 # Pinned to a patch version for production reproducibility. Bumping the minor
 # (8.2 -> 8.3) requires verifying extension compatibility.
+FROM node:22-alpine AS frontend
+
+WORKDIR /app
+
+COPY package.json /app/
+RUN npm install --no-audit --no-fund
+
+COPY vite.config.js /app/
+COPY resources /app/resources
+RUN npm run build
+
 FROM php:8.2.25-cli-alpine
 
 RUN apk add --no-cache \
@@ -43,6 +54,7 @@ RUN composer install --no-interaction --prefer-dist --no-dev --optimize-autoload
 
 # Now copy the rest of the application code.
 COPY . /var/www
+COPY --from=frontend /app/public/build /var/www/public/build
 
 # Regenerate the optimized autoloader now that artisan + app/ are present, which
 # also runs the deferred post-autoload-dump scripts (php artisan package:discover).
@@ -56,12 +68,6 @@ RUN chown -R www-data:www-data /var/www
 USER www-data
 
 EXPOSE 8080
-
-# Probes the public health endpoint every 30s. /api/v1/health returns 200 only
-# when Laravel is fully booted and routes are wired, so it's a better signal
-# than Railway's default TCP-port check.
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-    CMD curl -fsS "http://127.0.0.1:${PORT:-8080}/api/v1/health" || exit 1
 
 # Boot flow lives in docker/entrypoint.sh (plain POSIX sh — easier to read and
 # free of nested-shell escaping). It: storage:link -> wait for the DB via a

@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Appointment;
+use App\Services\AppointmentService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 
@@ -21,9 +22,11 @@ class MarkOverdueNoShows implements ShouldQueue
 
     public function handle(): void
     {
+        $appointments = app(AppointmentService::class);
+
         Appointment::whereIn('status', ['approved', 'rescheduled'])
             ->whereNotNull('scheduled_at')
             ->where('scheduled_at', '<', now()->subHours(self::GRACE_HOURS))
-            ->update(['status' => 'no_show']);
+            ->eachById(fn (Appointment $appointment) => $appointments->markNoShow($appointment));
     }
 }

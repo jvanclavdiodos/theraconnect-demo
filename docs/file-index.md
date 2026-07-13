@@ -10,6 +10,7 @@ This is an index of important, maintained source files. It intentionally exclude
 | `routes/web.php` | named browser routes and role groups | all Blade controllers/views |
 | `routes/api.php` | `/api/v1` patient endpoint map | API controllers, Flutter API services |
 | `routes/console.php` | appointment/assignment reminder and no-show schedule | scheduler service |
+| `routes/channels.php` | private Reverb channel authorization for users, conversations, and admin appointments | web sessions and Sanctum mobile tokens |
 | `app/Providers/AppServiceProvider.php` | rate limits, policy registrations, Blade role helper, Carbon serialization | all routing/API time behavior |
 | `app/Http/Middleware/RoleMiddleware.php` | `role:*` authorization middleware | all guarded route groups |
 | `app/Http/Middleware/SecurityHeaders.php` | response security headers/HSTS | all HTTP responses |
@@ -68,6 +69,7 @@ This is an index of important, maintained source files. It intentionally exclude
 | `AssessmentService.php`, `GoalService.php`, `AttendanceService.php` | assessments, goal lifecycle/rating, attendance statistics | progress/dashboard/portal/API |
 | `MessageService.php` | conversation creation, send, unread/read | web/portal/API messaging |
 | `NotificationService.php` | database notification factories and after-commit push/email dispatch | nearly every workflow and reminder job |
+| `RealtimeEventDispatcher.php` | after-commit, failure-contained broadcast dispatch | appointment, message, and notification services |
 | `FcmService.php` | OAuth/JWT FCM v1 delivery and invalid-token cleanup | push job |
 | `ChatbotService.php` | Gemini and Jaccard resolution/fallback | portal/API chatbot controller |
 | `PatientRequestService.php` | patient clinician-request transition + notification | request controller |
@@ -76,6 +78,9 @@ This is an index of important, maintained source files. It intentionally exclude
 | `SendPushNotification.php`, `SendEmailNotification.php` | queued idempotent channel delivery | NotificationService |
 | `GenerateAppointmentReminders.php`, `GenerateAssignmentReminders.php`, `MarkOverdueNoShows.php` | scheduled domain maintenance | console schedule |
 | `NotificationEmail.php`, `emails/notification.blade.php` | transactional email rendering | email job |
+| `app/Events/{NotificationCreated,MessageCreated,AppointmentUpdated}.php` | minimal private-channel broadcast contracts | Realtime dispatcher, Echo, Flutter RealtimeService |
+| `resources/js/{echo,realtime}.js`, `views/partials/realtime.blade.php` | browser Reverb setup, subscriptions, counters, safe refresh behavior | authenticated staff/portal layouts |
+| `config/broadcasting.php`, `config/reverb.php` | broadcaster client and Reverb server/app policy | API, worker, Reverb service |
 | `*Policy.php` | model authorization rules | controllers using `Gate`/`authorize` |
 | `StrongPassword.php`, `Support/Assessments.php`, `Support/TermsOfService.php` | shared validation/domain constants | auth/assessment/terms flows |
 
@@ -97,6 +102,7 @@ This is an index of important, maintained source files. It intentionally exclude
 | `lib/services/api/*_api.dart` | endpoint-specific Dio adapters; no repository layer |
 | `lib/services/auth_service.dart`, `cache_service.dart` | secure token and non-secret JSON cache |
 | `lib/services/fcm_service.dart` | Firebase token registration and local notification behavior |
+| `lib/services/realtime_service.dart`, `providers/realtime_provider.dart` | Reverb connection, private authorization, reconnect and active-thread subscriptions |
 | `lib/services/download_service.dart` | protected file download and local metadata |
 | `lib/providers/*.dart` | Riverpod dependency providers and feature state notifiers/futures |
 | `lib/screens/auth/*` | mobile login/registration/User Agreement |

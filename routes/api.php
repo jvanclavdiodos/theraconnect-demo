@@ -14,7 +14,10 @@ use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PasswordController;
 use App\Http\Controllers\Api\V1\PatientNoteController;
 use App\Http\Controllers\Api\V1\ProfileController;
+use App\Http\Controllers\Api\V1\RealtimeConfigController;
 use App\Http\Controllers\Api\V1\SubmissionController;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +53,9 @@ Route::prefix('v1')->group(function () {
     Route::middleware(['auth:sanctum', 'role:patient'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->middleware('throttle:10,1');
         Route::get('/me', [AuthController::class, 'me']);
+        Route::get('/realtime/config', RealtimeConfigController::class);
+        Route::post('/broadcasting/auth', fn (Request $request) => Broadcast::auth($request))
+            ->middleware('throttle:60,1');
         Route::put('/auth/password', [PasswordController::class, 'update'])->middleware('throttle:password-change');
 
         Route::middleware('throttle:api')->group(function () {

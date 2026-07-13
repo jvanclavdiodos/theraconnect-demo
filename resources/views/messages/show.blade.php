@@ -1,4 +1,6 @@
 @extends('layouts.app')
+@section('realtime-resources', 'messages')
+@section('realtime-conversation', $conversation->id)
 
 @section('title', 'Conversation — ' . config('app.name'))
 

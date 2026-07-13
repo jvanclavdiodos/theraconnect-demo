@@ -22,7 +22,7 @@ TheraConnect is a clinic-management and patient-engagement system for a mental-h
 2. **Patient web portal**: self-registration, appointment booking, assignments/submissions, assessments, mood logs, goals, notes shared by clinicians, messages, notifications, profile, and chatbot.
 3. **Flutter patient mobile app**: an API-backed patient experience with closely overlapping portal capabilities. It does not expose staff administration.
 
-The platform uses role-based access (`admin`, `clinician`, `patient`), model policies for ownership/caseload checks, session authentication for browser surfaces, and Laravel Sanctum bearer tokens for Flutter. It supports scheduled notifications, FCM push, optional transactional email, optional Gemini-assisted chatbot answers, Jitsi meeting links, and private/S3 file storage.
+The platform uses role-based access (`admin`, `clinician`, `patient`), model policies for ownership/caseload checks, session authentication for browser surfaces, and Laravel Sanctum bearer tokens for Flutter. It supports private Laravel Reverb updates, scheduled notifications, FCM push, optional transactional email, optional Gemini-assisted chatbot answers, Jitsi meeting links, and private/S3 file storage.
 
 ## Tech Stack
 
@@ -34,7 +34,7 @@ The platform uses role-based access (`admin`, `clinician`, `patient`), model pol
 | Authentication | Laravel session guard for web; Laravel Sanctum personal access tokens for mobile |
 | Database | MySQL 8 in deployment/local Docker; tests use migrations and can use SQLite configuration |
 | Storage | Laravel private local disk by default; optional AWS S3-compatible disk |
-| Notifications | Database notifications, Firebase Cloud Messaging, queued email via Laravel Mail |
+| Notifications/realtime | Database notifications, Laravel Reverb/Echo, Firebase Cloud Messaging, queued email via Laravel Mail |
 | Video | Jitsi room URLs generated server-side |
 | Chatbot | Database intent/response knowledge base; optional Google Gemini API with Jaccard fallback |
 | Deployment | Docker, Docker Compose, Railway app/worker/scheduler definitions |

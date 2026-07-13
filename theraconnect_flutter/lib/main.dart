@@ -1,5 +1,6 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,10 +10,13 @@ import 'l10n/app_localizations.dart';
 import 'providers/auth_provider.dart';
 import 'providers/appointment_provider.dart';
 import 'providers/assignment_provider.dart';
+import 'providers/message_provider.dart';
 import 'providers/notification_provider.dart';
 import 'providers/profile_provider.dart';
+import 'providers/realtime_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/fcm_service.dart';
+import 'services/realtime_service.dart';
 import 'theme/app_theme.dart';
 import 'router.dart';
 
@@ -49,10 +53,20 @@ class TheraConnectApp extends ConsumerStatefulWidget {
 }
 
 class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
+  StreamSubscription<RealtimeEvent>? _realtimeSubscription;
+
   @override
   void initState() {
     super.initState();
+    _realtimeSubscription =
+        ref.read(realtimeServiceProvider).events.listen(_handleRealtimeEvent);
     _initializeData();
+  }
+
+  @override
+  void dispose() {
+    _realtimeSubscription?.cancel();
+    super.dispose();
   }
 
   Future<void> _initializeData() async {
@@ -72,7 +86,36 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
     ref.read(assignmentsProvider.notifier).loadAssignments();
     ref.read(notificationsProvider.notifier).loadNotifications();
     ref.read(profileProvider.notifier).loadProfile();
+    final user = ref.read(authProvider).user;
+    if (user != null) {
+      unawaited(ref.read(realtimeServiceProvider).connect(user.id));
+    }
     _initFcmIfAvailable();
+  }
+
+  Future<void> _handleRealtimeEvent(RealtimeEvent event) async {
+    switch (event.name) {
+      case 'notification.created':
+        await ref.read(notificationsProvider.notifier).loadNotifications();
+        if (event.data['type'] == 'message_received') {
+          ref.invalidate(conversationsProvider);
+        }
+        break;
+      case 'appointment.updated':
+        await ref.read(appointmentsProvider.notifier).loadAppointments();
+        final appointmentId = event.data['appointment_id'];
+        if (appointmentId is int) {
+          ref.invalidate(appointmentDetailProvider(appointmentId));
+        }
+        break;
+      case 'connected':
+        await Future.wait([
+          ref.read(notificationsProvider.notifier).loadNotifications(),
+          ref.read(appointmentsProvider.notifier).loadAppointments(),
+        ]);
+        ref.invalidate(conversationsProvider);
+        break;
+    }
   }
 
   Future<void> _initFcmIfAvailable() async {
@@ -86,8 +129,13 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
         // Tapping a push deep-links to the relevant screen.
         onNavigate: (route) => router.go(route),
         // A push arriving in the foreground refreshes the in-app list.
-        onForegroundRefresh: () async =>
+        onForegroundRefresh: () async {
+          await Future.wait([
             ref.read(notificationsProvider.notifier).loadNotifications(),
+            ref.read(appointmentsProvider.notifier).loadAppointments(),
+          ]);
+          ref.invalidate(conversationsProvider);
+        },
       );
     } catch (e) {
       debugPrint('FCM init failed: $e');
@@ -102,6 +150,10 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
       if (prev?.status != AuthState.authenticated &&
           next.status == AuthState.authenticated) {
         _loadUserData();
+      }
+      if (prev?.status == AuthState.authenticated &&
+          next.status == AuthState.unauthenticated) {
+        unawaited(ref.read(realtimeServiceProvider).disconnect());
       }
     });
 

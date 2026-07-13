@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Events\AppointmentUpdated;
 use App\Exceptions\InvalidStateException;
 use App\Exceptions\SlotUnavailableException;
 use App\Models\Appointment;
@@ -14,6 +15,7 @@ class AppointmentService
     public function __construct(
         private JitsiService $jitsi,
         private AvailabilityService $availability,
+        private RealtimeEventDispatcher $realtime,
     ) {}
 
     public function getScheduleSlots(string $date): array
@@ -128,7 +130,7 @@ class AppointmentService
 
     public function create(array $data): Appointment
     {
-        return Appointment::create([
+        $appointment = Appointment::create([
             'patient_id' => $data['patient_id'],
             'clinician_id' => $data['clinician_id'] ?? null,
             'requested_at' => $data['requested_at'],
@@ -136,13 +138,15 @@ class AppointmentService
             'reason' => $data['reason'] ?? null,
             'status' => 'pending',
         ]);
+
+        return $this->broadcastChange($appointment, 'created');
     }
 
     public function cancel(Appointment $appointment): Appointment
     {
         $appointment->update(['status' => 'cancelled']);
 
-        return $appointment->fresh();
+        return $this->broadcastChange($appointment->fresh(), 'cancelled');
     }
 
     /** Close the case: mark a held appointment as completed (patient attended). */
@@ -150,7 +154,7 @@ class AppointmentService
     {
         $appointment->update(['status' => 'completed']);
 
-        return $appointment->fresh();
+        return $this->broadcastChange($appointment->fresh(), 'completed');
     }
 
     /** Record that the patient missed the session (attendance tracking). */
@@ -158,7 +162,7 @@ class AppointmentService
     {
         $appointment->update(['status' => 'no_show']);
 
-        return $appointment->fresh();
+        return $this->broadcastChange($appointment->fresh(), 'no_show');
     }
 
     public function approve(Appointment $appointment, ?string $scheduledAt = null): Appointment
@@ -189,7 +193,7 @@ class AppointmentService
             $appointment->patient->assignClinician($appointment->clinician_id);
         }
 
-        return $appointment->fresh();
+        return $this->broadcastChange($appointment->fresh(), 'approved');
     }
 
     public function reject(Appointment $appointment): Appointment
@@ -207,7 +211,7 @@ class AppointmentService
 
         $appointment->update(['status' => 'rejected']);
 
-        return $appointment->fresh();
+        return $this->broadcastChange($appointment->fresh(), 'rejected');
     }
 
     /**
@@ -248,7 +252,7 @@ class AppointmentService
                 'meeting_link' => $this->resolveMeetingLink($appointment),
             ]);
 
-            return $appointment->fresh();
+            return $this->broadcastChange($appointment->fresh(), 'rescheduled');
         });
     }
 
@@ -291,5 +295,12 @@ class AppointmentService
 
         return $appointment->meeting_link
             ?: $this->jitsi->generateMeetingLink($appointment->id);
+    }
+
+    private function broadcastChange(Appointment $appointment, string $change): Appointment
+    {
+        $this->realtime->dispatch(new AppointmentUpdated($appointment, $change));
+
+        return $appointment;
     }
 }

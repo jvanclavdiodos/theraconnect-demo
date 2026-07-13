@@ -1,4 +1,5 @@
 @extends('layouts.portal')
+@section('realtime-resources', 'notifications')
 
 @section('title', 'Notifications — ' . config('app.name'))
 

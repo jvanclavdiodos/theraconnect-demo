@@ -24,11 +24,10 @@
             </button>
             <a href="{{ route('portal.notifications.index') }}" class="btn btn-outline-secondary btn-sm position-relative" title="Notifications" aria-label="Notifications">
                 <i class="bi bi-bell"></i>
-                @if($unreadNotifications > 0)
-                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                        {{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}
-                    </span>
-                @endif
+                <span data-realtime-notification-count data-count="{{ $unreadNotifications }}"
+                      class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ $unreadNotifications > 0 ? '' : 'd-none' }}">
+                    {{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}
+                </span>
             </a>
             <span class="tc-user-pill d-none d-sm-inline-flex">
                 <i class="bi bi-person-circle"></i>

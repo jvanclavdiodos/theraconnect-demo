@@ -1,4 +1,5 @@
 @extends('layouts.portal')
+@section('realtime-resources', 'appointments notifications')
 
 @section('title', 'My Dashboard — ' . config('app.name'))
 

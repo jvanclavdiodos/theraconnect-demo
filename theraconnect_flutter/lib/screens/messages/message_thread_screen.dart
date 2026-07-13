@@ -1,40 +1,65 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/api_response.dart';
 import '../../models/message.dart';
 import '../../providers/message_provider.dart';
+import '../../providers/realtime_provider.dart';
+import '../../services/realtime_service.dart';
 
 class MessageThreadScreen extends ConsumerStatefulWidget {
   final int conversationId;
   final String? title;
 
-  const MessageThreadScreen({super.key, required this.conversationId, this.title});
+  const MessageThreadScreen(
+      {super.key, required this.conversationId, this.title});
 
   @override
-  ConsumerState<MessageThreadScreen> createState() => _MessageThreadScreenState();
+  ConsumerState<MessageThreadScreen> createState() =>
+      _MessageThreadScreenState();
 }
 
 class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   List<Message> _messages = [];
   bool _loading = true;
+  bool _refreshing = false;
+  bool _refreshQueued = false;
   bool _sending = false;
   final _controller = TextEditingController();
+  late final RealtimeService _realtime;
+  StreamSubscription<RealtimeEvent>? _realtimeSubscription;
 
   @override
   void initState() {
     super.initState();
+    _realtime = ref.read(realtimeServiceProvider);
+    unawaited(_realtime.subscribeConversation(widget.conversationId));
+    _realtimeSubscription = _realtime.events
+        .where((event) =>
+            event.name == 'message.created' &&
+            event.data['conversation_id'] == widget.conversationId)
+        .listen((_) => _load());
     _load();
   }
 
   @override
   void dispose() {
+    _realtimeSubscription?.cancel();
+    unawaited(_realtime.unsubscribeConversation(widget.conversationId));
     _controller.dispose();
     super.dispose();
   }
 
   Future<void> _load() async {
+    if (_refreshing) {
+      _refreshQueued = true;
+      return;
+    }
+    _refreshing = true;
     try {
-      final messages = await ref.read(messageApiProvider).getMessages(widget.conversationId);
+      final messages =
+          await ref.read(messageApiProvider).getMessages(widget.conversationId);
       if (!mounted) return;
       setState(() {
         _messages = messages;
@@ -46,6 +71,12 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(ApiError.fromException(e).userMessage)),
       );
+    } finally {
+      _refreshing = false;
+      if (_refreshQueued) {
+        _refreshQueued = false;
+        unawaited(_load());
+      }
     }
   }
 
@@ -54,10 +85,14 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     if (body.isEmpty || _sending) return;
     setState(() => _sending = true);
     try {
-      final message = await ref.read(messageApiProvider).sendMessage(widget.conversationId, body);
+      final message = await ref
+          .read(messageApiProvider)
+          .sendMessage(widget.conversationId, body);
       if (!mounted) return;
       setState(() {
-        _messages = [..._messages, message];
+        if (!_messages.any((existing) => existing.id == message.id)) {
+          _messages = [..._messages, message];
+        }
         _controller.clear();
         _sending = false;
       });
@@ -87,7 +122,8 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                         child: ListView.builder(
                           padding: const EdgeInsets.all(12),
                           itemCount: _messages.length,
-                          itemBuilder: (context, i) => _bubble(context, _messages[i]),
+                          itemBuilder: (context, i) =>
+                              _bubble(context, _messages[i]),
                         ),
                       ),
           ),
@@ -115,7 +151,10 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                   IconButton.filled(
                     onPressed: _sending ? null : _send,
                     icon: _sending
-                        ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.send),
                   ),
                 ],
@@ -134,14 +173,16 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.75),
         decoration: BoxDecoration(
           color: m.isMine ? scheme.primary : scheme.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           m.body,
-          style: TextStyle(color: m.isMine ? scheme.onPrimary : scheme.onSurface),
+          style:
+              TextStyle(color: m.isMine ? scheme.onPrimary : scheme.onSurface),
         ),
       ),
     );

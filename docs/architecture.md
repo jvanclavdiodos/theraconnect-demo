@@ -12,6 +12,7 @@
 | Models | `app/Models` | Eloquent persistence, relationships, casts, domain helpers |
 | Resources | `app/Http/Resources` | JSON API response shape |
 | Jobs/Mail | `app/Jobs`, `app/Mail` | Asynchronous reminders and delivery |
+| Events/Broadcasting | `app/Events`, `routes/channels.php` | Private, minimal invalidation events for Reverb clients |
 | Views | `resources/views` | Bootstrap/Blade browser UI |
 
 ### Recurring Patterns
@@ -20,6 +21,7 @@
 - **Explicit transactions**: appointment status transitions, registration/profile creation, assignment/assessment operations, and patient requests generally use `DB::transaction` around related writes.
 - **Policy before access**: controllers use `Gate::authorize` or `$this->authorize` for model-specific operations; broad role restrictions are route middleware.
 - **Notification as an after-effect**: services/controllers create a database `Notification`, then `NotificationService::dispatchDeliveries()` schedules push/email after transaction commit. Delivery dispatch failures are logged and intentionally do not undo the clinical/business operation.
+- **Realtime as invalidation**: domain services dispatch minimal identifier/status events after commit through `RealtimeEventDispatcher`. Browser and Flutter clients refetch through existing controllers/providers; broadcast failure is logged and cannot undo the domain write.
 - **API resource boundary**: API controllers return `*Resource` classes instead of Eloquent records directly.
 
 ## Major Data Flows
@@ -113,6 +115,20 @@ Domain action -> NotificationService::create()
 
 Email state is separate from push state: `sent_at` retains push semantics; `email_sent_at`, `email_failed_at`, and `email_error` track email. Jobs are idempotent around delivery timestamps.
 
+### Realtime updates
+
+```text
+Committed notification/message/appointment change
+  -> RealtimeEventDispatcher (after commit, failure-contained)
+  -> queued Laravel BroadcastEvent
+  -> Reverb service
+  -> authorized private user/conversation/admin channel
+  -> browser Echo or Flutter RealtimeService
+  -> existing page/provider API refresh
+```
+
+Events contain only IDs, type/status/change, and timestamps. Message and notification bodies are not broadcast. `routes/channels.php` authorizes both browser sessions and Sanctum tokens; conversation access delegates to `ConversationPolicy`. Browser pages defer refresh while a form or modal is active. Reconnects trigger a state refresh so events missed while offline do not leave stale state.
+
 ## Web Navigation and Guards
 
 ### Browser route groups
@@ -149,6 +165,7 @@ The mobile app uses Riverpod, primarily `StateNotifierProvider` and `FutureProvi
 | Assessments | assessment providers | list/detail and submission state |
 | Chatbot | `ChatbotNotifier` | in-memory transcript and optimistic placeholder reply |
 | Notifications | `NotificationNotifier` | cached list, loading/error, unread count |
+| Realtime invalidation | `RealtimeService` / `realtimeServiceProvider` | private user and active-conversation channels; refreshes existing providers after events/reconnect |
 | Profile | `ProfileNotifier` | cached patient profile/avatar mutations |
 | Downloads | `DownloadsNotifier` | locally recorded downloaded files |
 | Theme | `ThemeModeNotifier` | persisted `ThemeMode` preference |

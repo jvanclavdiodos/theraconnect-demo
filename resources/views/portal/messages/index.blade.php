@@ -1,4 +1,6 @@
 @extends('layouts.portal')
+@section('realtime-resources', 'messages')
+@section('realtime-conversation', $conversation?->id)
 
 @section('title', 'Messages — ' . config('app.name'))
 

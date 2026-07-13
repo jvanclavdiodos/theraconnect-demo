@@ -45,11 +45,11 @@
                 @endphp
                 <a href="{{ route('notifications.index') }}" class="tc-nav-item {{ $isActive('notifications.index') }}">
                     <i class="bi bi-bell"></i> <span>Notifications</span>
-                    @if($notifUnread > 0)
-                        <span class="badge bg-primary rounded-pill ms-auto">{{ $notifUnread }}</span>
-                    @else
-                        <i class="bi bi-chevron-right tc-nav-chevron"></i>
-                    @endif
+                    <span data-realtime-notification-count data-count="{{ $notifUnread }}"
+                          class="badge bg-primary rounded-pill ms-auto {{ $notifUnread > 0 ? '' : 'd-none' }}">
+                        {{ $notifUnread > 9 ? '9+' : $notifUnread }}
+                    </span>
+                    <i class="bi bi-chevron-right tc-nav-chevron {{ $notifUnread > 0 ? 'd-none' : '' }}"></i>
                 </a>
             </div>
 
@@ -72,11 +72,11 @@
                     @if($role === 'clinician')
                         <a href="{{ route('messages.index') }}" class="tc-nav-item {{ $isActive('messages.*') }}">
                             <i class="bi bi-chat-dots"></i> <span>Messages</span>
-                            @if($msgUnread > 0)
-                                <span class="badge bg-primary rounded-pill ms-auto">{{ $msgUnread }}</span>
-                            @else
-                                <i class="bi bi-chevron-right tc-nav-chevron"></i>
-                            @endif
+                            <span data-realtime-message-count data-count="{{ $msgUnread }}"
+                                  class="badge bg-primary rounded-pill ms-auto {{ $msgUnread > 0 ? '' : 'd-none' }}">
+                                {{ $msgUnread > 9 ? '9+' : $msgUnread }}
+                            </span>
+                            <i class="bi bi-chevron-right tc-nav-chevron {{ $msgUnread > 0 ? 'd-none' : '' }}"></i>
                         </a>
                     @endif
                 </div>

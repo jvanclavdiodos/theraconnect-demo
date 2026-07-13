@@ -33,6 +33,8 @@ Base path: `/api/v1`. Routes are defined in `routes/api.php`. The API is a patie
 | DELETE | `/device-token` | token/platform identifier | Flutter sign-out/token cleanup |
 | GET | `/notifications` | paginated notification resources | `NotificationApi.getNotifications` |
 | POST | `/notifications/{id}/read` | none | read state | `NotificationApi.markRead` |
+| GET | `/realtime/config` | public Reverb key/host/port/scheme and auth endpoint; never secret | Flutter `RealtimeService` |
+| POST | `/broadcasting/auth` | Pusher-compatible `socket_id`, private `channel_name` | Flutter private-channel authorization |
 
 ## Appointment and Availability
 
