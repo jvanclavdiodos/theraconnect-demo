@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\PreventAuthPageCaching;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -46,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->append(SecurityHeaders::class);
 
         $middleware->alias([
+            'auth.no-store' => PreventAuthPageCaching::class,
             'role' => RoleMiddleware::class,
         ]);
     })
@@ -113,7 +115,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // instead. Matching on BOTH classes (the wrapped form is what
         // actually reaches the renderer at runtime) restores the intended
         // `{message:'Forbidden.'}` JSON / `errors.403` view responses.
-        $exceptions->renderable(function (AuthorizationException | AccessDeniedHttpException $e, $request) {
+        $exceptions->renderable(function (AuthorizationException|AccessDeniedHttpException $e, $request) {
             if ($request->expectsJson()) {
                 return response()->json(['message' => 'Forbidden.'], 403);
             }

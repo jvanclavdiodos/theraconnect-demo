@@ -4,4 +4,4 @@
 
 @section('code', '419')
 @section('icon', 'bi bi-clock-history text-warning')
-@section('message', 'Your session has expired. Please reload the page and try again.')
+@section('message', 'Your session has expired. Return to a fresh page and try again.')

@@ -135,13 +135,15 @@ Events contain only IDs, type/status/change, and timestamps. Message and notific
 
 | Group | Guard | Surface |
 |---|---|---|
-| `/login`, `/register` | `guest`; rate-limited | Session auth entry |
+| `/login`, `/register` | `guest`; rate-limited; `auth.no-store` | Session auth entry; authenticated users redirect by role, and guest responses are not cached |
 | staff routes | `auth`, `role:admin,clinician` | Dashboard, appointments, assignments, patient management |
 | admin subset | staff guard + `role:admin` | Clinicians, chatbot content, audit/notification logs, patient editing/deleting |
 | clinician subset | staff guard + `role:clinician` | Availability, notes, goals/assessments, messages |
 | `/portal/*` | `auth`, `role:patient` | Patient browser portal |
 
 `RoleMiddleware` redirects unauthenticated browser users to login, emits JSON 401 for API requests, and raises authorization errors for incorrect roles. Policies apply the finer-grained patient/caseload/participant checks.
+
+Authentication pages send `Cache-Control: no-store` and reload when restored from the browser back-forward cache. This prevents a pre-login form and CSRF token from remaining actionable after authentication; the server-side `guest` middleware remains the source of truth for role-aware redirects.
 
 ### Flutter routes
 

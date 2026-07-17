@@ -34,7 +34,7 @@ Route::get('/', function () {
     return view('landing');
 })->name('home');
 
-Route::middleware('guest')->group(function () {
+Route::middleware(['guest', 'auth.no-store'])->group(function () {
     Route::get('/login', [AuthenticatedSessionController::class, 'create'])->name('login');
     // Combined login rate limiters (5/min/IP + 5/min per email|IP) — see
     // AppServiceProvider RateLimiter::for('login') / ('account-login'). They're

@@ -82,6 +82,44 @@ class PortalAccessTest extends TestCase
             ->assertRedirect(route('dashboard'));
     }
 
+    public function test_authenticated_users_cannot_resubmit_cached_login_or_registration_forms(): void
+    {
+        $patient = $this->createPatient('cached-patient@test.com');
+
+        $this->actingAs($patient['user'], 'web')
+            ->post(route('login'))
+            ->assertRedirect(route('portal.dashboard'));
+
+        $this->actingAs($patient['user'], 'web')
+            ->post(route('register'))
+            ->assertRedirect(route('portal.dashboard'));
+
+        $clinician = $this->createClinician();
+
+        $this->actingAs($clinician['user'], 'web')
+            ->post(route('login'))
+            ->assertRedirect(route('dashboard'));
+
+        $admin = $this->createAdmin();
+
+        $this->actingAs($admin, 'web')
+            ->post(route('login'))
+            ->assertRedirect(route('dashboard'));
+    }
+
+    public function test_authentication_pages_are_not_cached_and_recover_from_browser_history(): void
+    {
+        foreach ([route('login'), route('register')] as $url) {
+            $response = $this->get($url)->assertOk();
+
+            $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+            $this->assertStringContainsString('private', $response->headers->get('Cache-Control'));
+            $response->assertHeader('Pragma', 'no-cache');
+            $response->assertSee("window.addEventListener('pageshow'", false);
+            $response->assertSee('window.location.reload()', false);
+        }
+    }
+
     public function test_registration_page_includes_the_user_agreement_modal(): void
     {
         config([
