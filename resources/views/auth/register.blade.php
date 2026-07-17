@@ -84,10 +84,10 @@
 
                     <div class="form-check mb-3">
                         <input type="hidden" name="accepted_terms" :value="termsAccepted ? '1' : '0'">
-                        <input class="form-check-input @error('accepted_terms') is-invalid @enderror" type="checkbox" id="accepted_terms" :checked="termsAccepted" aria-label="Agree to the TheraConnect User Agreement" aria-haspopup="dialog">
+                        <input class="form-check-input @error('accepted_terms') is-invalid @enderror" type="checkbox" id="accepted_terms" :checked="termsAccepted" aria-label="Agree to the TheraConnect User Agreement and acknowledge the Privacy Notice" aria-haspopup="dialog">
                         <label class="form-check-label small">
                             By creating an account, I agree to the
-                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-bs-toggle="modal" data-bs-target="#user-agreement-modal">TheraConnect User Agreement</button>.
+                            <button type="button" class="btn btn-link btn-sm p-0 align-baseline" data-bs-toggle="modal" data-bs-target="#user-agreement-modal">TheraConnect User Agreement and Privacy Notice</button>, including the processing of health information as described.
                         </label>
                         @error('accepted_terms') <div class="invalid-feedback">{{ $message }}</div> @enderror
                     </div>
@@ -98,7 +98,7 @@
                         <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
                             <div class="modal-content">
                                 <div class="modal-header">
-                                    <h5 class="modal-title" id="terms-title">TheraConnect User Agreement</h5>
+                                    <h5 class="modal-title" id="terms-title">TheraConnect User Agreement and Privacy Notice</h5>
                                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                 </div>
                                 <div class="modal-body small">

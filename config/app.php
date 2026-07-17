@@ -70,6 +70,20 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Privacy Contact
+    |--------------------------------------------------------------------------
+    |
+    | Identifies the clinic operating TheraConnect as the Personal Information
+    | Controller and gives data subjects a direct privacy/DPO contact.
+    |
+    */
+
+    'privacy_controller_name' => env('PRIVACY_CONTROLLER_NAME', env('APP_NAME', 'TheraConnect')),
+
+    'privacy_contact_email' => env('PRIVACY_CONTACT_EMAIL'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Application Timezone
     |--------------------------------------------------------------------------
     |

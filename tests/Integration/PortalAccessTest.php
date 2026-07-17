@@ -3,6 +3,7 @@
 namespace Tests\Integration;
 
 use App\Models\User;
+use App\Support\TermsOfService;
 use Illuminate\Contracts\Auth\StatefulGuard;
 use Illuminate\Support\Facades\Auth;
 use RuntimeException;
@@ -83,12 +84,25 @@ class PortalAccessTest extends TestCase
 
     public function test_registration_page_includes_the_user_agreement_modal(): void
     {
+        config([
+            'app.privacy_controller_name' => 'TheraConnect Test Clinic',
+            'app.privacy_contact_email' => 'privacy@clinic.test',
+        ]);
+
         $this->get('/register')
             ->assertOk()
             ->assertSee('id="user-agreement-modal"', false)
             ->assertSee('id="accept-user-agreement"', false)
+            ->assertSee('User Agreement and Privacy Notice')
+            ->assertSee('Republic Act No. 10173')
+            ->assertSee('TheraConnect Test Clinic')
+            ->assertSee('privacy@clinic.test')
+            ->assertSee('rights to be informed')
+            ->assertSee('National Privacy Commission')
             ->assertSee('Object.assign(passwordField', false)
             ->assertSee('terms-revoked', false);
+
+        $this->assertSame('2026-07-17', TermsOfService::CURRENT_VERSION);
     }
 
     public function test_patient_can_self_register_and_land_in_portal(): void
@@ -105,7 +119,7 @@ class PortalAccessTest extends TestCase
         $this->assertNotNull($user);
         $this->assertSame('patient', $user->role);
         $this->assertNotNull($user->terms_accepted_at);
-        $this->assertSame(\App\Support\TermsOfService::CURRENT_VERSION, $user->terms_version);
+        $this->assertSame(TermsOfService::CURRENT_VERSION, $user->terms_version);
         $this->assertNotNull($user->patient);
     }
 

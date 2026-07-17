@@ -17,6 +17,7 @@
 13. Run focused tests proportional to affected layers, plus `git diff --check`. State test/environment limitations clearly.
 14. Update `/docs` when adding a feature, endpoint, table, external service, cross-surface contract, or critical change rule.
 15. Keep realtime events private, post-commit, and payload-minimal. Use them to invalidate existing API/provider state; never broadcast message bodies, notes, assessment answers, or credentials.
+16. Keep the web and Flutter User Agreement/Privacy Notice materially aligned. A material notice change requires a new `TermsOfService::CURRENT_VERSION`; never invent a clinic legal name, DPO contact, retention period, or processing practice.
 
 ## Coding Conventions
 
