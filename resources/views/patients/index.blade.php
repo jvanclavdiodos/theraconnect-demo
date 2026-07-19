@@ -105,7 +105,13 @@
                     <tr>
                         <td>
                             <a href="{{ route('patients.show', $patient) }}" class="text-decoration-none d-flex align-items-center gap-2">
-                                <span class="tc-cell-avatar">{{ $initials($patient->user->name) }}</span>
+                                @if($patient->user->hasAvatar())
+                                    <img src="{{ route('avatars.show', $patient->user) }}?v={{ $patient->user->updated_at?->timestamp }}"
+                                         alt="{{ $patient->user->name }} profile photo"
+                                         class="tc-cell-avatar tc-cell-avatar-image" data-patient-avatar>
+                                @else
+                                    <span class="tc-cell-avatar" data-patient-initials>{{ $initials($patient->user->name) }}</span>
+                                @endif
                                 <span class="fw-semibold">{{ $patient->user->name }}</span>
                                 @if (!empty($atRisk[$patient->id]))
                                     <span class="badge bg-danger" title="Consecutive no-shows — at risk of disengaging">

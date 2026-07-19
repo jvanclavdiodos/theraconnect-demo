@@ -55,6 +55,38 @@ class AvatarAuthorizationTest extends TestCase
             ->assertStatus(200);
     }
 
+    public function test_clinician_patient_list_displays_caseload_avatar(): void
+    {
+        Storage::fake('local');
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('listed-avatar@test.com');
+        $patient['patient']->assignedClinicians()->attach($clinician['clinician']->id);
+        $this->giveAvatar($patient['user']);
+
+        $user = $patient['user']->fresh();
+        $avatarUrl = route('avatars.show', $user).'?v='.$user->updated_at->timestamp;
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('patients.index'))
+            ->assertOk()
+            ->assertSee('data-patient-avatar', false)
+            ->assertSee($avatarUrl, false)
+            ->assertSee($user->name.' profile photo');
+    }
+
+    public function test_clinician_patient_list_uses_initials_without_avatar(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('listed-initials@test.com');
+        $patient['patient']->assignedClinicians()->attach($clinician['clinician']->id);
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('patients.index'))
+            ->assertOk()
+            ->assertSee('data-patient-initials', false)
+            ->assertSee('JP');
+    }
+
     public function test_admin_can_view_any_avatar(): void
     {
         Storage::fake('local');

@@ -422,6 +422,10 @@ a:hover { color: var(--tc-teal-dark); }
   display: inline-flex; align-items: center; justify-content: center;
   font-size: 0.72rem; font-weight: 600; flex-shrink: 0;
 }
+.tc-cell-avatar-image {
+  display: block; object-fit: cover;
+  border: 1px solid var(--tc-neutral-200);
+}
 
 /* Utilities */
 .min-w-0 { min-width: 0; }
