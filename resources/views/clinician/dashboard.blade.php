@@ -81,7 +81,7 @@
                 <a href="{{ route('appointments.index') }}" class="tc-viewall">View all <i class="bi bi-arrow-right"></i></a>
             </div>
             <div>
-                @forelse ($recentAppointments as $appt)
+                @forelse ($upcomingAppointments as $appt)
                     <div class="tc-list-row">
                         @if($appt->patient->user->hasAvatar() && auth()->user()->can('viewAvatar', $appt->patient->user))
                             <img src="{{ route('avatars.show', $appt->patient->user) }}?v={{ $appt->patient->user->updated_at?->timestamp }}"
@@ -104,7 +104,7 @@
                 @empty
                     <div class="tc-empty">
                         <div class="tc-empty-icon"><i class="bi bi-calendar-x"></i></div>
-                        <div>No recent appointments.</div>
+                        <div>No upcoming appointments.</div>
                     </div>
                 @endforelse
             </div>
