@@ -27,7 +27,7 @@ class UpdateAvatarRequest extends FormRequest
                 'required',
                 'image',
                 'mimes:jpg,jpeg,png,webp',
-                'max:4096',
+                'max:2048',
                 'dimensions:max_width=1024,max_height=1024',
             ],
         ];
@@ -36,7 +36,8 @@ class UpdateAvatarRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'avatar.max' => 'The avatar must not be greater than 4 MB.',
+            'avatar.required' => 'Choose a photo before uploading.',
+            'avatar.max' => 'The profile photo must not be greater than 2 MB.',
             'avatar.mimes' => 'The avatar must be a JPG, JPEG, PNG, or WebP image.',
             'avatar.dimensions' => 'The avatar must be 1024x1024 pixels or smaller.',
         ];

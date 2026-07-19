@@ -32,10 +32,10 @@
             @csrf
             <div class="mb-2">
                 <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp"
-                       data-validate-file data-max-bytes="4194304" data-allowed-extensions="jpg,jpeg,png,webp"
+                       data-validate-file data-max-bytes="2097152" data-allowed-extensions="jpg,jpeg,png,webp"
                        class="form-control @error('avatar') is-invalid @enderror" required>
                 @error('avatar') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                <div class="form-text">JPG, PNG, or WEBP, up to 4&nbsp;MB. Square, max 1024×1024 pixels.</div>
+                <div class="form-text">JPG, PNG, or WEBP, up to 2&nbsp;MB. Square, max 1024×1024 pixels.</div>
             </div>
             <button type="submit" class="btn btn-primary btn-sm">Upload picture</button>
             @if ($user->hasAvatar())

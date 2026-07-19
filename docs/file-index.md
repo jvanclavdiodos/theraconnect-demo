@@ -124,6 +124,7 @@ This is an index of important, maintained source files. It intentionally exclude
 | `resources/views/partials/password-strength.blade.php` | shared Alpine `passwordField()` strength/confirmation UI; retain getter-based initialization |
 | `resources/views/partials/availability-calendar.blade.php` | clinician availability calendar interaction |
 | `public/js/file-upload.js` | browser file-upload enhancement |
+| `public/js/avatar-cropper.js` | patient avatar selection, square crop, zoom/rotation, compression, and guarded form submission |
 | `public/css/theraconnect.css` | shared browser visual tokens/layout behavior |
 | `theraconnect_flutter/lib/widgets/password_field.dart` | mobile password entry/visibility widget |
 | `theraconnect_flutter/lib/widgets/joy_avatar.dart` | chatbot persona/avatar widget |

@@ -177,7 +177,7 @@ class InputResilienceTest extends TestCase
         $patient = $this->createPatient('in-b9@test.com');
         $token = $this->getApiToken($patient['user']);
 
-        // 5 MB — exceeds the 4096 KB (4 MB) max.
+        // 5 MB exceeds the shared 2 MB avatar limit.
         $file = UploadedFile::fake()->create('big.jpg', 5120, 'image/jpeg');
 
         $this->withHeaders($this->apiHeaders($token))

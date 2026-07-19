@@ -145,6 +145,8 @@ Events contain only IDs, type/status/change, and timestamps. Message and notific
 
 Authentication pages send `Cache-Control: no-store` and reload when restored from the browser back-forward cache. This prevents a pre-login form and CSRF token from remaining actionable after authentication; the server-side `guest` middleware remains the source of truth for role-aware redirects.
 
+Expected framework exceptions must retain their native response semantics. Do not add a catch-all `Throwable` renderable: Laravel's production renderer already uses the branded error views for genuine failures, while a broad renderable converts validation redirects, JSON 422 responses, and CSRF 419 responses into misleading 500 pages.
+
 ### Flutter routes
 
 `theraconnect_flutter/lib/router.dart` uses GoRouter. The root redirect is based on `authProvider` state:

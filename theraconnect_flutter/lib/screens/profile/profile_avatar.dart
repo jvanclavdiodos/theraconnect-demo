@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_cropper/image_cropper.dart';
 import '../../providers/profile_provider.dart';
 import '../../theme/app_theme.dart';
 
@@ -47,11 +49,67 @@ class _ProfileAvatarState extends ConsumerState<ProfileAvatar> {
   Future<void> _pickAndUpload() async {
     final result = await FilePicker.platform.pickFiles(type: FileType.image);
     final path = result?.files.single.path;
-    if (path == null) return;
+    if (path == null || !mounted) return;
 
     final colorScheme = Theme.of(context).colorScheme;
+    CroppedFile? cropped;
+    try {
+      cropped = await ImageCropper().cropImage(
+        sourcePath: path,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        compressFormat: ImageCompressFormat.jpg,
+        compressQuality: 90,
+        aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),
+        uiSettings: [
+          AndroidUiSettings(
+            toolbarTitle: 'Adjust profile photo',
+            toolbarColor: colorScheme.primary,
+            toolbarWidgetColor: colorScheme.onPrimary,
+            activeControlsWidgetColor: colorScheme.primary,
+            lockAspectRatio: true,
+            cropStyle: CropStyle.circle,
+            aspectRatioPresets: const [CropAspectRatioPreset.square],
+          ),
+          IOSUiSettings(
+            title: 'Adjust profile photo',
+            doneButtonTitle: 'Save',
+            cancelButtonTitle: 'Cancel',
+            aspectRatioLockEnabled: true,
+            resetAspectRatioEnabled: false,
+            cropStyle: CropStyle.circle,
+            aspectRatioPresets: const [CropAspectRatioPreset.square],
+          ),
+        ],
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text(
+              'The photo could not be opened. Choose another image.'),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+      return;
+    }
+
+    if (cropped == null || !mounted) return;
+
+    if (await File(cropped.path).length() > 2 * 1024 * 1024) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('The adjusted photo must be 2 MB or smaller.'),
+          backgroundColor: colorScheme.error,
+        ),
+      );
+      return;
+    }
+
     setState(() => _uploading = true);
-    final error = await ref.read(profileProvider.notifier).uploadAvatar(path);
+    final error =
+        await ref.read(profileProvider.notifier).uploadAvatar(cropped.path);
     if (!mounted) return;
     setState(() => _uploading = false);
 
@@ -62,7 +120,9 @@ class _ProfileAvatarState extends ConsumerState<ProfileAvatar> {
     } else {
       _load(); // refetch the new image
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Profile picture updated!'), backgroundColor: AppTheme.success),
+        const SnackBar(
+            content: Text('Profile picture updated!'),
+            backgroundColor: AppTheme.success),
       );
     }
   }
@@ -83,14 +143,19 @@ class _ProfileAvatarState extends ConsumerState<ProfileAvatar> {
                   future: _bytes,
                   builder: (context, snap) {
                     if (snap.hasData) {
-                      return CircleAvatar(radius: radius, backgroundImage: MemoryImage(snap.data!));
+                      return CircleAvatar(
+                          radius: radius,
+                          backgroundImage: MemoryImage(snap.data!));
                     }
                     return const SizedBox(
-                      width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2),
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(strokeWidth: 2),
                     );
                   },
                 )
-              : Icon(Icons.person, size: radius, color: scheme.onPrimaryContainer),
+              : Icon(Icons.person,
+                  size: radius, color: scheme.onPrimaryContainer),
         ),
         if (widget.editable)
           Positioned(
@@ -105,8 +170,13 @@ class _ProfileAvatarState extends ConsumerState<ProfileAvatar> {
                 child: Padding(
                   padding: const EdgeInsets.all(6),
                   child: _uploading
-                      ? SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: scheme.onPrimary))
-                      : Icon(Icons.camera_alt, size: 16, color: scheme.onPrimary),
+                      ? SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: scheme.onPrimary))
+                      : Icon(Icons.camera_alt,
+                          size: 16, color: scheme.onPrimary),
                 ),
               ),
             ),

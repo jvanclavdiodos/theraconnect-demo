@@ -58,12 +58,13 @@ One Reverb replica with scaling disabled is the efficient starting topology for 
 | AWS S3-compatible storage | Laravel filesystem disk for sensitive uploads | Local private disk is fallback. Production needs a private persistent bucket; container storage is ephemeral. |
 | Jitsi | `JitsiService` meeting links in appointments | Generates unguessable room URL; no observed server-side Jitsi authentication/token integration. |
 | Google Gemini API | `ChatbotService` | Optional; 5s connect / 15s total timeout; logs warning and uses database/Jaccard fallback. |
+| Cropper.js / Flutter `image_cropper` | patient web and mobile profile-photo adjustment | Web falls back to the normal validated upload if the pinned CDN script is unavailable; mobile cancellation leaves the current avatar unchanged. |
 | MySQL | all durable backend data, queued jobs/cache/sessions when configured | `/api/v1/health` reports 503 if a simple DB query fails. |
 
 ## Logging and Error Handling
 
 - `SecurityHeaders` sets defensive headers and HSTS only for secure requests.
-- `bootstrap/app.php` renders branded 403/404/419/429 pages and production 500 responses, while preserving server logs.
+- `bootstrap/app.php` renders branded 403/404/419/429 pages. Laravel's production exception renderer sanitizes genuine failures and selects the branded 500 view without overriding validation/CSRF responses.
 - Expected business exceptions (`InvalidStateException`, `SlotUnavailableException`) should produce validation/user-safe errors in their controllers; do not let them become generic 500s.
 - Notification dispatch is best-effort after commit and logs channel/notification context if enqueueing fails.
 - Realtime dispatch is best-effort after commit. Private broadcast payloads contain identifiers/state only, not message or clinical content.

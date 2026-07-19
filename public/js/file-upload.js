@@ -1,7 +1,7 @@
 (function () {
     // Auto-wire client-side validation for file inputs marked with
     // `data-validate-file`. Each marked input may carry:
-    //   data-max-bytes="4194304"
+    //   data-max-bytes="2097152"
     //   data-allowed-extensions="jpg,jpeg,png,webp"
     //
     // On change (and again on form submit) the file's size and extension are

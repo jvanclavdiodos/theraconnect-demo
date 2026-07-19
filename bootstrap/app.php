@@ -123,19 +123,9 @@ return Application::configure(basePath: dirname(__DIR__))
             return response()->view('errors.403', [], 403);
         });
 
-        // Catch-all only in PRODUCTION (not test/dev env). Less-specific
-        // renderables than the ones above; the more-specific ones always win
-        // regardless of registration order. This catches genuine 500s and
-        // presents a branded page rather than a Symfony trace. The production
-        // environment check (rather than `! config('app.debug')`) ensures
-        // tests can pin APP_DEBUG without triggering the catch-all.
-        if (app()->environment('production')) {
-            $exceptions->renderable(function (Throwable $e, $request) {
-                if ($request->expectsJson()) {
-                    return response()->json(['message' => 'Server error.'], 500);
-                }
-
-                return response()->view('errors.500', [], 500);
-            });
-        }
+        // Do not register a Throwable catch-all here. Laravel's production
+        // renderer already hides exception details and uses errors/500.blade.php
+        // for genuine server errors. A catch-all renderable also captures
+        // expected framework exceptions such as validation and CSRF failures,
+        // incorrectly converting useful redirects/422s/419s into a 500 page.
     })->create();
