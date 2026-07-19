@@ -83,7 +83,13 @@
             <div>
                 @forelse ($recentAppointments as $appt)
                     <div class="tc-list-row">
-                        <span class="tc-row-avatar">{{ $initials($appt->patient->user->name) }}</span>
+                        @if($appt->patient->user->hasAvatar() && auth()->user()->can('viewAvatar', $appt->patient->user))
+                            <img src="{{ route('avatars.show', $appt->patient->user) }}?v={{ $appt->patient->user->updated_at?->timestamp }}"
+                                 alt="{{ $appt->patient->user->name }} profile photo"
+                                 class="tc-row-avatar tc-row-avatar-image" data-dashboard-patient-avatar>
+                        @else
+                            <span class="tc-row-avatar" data-dashboard-patient-initials>{{ $initials($appt->patient->user->name) }}</span>
+                        @endif
                         <div class="flex-grow-1 min-w-0">
                             <div class="tc-row-title text-truncate">{{ $appt->patient->user->name }}</div>
                             <div class="tc-row-sub">{{ $appt->requested_at->format('M d, h:i A') }}</div>

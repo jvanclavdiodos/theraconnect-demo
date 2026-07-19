@@ -2,6 +2,7 @@
 
 namespace Tests\Integration;
 
+use App\Models\Appointment;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -85,6 +86,56 @@ class AvatarAuthorizationTest extends TestCase
             ->assertOk()
             ->assertSee('data-patient-initials', false)
             ->assertSee('JP');
+    }
+
+    public function test_clinician_dashboard_displays_approved_patient_avatar(): void
+    {
+        Storage::fake('local');
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('dashboard-avatar@test.com');
+        $patient['patient']->assignedClinicians()->attach($clinician['clinician']->id);
+        $this->giveAvatar($patient['user']);
+
+        Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => now()->addDay(),
+            'scheduled_at' => now()->addDay(),
+            'mode' => 'in_person',
+            'status' => 'approved',
+        ]);
+
+        $user = $patient['user']->fresh();
+        $avatarUrl = route('avatars.show', $user).'?v='.$user->updated_at->timestamp;
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-dashboard-patient-avatar', false)
+            ->assertSee($avatarUrl, false)
+            ->assertSee($user->name.' profile photo');
+    }
+
+    public function test_clinician_dashboard_does_not_request_unapproved_patient_avatar(): void
+    {
+        Storage::fake('local');
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('dashboard-pending@test.com');
+        $this->giveAvatar($patient['user']);
+
+        Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => now()->addDay(),
+            'mode' => 'online',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('data-dashboard-patient-initials', false)
+            ->assertDontSee(route('avatars.show', $patient['user']), false);
     }
 
     public function test_admin_can_view_any_avatar(): void
