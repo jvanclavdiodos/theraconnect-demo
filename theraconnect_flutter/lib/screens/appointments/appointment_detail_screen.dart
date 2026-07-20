@@ -28,11 +28,14 @@ class AppointmentDetailScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, Appointment appointment) {
-    final canCancel = appointment.status == 'pending' || appointment.status == 'approved';
+  Widget _buildContent(
+      BuildContext context, WidgetRef ref, Appointment appointment) {
+    final canCancel =
+        appointment.status == 'pending' || appointment.status == 'approved';
     // Server gates the link: meeting_link is only present (and active) within 5h
     // of the appointment; expired online links are dropped to null.
-    final canJoin = appointment.meetingLinkActive && appointment.meetingLink != null;
+    final canJoin =
+        appointment.meetingLinkActive && appointment.meetingLink != null;
 
     return Scaffold(
       appBar: AppBar(
@@ -58,11 +61,13 @@ class AppointmentDetailScreen extends ConsumerWidget {
                   Chip(label: Text(appointment.statusLabel)),
                   const SizedBox(height: 8),
                   Text(
-                    formatApptDateTime(appointment.scheduledAt ?? appointment.requestedAt),
+                    formatApptDateTime(
+                        appointment.scheduledAt ?? appointment.requestedAt),
                     style: Theme.of(context).textTheme.titleLarge,
                   ),
                   const SizedBox(height: 4),
-                  Text('Mode: ${appointment.mode == 'online' ? 'Online' : 'In Person'}'),
+                  Text(
+                      'Mode: ${appointment.mode == 'online' ? 'Online' : 'In Person'}'),
                 ],
               ),
             ),
@@ -100,13 +105,24 @@ class AppointmentDetailScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Details', style: Theme.of(context).textTheme.titleMedium),
+                  Text('Details',
+                      style: Theme.of(context).textTheme.titleMedium),
                   const Divider(),
-                  _DetailRow(label: 'Clinician', value: appointment.clinicianName ?? 'Not assigned'),
-                  _DetailRow(label: 'Mode', value: appointment.mode == 'online' ? 'Online' : 'In Person'),
-                  if (appointment.meetingLink != null && !canJoin) _DetailRow(label: 'Meeting Link', value: appointment.meetingLink!),
-                  if (appointment.reason != null) _DetailRow(label: 'Reason', value: appointment.reason!),
-                  if (appointment.clinicNotes != null) _DetailRow(label: 'Notes', value: appointment.clinicNotes!),
+                  _DetailRow(
+                      label: 'Clinician',
+                      value: appointment.clinicianName ?? 'Not assigned'),
+                  _DetailRow(
+                      label: 'Mode',
+                      value: appointment.mode == 'online'
+                          ? 'Online'
+                          : 'In Person'),
+                  if (appointment.meetingLink != null && !canJoin)
+                    _DetailRow(
+                        label: 'Meeting Link', value: appointment.meetingLink!),
+                  if (appointment.reason != null)
+                    _DetailRow(label: 'Reason', value: appointment.reason!),
+                  if (appointment.clinicNotes != null)
+                    _DetailRow(label: 'Notes', value: appointment.clinicNotes!),
                 ],
               ),
             ),
@@ -121,7 +137,9 @@ class AppointmentDetailScreen extends ConsumerWidget {
     final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open the video call.'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Could not open the video call.'),
+            backgroundColor: Colors.red),
       );
     }
   }
@@ -131,16 +149,23 @@ class AppointmentDetailScreen extends ConsumerWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Cancel Appointment'),
-        content: const Text('Are you sure you want to cancel this appointment?'),
+        content:
+            const Text('Are you sure you want to cancel this appointment?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('No')),
-          FilledButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Yes, Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('No')),
+          FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Yes, Cancel')),
         ],
       ),
     );
 
     if (confirmed == true && context.mounted) {
-      final error = await ref.read(appointmentsProvider.notifier).cancelAppointment(appointmentId);
+      final error = await ref
+          .read(appointmentsProvider.notifier)
+          .cancelAppointment(appointmentId);
       if (context.mounted) {
         if (error != null) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -149,6 +174,7 @@ class AppointmentDetailScreen extends ConsumerWidget {
         } else {
           ref.invalidate(appointmentDetailProvider(appointmentId));
           ref.read(appointmentsProvider.notifier).loadAppointments();
+          ref.read(appointmentListProvider.notifier).loadAppointments();
         }
       }
     }
@@ -170,9 +196,10 @@ class _DetailRow extends StatelessWidget {
         children: [
           SizedBox(
             width: 100,
-            child: Text(label, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                )),
+            child: Text(label,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    )),
           ),
           Expanded(child: Text(value)),
         ],

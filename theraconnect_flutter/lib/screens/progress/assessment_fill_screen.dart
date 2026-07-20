@@ -37,12 +37,13 @@ class _AssessmentFillScreenState extends ConsumerState<AssessmentFillScreen> {
 
     setState(() => _submitting = true);
 
-    final responses = List<int>.generate(
-        detail.items.length, (i) => _answers[i] ?? 0);
+    final responses =
+        List<int>.generate(detail.items.length, (i) => _answers[i] ?? 0);
 
     try {
-      final result =
-          await ref.read(assessmentApiProvider).submit(widget.assessmentId, responses);
+      final result = await ref
+          .read(assessmentApiProvider)
+          .submit(widget.assessmentId, responses);
       ref.invalidate(assessmentsProvider);
       if (mounted) {
         setState(() => _submitting = false);
@@ -107,7 +108,8 @@ class _AssessmentFillScreenState extends ConsumerState<AssessmentFillScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final detailAsync = ref.watch(assessmentDetailProvider(widget.assessmentId));
+    final detailAsync =
+        ref.watch(assessmentDetailProvider(widget.assessmentId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Questionnaire')),
@@ -145,6 +147,21 @@ class _AssessmentFillScreenState extends ConsumerState<AssessmentFillScreen> {
                       const SizedBox(height: 4),
                       Text(detail.prompt,
                           style: Theme.of(context).textTheme.bodyMedium),
+                      if (detail.assessment.explanation
+                          case final explanation?) ...[
+                        const SizedBox(height: 12),
+                        Text(explanation.purpose),
+                        const SizedBox(height: 8),
+                        Text(explanation.clinicianUse),
+                        const SizedBox(height: 8),
+                        Text(
+                          explanation.disclaimer,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -217,7 +234,8 @@ class _CompletedView extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.check_circle, size: 48, color: severityColor(assessment.severity)),
+            Icon(Icons.check_circle,
+                size: 48, color: severityColor(assessment.severity)),
             const SizedBox(height: 12),
             Text('${assessment.title} already completed',
                 style: Theme.of(context).textTheme.titleMedium),

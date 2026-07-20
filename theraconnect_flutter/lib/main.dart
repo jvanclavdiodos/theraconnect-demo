@@ -102,7 +102,10 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
         }
         break;
       case 'appointment.updated':
-        await ref.read(appointmentsProvider.notifier).loadAppointments();
+        await Future.wait([
+          ref.read(appointmentsProvider.notifier).loadAppointments(),
+          ref.read(appointmentListProvider.notifier).loadAppointments(),
+        ]);
         final appointmentId = event.data['appointment_id'];
         if (appointmentId is int) {
           ref.invalidate(appointmentDetailProvider(appointmentId));
@@ -112,6 +115,7 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
         await Future.wait([
           ref.read(notificationsProvider.notifier).loadNotifications(),
           ref.read(appointmentsProvider.notifier).loadAppointments(),
+          ref.read(appointmentListProvider.notifier).loadAppointments(),
         ]);
         ref.invalidate(conversationsProvider);
         break;
@@ -133,6 +137,7 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
           await Future.wait([
             ref.read(notificationsProvider.notifier).loadNotifications(),
             ref.read(appointmentsProvider.notifier).loadAppointments(),
+            ref.read(appointmentListProvider.notifier).loadAppointments(),
           ]);
           ref.invalidate(conversationsProvider);
         },

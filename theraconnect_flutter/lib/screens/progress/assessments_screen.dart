@@ -40,16 +40,20 @@ class AssessmentsScreen extends ConsumerWidget {
               children: [
                 if (pending.isNotEmpty) ...[
                   Text('To complete',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold)),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   ...pending.map((a) => _PendingCard(assessment: a)),
                   const SizedBox(height: 16),
                 ],
                 if (completed.isNotEmpty) ...[
                   Text('History',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold)),
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   ...completed.map((a) => _CompletedCard(assessment: a)),
                 ],
@@ -76,7 +80,13 @@ class _PendingCard extends StatelessWidget {
       child: ListTile(
         leading: const Icon(Icons.assignment_outlined),
         title: Text(assessment.title),
-        subtitle: Text(assessment.name ?? 'Tap to complete'),
+        subtitle: Text(
+          assessment.explanation?.purpose ??
+              assessment.name ??
+              'Tap to complete',
+          maxLines: 3,
+          overflow: TextOverflow.ellipsis,
+        ),
         trailing: FilledButton(
           onPressed: () => context.push('/assessments/${assessment.id}'),
           child: const Text('Start'),
@@ -96,7 +106,8 @@ class _CompletedCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: severityColor(assessment.severity).withValues(alpha: 0.15),
+          backgroundColor:
+              severityColor(assessment.severity).withValues(alpha: 0.15),
           child: Text(
             '${assessment.score ?? '—'}',
             style: TextStyle(

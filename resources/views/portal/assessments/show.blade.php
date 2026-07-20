@@ -15,6 +15,11 @@
                 <strong>{{ $definition['title'] }}</strong> — {{ $definition['name'] }}
             </div>
             <div class="card-body">
+                <div class="alert alert-info" role="note">
+                    <p class="mb-2">{{ $definition['purpose'] }}</p>
+                    <p class="mb-2">{{ $definition['clinician_use'] }}</p>
+                    <p class="mb-0 fw-semibold">{{ $definition['disclaimer'] }}</p>
+                </div>
                 @if($assessment->status === 'completed')
                     <div class="text-center py-3">
                         <i class="bi bi-check-circle-fill text-success fs-1"></i>

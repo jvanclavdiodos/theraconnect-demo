@@ -27,12 +27,35 @@ class PortalAppointmentController extends Controller
         $patient = $request->user()->patient;
         abort_unless($patient !== null, 404);
 
-        $appointments = Appointment::where('patient_id', $patient->id)
-            ->with('clinician.user')
-            ->latest('requested_at')
-            ->paginate(15);
+        $validated = $request->validate([
+            'status' => ['nullable', 'in:pending,approved,rejected,rescheduled,completed,cancelled,no_show'],
+            'mode' => ['nullable', 'in:online,in_person'],
+            'sort' => ['nullable', 'in:appointment_date'],
+            'direction' => ['nullable', 'in:asc,desc'],
+        ]);
 
-        return view('portal.appointments.index', compact('appointments'));
+        $status = $validated['status'] ?? null;
+        $mode = $validated['mode'] ?? null;
+        $direction = $validated['direction'] ?? 'desc';
+
+        $query = Appointment::where('patient_id', $patient->id)
+            ->with('clinician.user');
+
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        if ($mode) {
+            $query->where('mode', $mode);
+        }
+
+        $appointments = $query
+            ->orderByRaw("COALESCE(scheduled_at, requested_at) {$direction}")
+            ->orderBy('id', $direction)
+            ->paginate(15)
+            ->withQueryString();
+
+        return view('portal.appointments.index', compact('appointments', 'status', 'mode', 'direction'));
     }
 
     public function show(Appointment $appointment): View

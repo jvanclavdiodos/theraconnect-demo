@@ -33,6 +33,9 @@ class Assessments
             'title' => 'PHQ-9',
             'name' => 'Patient Health Questionnaire (depression)',
             'prompt' => 'Over the last 2 weeks, how often have you been bothered by any of the following problems?',
+            'purpose' => 'This questionnaire screens how often symptoms associated with depression have affected you over the past two weeks.',
+            'clinician_use' => 'Your clinician may use your answers and score to discuss concerns, support care planning, and track changes over time.',
+            'disclaimer' => 'The PHQ-9 is a screening tool and does not diagnose depression by itself.',
             'max' => 27,
             'items' => [
                 'Little interest or pleasure in doing things',
@@ -51,6 +54,9 @@ class Assessments
             'title' => 'GAD-7',
             'name' => 'Generalized Anxiety Disorder scale',
             'prompt' => 'Over the last 2 weeks, how often have you been bothered by the following problems?',
+            'purpose' => 'This questionnaire screens how often symptoms associated with anxiety have affected you over the past two weeks.',
+            'clinician_use' => 'Your clinician may use your answers and score to discuss concerns, support care planning, and track changes over time.',
+            'disclaimer' => 'The GAD-7 is a screening tool and does not diagnose an anxiety disorder by itself.',
             'max' => 21,
             'items' => [
                 'Feeling nervous, anxious, or on edge',
@@ -77,6 +83,22 @@ class Assessments
     public static function title(string $instrument): string
     {
         return self::INSTRUMENTS[$instrument]['title'] ?? $instrument;
+    }
+
+    /** @return array{purpose: string, clinician_use: string, disclaimer: string}|null */
+    public static function explanation(string $instrument): ?array
+    {
+        $definition = self::definition($instrument);
+
+        if (! $definition) {
+            return null;
+        }
+
+        return [
+            'purpose' => $definition['purpose'],
+            'clinician_use' => $definition['clinician_use'],
+            'disclaimer' => $definition['disclaimer'],
+        ];
     }
 
     public static function itemCount(string $instrument): int

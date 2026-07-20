@@ -212,6 +212,31 @@ class AssessmentTest extends TestCase
             ->assertOk()
             ->assertJsonCount(7, 'data.items')
             ->assertJsonCount(4, 'data.options')
-            ->assertJsonPath('data.instrument', 'gad7');
+            ->assertJsonPath('data.instrument', 'gad7')
+            ->assertJsonPath('data.explanation.purpose', 'This questionnaire screens how often symptoms associated with anxiety have affected you over the past two weeks.')
+            ->assertJsonPath('data.explanation.disclaimer', 'The GAD-7 is a screening tool and does not diagnose an anxiety disorder by itself.');
+    }
+
+    public function test_portal_shows_questionnaire_explanation_before_the_form(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('assessment-copy@test.com');
+        $assessment = Assessment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'instrument' => 'phq9',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($patient['user'])
+            ->get(route('portal.assessments.show', $assessment))
+            ->assertOk()
+            ->assertSeeInOrder([
+                'This questionnaire screens how often symptoms associated with depression',
+                'Your clinician may use your answers and score',
+                'does not diagnose depression by itself',
+                'Over the last 2 weeks',
+                'Submit questionnaire',
+            ]);
     }
 }

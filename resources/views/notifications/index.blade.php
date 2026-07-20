@@ -44,7 +44,10 @@
                 @unless($n->read_at)
                     <form method="POST" action="{{ route('notifications.read', $n->id) }}">
                         @csrf
-                        <button class="btn btn-sm btn-link text-decoration-none" title="Mark read"><i class="bi bi-check2"></i></button>
+                        <button class="btn btn-sm btn-link text-decoration-none" aria-label="Mark notification read"
+                                data-bs-toggle="tooltip" data-bs-title="Mark read">
+                            <i class="bi bi-check2" aria-hidden="true"></i>
+                        </button>
                     </form>
                 @endunless
             </div>

@@ -17,6 +17,7 @@ class AssessmentResource extends JsonResource
             'instrument' => $this->instrument,
             'title' => $this->title(),
             'name' => $def['name'] ?? null,
+            'explanation' => Assessments::explanation($this->instrument),
             'status' => $this->status,
             'score' => $this->score,
             'max' => $def['max'] ?? null,

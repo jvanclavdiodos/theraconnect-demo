@@ -33,6 +33,14 @@ class AppointmentPolicy
             && $appointment->clinician_id === $user->clinician->id;
     }
 
+    /** Only the clinician assigned to this appointment may read its reason. */
+    public function viewReason(User $user, Appointment $appointment): bool
+    {
+        return $user->role === 'clinician'
+            && $user->clinician !== null
+            && $appointment->clinician_id === $user->clinician->id;
+    }
+
     /**
      * Patients may cancel their own appointments. Cancellable states are
      * pending, approved, rescheduled, and cancelled. `cancelled` is permitted

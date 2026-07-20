@@ -15,11 +15,13 @@
 <div class="card">
     <div class="list-group list-group-flush">
         @forelse($assessments as $assessment)
+            @php $definition = \App\Support\Assessments::definition($assessment->instrument); @endphp
             <a href="{{ route('portal.assessments.show', $assessment) }}"
                class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
                 <div>
                     <div class="fw-semibold">{{ $assessment->title() }}</div>
                     <div class="text-muted small">
+                        <span class="d-block mb-1">{{ $definition['purpose'] ?? '' }}</span>
                         @if($assessment->status === 'completed')
                             Completed {{ $assessment->completed_at?->format('M j, Y') }} · Score {{ $assessment->score }} ({{ $assessment->severity() }})
                         @else

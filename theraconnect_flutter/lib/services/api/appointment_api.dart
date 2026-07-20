@@ -23,7 +23,8 @@ class AppointmentApi {
     }
   }
 
-  Future<List<ScheduleSlot>> getSchedules(String date, {int? clinicianId}) async {
+  Future<List<ScheduleSlot>> getSchedules(String date,
+      {int? clinicianId}) async {
     try {
       final response = await _client.get(
         ApiConfig.schedulesEndpoint,
@@ -63,12 +64,28 @@ class AppointmentApi {
     }
   }
 
-  Future<({List<Appointment> appointments, int currentPage, int lastPage, int total})>
-      getAppointments({int page = 1}) async {
+  Future<
+      ({
+        List<Appointment> appointments,
+        int currentPage,
+        int lastPage,
+        int total
+      })> getAppointments({
+    int page = 1,
+    String? status,
+    String? mode,
+    String direction = 'desc',
+  }) async {
     try {
       final response = await _client.get(
         ApiConfig.appointmentsEndpoint,
-        queryParameters: {'page': page},
+        queryParameters: {
+          'page': page,
+          'sort': 'appointment_date',
+          'direction': direction,
+          if (status != null) 'status': status,
+          if (mode != null) 'mode': mode,
+        },
       );
       final data = response.data['data'] as List<dynamic>;
       final meta = response.data['meta'] as Map<String, dynamic>;

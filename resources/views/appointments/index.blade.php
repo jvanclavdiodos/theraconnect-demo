@@ -23,6 +23,7 @@
     ];
     $nextDirection = ($sortDirection ?? 'desc') === 'desc' ? 'asc' : 'desc';
     $sortIcon = ($sortDirection ?? 'desc') === 'desc' ? 'bi-arrow-down' : 'bi-arrow-up';
+    $showReasons = auth()->user()->role === 'clinician';
 @endphp
 
 <div class="mb-4">
@@ -76,6 +77,9 @@
                     </th>
                     <th>Mode</th>
                     <th>Status</th>
+                    @if ($showReasons)
+                        <th class="text-center">Reason</th>
+                    @endif
                     <th class="text-end">Actions</th>
                 </tr>
             </thead>
@@ -104,10 +108,27 @@
                                 default => 'secondary'
                             } }}">{{ $appt->status === 'no_show' ? 'No-show' : ucfirst($appt->status) }}</span>
                         </td>
+                        @if ($showReasons)
+                            <td class="text-center">
+                                @can('viewReason', $appt)
+                                    @if (filled(trim((string) $appt->reason)))
+                                        <button type="button" class="btn btn-sm btn-outline-secondary"
+                                                data-bs-toggle="popover" data-bs-placement="left"
+                                                data-bs-title="Booking reason" data-bs-content="{{ $appt->reason }}"
+                                                aria-label="View booking reason">
+                                            <i class="bi bi-info-circle" aria-hidden="true"></i>
+                                        </button>
+                                    @else
+                                        <span class="text-muted" aria-label="No booking reason provided">&mdash;</span>
+                                    @endif
+                                @endcan
+                            </td>
+                        @endif
                         <td class="text-end">
                             @if ($appt->meetingLinkActive())
                                 <a href="{{ $appt->meeting_link }}" target="_blank" rel="noopener"
                                    class="btn btn-sm btn-primary" aria-label="Join video call"
+                                   data-bs-toggle="tooltip" data-bs-title="Join video call"
                                    x-data @click="$dispatch('open-conclude', { id: {{ $appt->id }} })">
                                     <i class="bi bi-camera-video" aria-hidden="true"></i>
                                 </a>
@@ -120,14 +141,16 @@
                             @if ($appt->status === 'pending')
                                 <form action="{{ route('appointments.approve', $appt) }}" method="POST" class="d-inline">
                                     @csrf @method('PATCH')
-                                    <button class="btn btn-sm btn-success" type="submit" aria-label="Approve appointment">
+                                    <button class="btn btn-sm btn-success" type="submit" aria-label="Approve appointment"
+                                            data-bs-toggle="tooltip" data-bs-title="Approve appointment">
                                         <i class="bi bi-check-lg" aria-hidden="true"></i>
                                     </button>
                                 </form>
                                 <form action="{{ route('appointments.reject', $appt) }}" method="POST" class="d-inline"
                                       x-data @submit.prevent="if (confirm('Reject this appointment?')) $el.submit()">
                                     @csrf @method('PATCH')
-                                    <button class="btn btn-sm btn-danger" type="submit" aria-label="Reject appointment">
+                                    <button class="btn btn-sm btn-danger" type="submit" aria-label="Reject appointment"
+                                            data-bs-toggle="tooltip" data-bs-title="Reject appointment">
                                         <i class="bi bi-x-lg" aria-hidden="true"></i>
                                     </button>
                                 </form>
@@ -135,11 +158,13 @@
 
                             @if (in_array($appt->status, ['approved', 'rescheduled']))
                                 <button class="btn btn-sm btn-outline-secondary" type="button" aria-label="Reschedule appointment"
+                                        data-bs-toggle="tooltip" data-bs-title="Reschedule appointment"
                                         x-data
                                         @click="$dispatch('open-reschedule', { id: {{ $appt->id }} })">
                                     <i class="bi bi-calendar2-week" aria-hidden="true"></i>
                                 </button>
                                 <button class="btn btn-sm btn-outline-success" type="button" aria-label="Conclude or close case"
+                                        data-bs-toggle="tooltip" data-bs-title="Conclude appointment"
                                         x-data
                                         @click="$dispatch('open-conclude', { id: {{ $appt->id }} })">
                                     <i class="bi bi-clipboard-check" aria-hidden="true"></i>
@@ -149,7 +174,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6">
+                        <td colspan="{{ $showReasons ? 7 : 6 }}">
                             <div class="tc-empty">
                                 <div class="tc-empty-icon"><i class="bi bi-calendar-check"></i></div>
                                 <div>No appointments match this filter.</div>

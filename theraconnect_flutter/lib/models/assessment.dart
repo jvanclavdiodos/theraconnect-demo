@@ -5,6 +5,7 @@ class Assessment {
   final String instrument; // 'phq9' | 'gad7'
   final String title; // e.g. "PHQ-9"
   final String? name; // e.g. "Patient Health Questionnaire (depression)"
+  final AssessmentExplanation? explanation;
   final String status; // 'pending' | 'completed'
   final int? score;
   final int? max;
@@ -17,6 +18,7 @@ class Assessment {
     required this.instrument,
     required this.title,
     this.name,
+    this.explanation,
     required this.status,
     this.score,
     this.max,
@@ -33,12 +35,36 @@ class Assessment {
       instrument: json['instrument'] as String,
       title: json['title'] as String,
       name: json['name'] as String?,
+      explanation: json['explanation'] is Map<String, dynamic>
+          ? AssessmentExplanation.fromJson(
+              json['explanation'] as Map<String, dynamic>)
+          : null,
       status: json['status'] as String,
       score: json['score'] as int?,
       max: json['max'] as int?,
       severity: json['severity'] as String?,
       completedAt: json['completed_at'] as String?,
       createdAt: json['created_at'] as String?,
+    );
+  }
+}
+
+class AssessmentExplanation {
+  final String purpose;
+  final String clinicianUse;
+  final String disclaimer;
+
+  const AssessmentExplanation({
+    required this.purpose,
+    required this.clinicianUse,
+    required this.disclaimer,
+  });
+
+  factory AssessmentExplanation.fromJson(Map<String, dynamic> json) {
+    return AssessmentExplanation(
+      purpose: json['purpose'] as String? ?? '',
+      clinicianUse: json['clinician_use'] as String? ?? '',
+      disclaimer: json['disclaimer'] as String? ?? '',
     );
   }
 }

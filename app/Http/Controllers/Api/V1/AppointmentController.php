@@ -97,14 +97,34 @@ class AppointmentController extends Controller
         return response()->json(['data' => $dates]);
     }
 
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $patient = $this->getPatient();
 
-        $appointments = Appointment::where('patient_id', $patient->id)
-            ->with('clinician.user')
-            ->latest('requested_at')
-            ->paginate(20);
+        $validated = $request->validate([
+            'status' => ['nullable', 'in:pending,approved,rejected,rescheduled,completed,cancelled,no_show'],
+            'mode' => ['nullable', 'in:online,in_person'],
+            'sort' => ['nullable', 'in:appointment_date'],
+            'direction' => ['nullable', 'in:asc,desc'],
+        ]);
+
+        $query = Appointment::where('patient_id', $patient->id)
+            ->with('clinician.user');
+
+        if ($status = ($validated['status'] ?? null)) {
+            $query->where('status', $status);
+        }
+
+        if ($mode = ($validated['mode'] ?? null)) {
+            $query->where('mode', $mode);
+        }
+
+        $direction = $validated['direction'] ?? 'desc';
+        $appointments = $query
+            ->orderByRaw("COALESCE(scheduled_at, requested_at) {$direction}")
+            ->orderBy('id', $direction)
+            ->paginate(20)
+            ->withQueryString();
 
         return response()->json([
             'data' => AppointmentResource::collection($appointments),
