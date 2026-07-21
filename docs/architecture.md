@@ -129,6 +129,8 @@ Committed notification/message/appointment change
 
 Events contain only IDs, type/status/change, and timestamps. Message and notification bodies are not broadcast. `routes/channels.php` authorizes both browser sessions and Sanctum tokens; conversation access delegates to `ConversationPolicy`. Browser message forms submit asynchronously to the existing POST routes, which return message JSON for JSON requests and retain redirects for normal requests. Sent rows are merged by message ID, while incoming events refetch existing server-rendered state and merge stable DOM fragments. New incoming rows scroll into view only when the reader was already near the bottom. Appointment pages defer refresh while a form or modal is active. Browser and Flutter reconnects trigger state refreshes so events missed while offline do not leave stale state.
 
+The Flutter shell keeps Joy in a stateful overlay above primary branch content. Its invitation dismisses after five seconds while the circular chat head remains draggable and snaps to the nearest horizontal edge. The overlay stays mounted so its position survives branch navigation, but is visually suppressed on clinical messaging screens to avoid covering the composer. Joy's chatbot continues to use its request/response provider; patient-clinician realtime messages continue through the existing private Reverb conversation channels without polling.
+
 ## Web Navigation and Guards
 
 ### Browser route groups
