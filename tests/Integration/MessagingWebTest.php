@@ -100,6 +100,53 @@ class MessagingWebTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_clinician_can_send_message_as_json_without_changing_normal_redirects(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $patient['patient']->assignClinician($clinician['clinician']);
+        $conversation = Conversation::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+        ]);
+
+        $this->actingAs($clinician['user'], 'web')
+            ->postJson(route('messages.store', $conversation), ['body' => 'Sent asynchronously'])
+            ->assertCreated()
+            ->assertJsonPath('data.conversation_id', $conversation->id)
+            ->assertJsonPath('data.sender_id', $clinician['user']->id)
+            ->assertJsonPath('data.body', 'Sent asynchronously')
+            ->assertJsonStructure(['data' => ['id', 'created_at', 'created_at_label']]);
+
+        $this->assertDatabaseHas('messages', [
+            'conversation_id' => $conversation->id,
+            'sender_id' => $clinician['user']->id,
+        ]);
+    }
+
+    public function test_patient_can_send_message_as_json_and_validation_remains_json(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $patient['patient']->assignClinician($clinician['clinician']);
+        $conversation = Conversation::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+        ]);
+
+        $this->actingAs($patient['user'], 'web')
+            ->postJson(route('portal.messages.send', $conversation), ['body' => 'Hello asynchronously'])
+            ->assertCreated()
+            ->assertJsonPath('data.conversation_id', $conversation->id)
+            ->assertJsonPath('data.sender_id', $patient['user']->id)
+            ->assertJsonPath('data.body', 'Hello asynchronously');
+
+        $this->actingAs($patient['user'], 'web')
+            ->postJson(route('portal.messages.send', $conversation), ['body' => ''])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('body');
+    }
+
     public function test_assigned_patient_appears_in_start_conversation_dropdown(): void
     {
         $clinician = $this->createClinician();

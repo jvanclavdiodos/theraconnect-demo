@@ -33,7 +33,7 @@
                     @else
                         <span class="tc-chat-avatar" aria-hidden="true">{{ $initials ?: 'P' }}</span>
                     @endif
-                    <span class="min-w-0 flex-grow-1"><span class="tc-conversation-name {{ $unread ? 'fw-bold' : '' }}">{{ $patientName }}</span><span class="tc-conversation-specialty">{{ $thread->latestMessage?->body ?? 'No messages yet.' }}</span></span>
+                    <span class="min-w-0 flex-grow-1"><span class="tc-conversation-name {{ $unread ? 'fw-bold' : '' }}">{{ $patientName }}</span><span class="tc-conversation-specialty" data-message-preview>{{ $thread->latestMessage?->body ?? 'No messages yet.' }}</span></span>
                     @if($unread)<span class="badge rounded-pill text-bg-primary" aria-label="New message">New</span>@endif
                 </a>
             @empty
@@ -70,7 +70,7 @@
                         <textarea name="body" class="form-control @error('body') is-invalid @enderror" rows="1" placeholder="Write a message..." aria-label="Message to {{ $patientName }}" required>{{ old('body') }}</textarea>
                         <button type="submit" class="btn btn-primary tc-message-send" aria-label="Send message"><i class="bi bi-send-fill" aria-hidden="true"></i></button>
                     </form>
-                    @error('body')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    <div class="text-danger small mt-1" data-message-error aria-live="polite" @unless($errors->has('body')) hidden @endunless>@error('body'){{ $message }}@enderror</div>
                 </footer>
             @else
                 <div class="tc-message-readonly"><i class="bi bi-lock" aria-hidden="true"></i> This patient is no longer assigned to you. This conversation is read-only.</div>

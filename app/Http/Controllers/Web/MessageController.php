@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\Patient;
 use App\Services\ActivityLogService;
 use App\Services\MessageService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -70,7 +71,7 @@ class MessageController extends Controller
         return view('messages.show', compact('conversation', 'conversations', 'caseload'));
     }
 
-    public function store(Request $request, Conversation $conversation): RedirectResponse
+    public function store(Request $request, Conversation $conversation): RedirectResponse|JsonResponse
     {
         Gate::authorize('send', $conversation);
 
@@ -78,6 +79,19 @@ class MessageController extends Controller
         $message = $this->messages->send($conversation, $request->user(), $validated['body']);
 
         app(ActivityLogService::class)->log($request->user(), 'message.sent', $message);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'data' => [
+                    'id' => $message->id,
+                    'conversation_id' => $message->conversation_id,
+                    'sender_id' => $message->sender_id,
+                    'body' => $message->body,
+                    'created_at' => $message->created_at?->toIso8601String(),
+                    'created_at_label' => $message->created_at?->format('M j, g:i A'),
+                ],
+            ], 201);
+        }
 
         return redirect()->route('messages.show', $conversation);
     }

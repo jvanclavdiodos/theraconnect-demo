@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Services\ActivityLogService;
 use App\Services\MessageService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -37,7 +38,7 @@ class PortalMessageController extends Controller
         return view('portal.messages.index', compact('conversation', 'conversations'));
     }
 
-    public function send(Request $request, Conversation $conversation): RedirectResponse
+    public function send(Request $request, Conversation $conversation): RedirectResponse|JsonResponse
     {
         Gate::authorize('send', $conversation);
 
@@ -46,6 +47,19 @@ class PortalMessageController extends Controller
         $message = $this->messages->send($conversation, $request->user(), $validated['body']);
 
         app(ActivityLogService::class)->log($request->user(), 'message.sent', $message);
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'data' => [
+                    'id' => $message->id,
+                    'conversation_id' => $message->conversation_id,
+                    'sender_id' => $message->sender_id,
+                    'body' => $message->body,
+                    'created_at' => $message->created_at?->toIso8601String(),
+                    'created_at_label' => $message->created_at?->format('M j, g:i A'),
+                ],
+            ], 201);
+        }
 
         return redirect()->route('portal.messages.index');
     }

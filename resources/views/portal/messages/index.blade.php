@@ -96,7 +96,7 @@
                            placeholder="Write a message..." aria-label="Message to {{ $clinicianName }}" maxlength="5000" required autofocus>
                     <button class="btn btn-primary tc-message-send" type="submit" aria-label="Send message"><i class="bi bi-send-fill" aria-hidden="true"></i></button>
                 </form>
-                @error('body')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                <div class="text-danger small mt-1" data-message-error aria-live="polite" @unless($errors->has('body')) hidden @endunless>@error('body'){{ $message }}@enderror</div>
             </footer>
         @endif
     </section>
