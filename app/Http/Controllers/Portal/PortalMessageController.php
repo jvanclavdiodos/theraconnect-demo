@@ -39,7 +39,7 @@ class PortalMessageController extends Controller
 
     public function send(Request $request, Conversation $conversation): RedirectResponse
     {
-        Gate::authorize('participate', $conversation);
+        Gate::authorize('send', $conversation);
 
         $validated = $request->validate(['body' => ['required', 'string', 'max:5000']]);
 

@@ -14,7 +14,6 @@
         <h1 class="tc-page-title mb-1">Messages</h1>
         <p class="tc-page-sub mb-0">Private conversations with your care team.</p>
     </div>
-    <span class="tc-secure-label"><i class="bi bi-shield-lock" aria-hidden="true"></i> Secure messaging</span>
 </div>
 
 <div class="tc-messaging-shell">

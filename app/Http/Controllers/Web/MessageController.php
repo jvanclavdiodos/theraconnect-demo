@@ -23,6 +23,7 @@ class MessageController extends Controller
         $clinician = $this->currentClinician($request);
 
         $conversations = Conversation::where('clinician_id', $clinician->id)
+            ->whereHas('patient', fn ($query) => $query->assignedTo($clinician))
             ->with(['patient.user', 'latestMessage'])
             ->orderByDesc('last_message_at')
             ->get();
@@ -60,6 +61,7 @@ class MessageController extends Controller
 
         $clinician = $this->currentClinician($request);
         $conversations = Conversation::where('clinician_id', $clinician->id)
+            ->whereHas('patient', fn ($query) => $query->assignedTo($clinician))
             ->with(['patient.user', 'latestMessage'])
             ->orderByDesc('last_message_at')
             ->get();
@@ -70,7 +72,7 @@ class MessageController extends Controller
 
     public function store(Request $request, Conversation $conversation): RedirectResponse
     {
-        Gate::authorize('participate', $conversation);
+        Gate::authorize('send', $conversation);
 
         $validated = $request->validate(['body' => ['required', 'string', 'max:5000']]);
         $message = $this->messages->send($conversation, $request->user(), $validated['body']);

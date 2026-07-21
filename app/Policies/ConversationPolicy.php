@@ -20,4 +20,15 @@ class ConversationPolicy
         // thread exists, both participants retain access to its history.
         return $conversation->hasParticipant($user);
     }
+
+    /** Only current patient-clinician assignments may exchange new messages. */
+    public function send(User $user, Conversation $conversation): bool
+    {
+        $conversation->loadMissing(['patient.assignedClinicians', 'clinician']);
+
+        return $conversation->hasParticipant($user)
+            && $conversation->patient !== null
+            && $conversation->clinician !== null
+            && $conversation->patient->isAssignedTo($conversation->clinician);
+    }
 }

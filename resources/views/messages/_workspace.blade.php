@@ -1,7 +1,6 @@
 @php $activeConversation = $conversation ?? null; $me = auth()->id(); @endphp
 <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
     <div><h1 class="tc-page-title mb-1">Messages</h1><p class="tc-page-sub mb-0">Private conversations with your patients.</p></div>
-    <span class="tc-secure-label"><i class="bi bi-shield-lock" aria-hidden="true"></i> Secure messaging</span>
 </div>
 
 <div class="tc-messaging-shell">
@@ -60,14 +59,18 @@
                     <div class="tc-chat-empty"><i class="bi bi-chat-square-text" aria-hidden="true"></i><span>No messages yet. Say hello below.</span></div>
                 @endforelse
             </div>
-            <footer class="tc-message-composer">
-                <form action="{{ route('messages.store', $activeConversation) }}" method="POST" class="tc-message-form">
-                    @csrf
-                    <textarea name="body" class="form-control @error('body') is-invalid @enderror" rows="1" placeholder="Write a message..." aria-label="Message to {{ $patientName }}" required>{{ old('body') }}</textarea>
-                    <button type="submit" class="btn btn-primary tc-message-send" aria-label="Send message"><i class="bi bi-send-fill" aria-hidden="true"></i></button>
-                </form>
-                @error('body')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
-            </footer>
+            @can('send', $activeConversation)
+                <footer class="tc-message-composer">
+                    <form action="{{ route('messages.store', $activeConversation) }}" method="POST" class="tc-message-form">
+                        @csrf
+                        <textarea name="body" class="form-control @error('body') is-invalid @enderror" rows="1" placeholder="Write a message..." aria-label="Message to {{ $patientName }}" required>{{ old('body') }}</textarea>
+                        <button type="submit" class="btn btn-primary tc-message-send" aria-label="Send message"><i class="bi bi-send-fill" aria-hidden="true"></i></button>
+                    </form>
+                    @error('body')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                </footer>
+            @else
+                <div class="tc-message-readonly"><i class="bi bi-lock" aria-hidden="true"></i> This patient is no longer assigned to you. This conversation is read-only.</div>
+            @endcan
             <script>const t=document.getElementById('thread');if(t)t.scrollTop=t.scrollHeight;</script>
         @endif
     </section>

@@ -123,4 +123,20 @@ class MessagingApiTest extends TestCase
             ->getJson("/api/v1/conversations/{$conversation->id}/messages")
             ->assertStatus(403);
     }
+
+    public function test_former_assignment_can_read_history_but_cannot_send(): void
+    {
+        $ctx = $this->assignedPatient('former@test.com');
+        $conversation = app(MessageService::class)
+            ->conversationFor($ctx['patient']['patient'], $ctx['clinician']['clinician']);
+        $ctx['patient']['patient']->update(['assigned_clinician_id' => null]);
+
+        $this->withHeaders($ctx['headers'])
+            ->getJson("/api/v1/conversations/{$conversation->id}/messages")
+            ->assertOk();
+
+        $this->withHeaders($ctx['headers'])
+            ->postJson("/api/v1/conversations/{$conversation->id}/messages", ['body' => 'Not allowed'])
+            ->assertForbidden();
+    }
 }

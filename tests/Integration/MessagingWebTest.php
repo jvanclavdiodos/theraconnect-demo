@@ -94,6 +94,18 @@ class MessagingWebTest extends TestCase
             ->assertStatus(403);
     }
 
+    public function test_assigned_patient_appears_in_start_conversation_dropdown(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $patient['patient']->assignClinician($clinician['clinician']);
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('messages.index'))
+            ->assertOk()
+            ->assertSee('<option value="'.$patient['patient']->id.'">'.$patient['user']->name.'</option>', false);
+    }
+
     public function test_clinician_cannot_view_another_clinicians_conversation(): void
     {
         $owner = $this->makeClinician('owner@test.com');
@@ -109,5 +121,35 @@ class MessagingWebTest extends TestCase
         $this->actingAs($other['user'], 'web')
             ->get("/messages/{$conversation->id}")
             ->assertStatus(403);
+    }
+
+    public function test_clinician_cannot_list_or_message_a_formerly_assigned_patient(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $patient['patient']->update(['assigned_clinician_id' => $clinician['clinician']->id]);
+        $conversation = Conversation::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+        ]);
+
+        $patient['patient']->update(['assigned_clinician_id' => null]);
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('messages.index'))
+            ->assertOk()
+            ->assertDontSee($patient['user']->name);
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('messages.show', $conversation))
+            ->assertOk()
+            ->assertSee('conversation is read-only')
+            ->assertDontSee('tc-message-composer', false);
+
+        $this->actingAs($clinician['user'], 'web')
+            ->post(route('messages.store', $conversation), ['body' => 'Not allowed'])
+            ->assertForbidden();
+
+        $this->assertDatabaseMissing('messages', ['conversation_id' => $conversation->id]);
     }
 }
