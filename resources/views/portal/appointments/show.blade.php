@@ -42,6 +42,29 @@
                 <li class="list-group-item d-flex justify-content-between">
                     <span class="text-muted">Clinician</span><span>{{ $appointment->clinician?->user?->name ?? 'Not assigned' }}</span>
                 </li>
+                @if($appointment->clinician)
+                    <li class="list-group-item">
+                        <div class="text-muted mb-2">Clinician contact</div>
+                        <div class="d-grid gap-2">
+                            @if($appointment->clinician->specialization)
+                                <div><i class="bi bi-person-badge me-2 text-muted" aria-hidden="true"></i>{{ $appointment->clinician->specialization }}</div>
+                            @endif
+                            @if($appointment->clinician->user?->email)
+                                <a href="mailto:{{ $appointment->clinician->user->email }}" class="text-decoration-none">
+                                    <i class="bi bi-envelope me-2" aria-hidden="true"></i>{{ $appointment->clinician->user->email }}
+                                </a>
+                            @endif
+                            @if($appointment->clinician->contact_no)
+                                <a href="tel:{{ preg_replace('/[^0-9+]/', '', $appointment->clinician->contact_no) }}" class="text-decoration-none">
+                                    <i class="bi bi-telephone me-2" aria-hidden="true"></i>{{ $appointment->clinician->contact_no }}
+                                </a>
+                            @endif
+                            @if(!$appointment->clinician->user?->email && !$appointment->clinician->contact_no)
+                                <span class="text-body-secondary">No contact details available.</span>
+                            @endif
+                        </div>
+                    </li>
+                @endif
                 <li class="list-group-item d-flex justify-content-between">
                     <span class="text-muted">Mode</span><span>{{ $appointment->mode === 'online' ? 'Online' : 'In-person' }}</span>
                 </li>

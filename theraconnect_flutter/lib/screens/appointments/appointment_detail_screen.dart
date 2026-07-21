@@ -72,6 +72,58 @@ class AppointmentDetailScreen extends ConsumerWidget {
               ),
             ),
           ),
+          if (appointment.clinicianId != null) ...[
+            const SizedBox(height: 16),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Your clinician',
+                        style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: 12),
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading:
+                          const CircleAvatar(child: Icon(Icons.person_outline)),
+                      title: Text(appointment.clinicianName ?? 'Clinician'),
+                      subtitle: appointment.clinicianSpecialization == null
+                          ? null
+                          : Text(appointment.clinicianSpecialization!),
+                    ),
+                    if (appointment.clinicianEmail != null)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.email_outlined),
+                        title: Text(appointment.clinicianEmail!),
+                        trailing: const Icon(Icons.open_in_new),
+                        onTap: () => _openContact(
+                            context,
+                            Uri(
+                                scheme: 'mailto',
+                                path: appointment.clinicianEmail)),
+                      ),
+                    if (appointment.clinicianPhone != null)
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: const Icon(Icons.phone_outlined),
+                        title: Text(appointment.clinicianPhone!),
+                        trailing: const Icon(Icons.call_outlined),
+                        onTap: () => _openContact(
+                            context,
+                            Uri(
+                                scheme: 'tel',
+                                path: appointment.clinicianPhone)),
+                      ),
+                    if (appointment.clinicianEmail == null &&
+                        appointment.clinicianPhone == null)
+                      const Text('No contact details available.'),
+                  ],
+                ),
+              ),
+            ),
+          ],
           if (canJoin) ...[
             const SizedBox(height: 16),
             SizedBox(
@@ -140,6 +192,15 @@ class AppointmentDetailScreen extends ConsumerWidget {
         const SnackBar(
             content: Text('Could not open the video call.'),
             backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _openContact(BuildContext context, Uri uri) async {
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open this contact method.')),
       );
     }
   }

@@ -3,6 +3,9 @@ class Appointment {
   final int patientId;
   final int? clinicianId;
   final String? clinicianName;
+  final String? clinicianEmail;
+  final String? clinicianPhone;
+  final String? clinicianSpecialization;
   final String? requestedAt;
   final String? scheduledAt;
   final String mode;
@@ -20,6 +23,9 @@ class Appointment {
     required this.patientId,
     this.clinicianId,
     this.clinicianName,
+    this.clinicianEmail,
+    this.clinicianPhone,
+    this.clinicianSpecialization,
     this.requestedAt,
     this.scheduledAt,
     required this.mode,
@@ -34,11 +40,15 @@ class Appointment {
   });
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
+    final clinicianContact = json['clinician_contact'] as Map<String, dynamic>?;
     return Appointment(
       id: json['id'] as int,
       patientId: json['patient_id'] as int,
       clinicianId: json['clinician_id'] as int?,
       clinicianName: json['clinician_name'] as String?,
+      clinicianEmail: clinicianContact?['email'] as String?,
+      clinicianPhone: clinicianContact?['phone'] as String?,
+      clinicianSpecialization: clinicianContact?['specialization'] as String?,
       requestedAt: json['requested_at'] as String?,
       scheduledAt: json['scheduled_at'] as String?,
       mode: json['mode'] as String? ?? 'in_person',
@@ -59,6 +69,11 @@ class Appointment {
       'patient_id': patientId,
       'clinician_id': clinicianId,
       'clinician_name': clinicianName,
+      'clinician_contact': {
+        'email': clinicianEmail,
+        'phone': clinicianPhone,
+        'specialization': clinicianSpecialization,
+      },
       'requested_at': requestedAt,
       'scheduled_at': scheduledAt,
       'mode': mode,
@@ -77,7 +92,9 @@ class Appointment {
   bool get meetingLinkExpired {
     if (mode != 'online' || meetingLinkExpiresAt == null) return false;
     final expiry = DateTime.tryParse(meetingLinkExpiresAt!);
-    return !meetingLinkActive && expiry != null && expiry.isBefore(DateTime.now());
+    return !meetingLinkActive &&
+        expiry != null &&
+        expiry.isBefore(DateTime.now());
   }
 
   String get statusLabel {

@@ -16,6 +16,14 @@ class AppointmentResource extends JsonResource
             'clinician_name' => $this->relationLoaded('clinician') && $this->clinician
                 ? $this->clinician->user?->name
                 : null,
+            'clinician_contact' => $this->when(
+                $this->relationLoaded('clinician') && $this->clinician,
+                fn () => [
+                    'email' => $this->clinician->user?->email,
+                    'phone' => $this->clinician->contact_no,
+                    'specialization' => $this->clinician->specialization,
+                ]
+            ),
             'requested_at' => $this->requested_at,
             'scheduled_at' => $this->scheduled_at,
             'mode' => $this->mode,
