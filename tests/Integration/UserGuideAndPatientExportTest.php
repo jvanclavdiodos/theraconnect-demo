@@ -16,7 +16,7 @@ class UserGuideAndPatientExportTest extends TestCase
         $admin = User::create(['name' => 'Admin', 'email' => 'admin-guide@test.com', 'password' => 'password', 'role' => 'admin']);
 
         $this->actingAs($patient['user'])->get('/portal/guide')->assertOk()->assertSee('Book and manage appointments');
-        $this->actingAs($patient['user'])->get('/portal')->assertOk()->assertSee('Open Joy assistant');
+        $this->actingAs($patient['user'])->get('/portal')->assertOk()->assertSee('Have questions?')->assertSee('Talk to Joy.');
         $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))->getJson('/api/v1/guide')->assertOk()->assertJsonPath('data.version', '1.0');
         $this->actingAs($clinician['user'])->get('/guide')->assertOk()->assertSee('Review appointment requests');
         $this->actingAs($admin)->get('/guide')->assertForbidden();

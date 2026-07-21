@@ -26,7 +26,7 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  Set<String> _openDays = {};
+  Map<String, String> _dateStatuses = {};
   bool _loadingDays = true;
   String? _daysError;
 
@@ -51,14 +51,14 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       _daysError = null;
     });
     try {
-      final dates = await ref.read(appointmentApiProvider).getAvailability(
+      final statuses = await ref.read(appointmentApiProvider).getAvailability(
             clinicianId: widget.clinician.id,
             from: _ymd(_firstDay),
             to: _ymd(_lastDay),
           );
       if (!mounted) return;
       setState(() {
-        _openDays = dates.toSet();
+        _dateStatuses = statuses;
         _loadingDays = false;
       });
     } catch (e) {
@@ -112,10 +112,37 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
                       focusedDay: _focusedDay,
                       selectedDayPredicate: (day) =>
                           _selectedDay != null && isSameDay(_selectedDay, day),
-                      enabledDayPredicate: (day) => _openDays.contains(_ymd(day)),
+                      enabledDayPredicate: (day) =>
+                          _dateStatuses[_ymd(day)] == 'open',
+                      calendarBuilders: CalendarBuilders(
+                        disabledBuilder: (context, day, focusedDay) => Tooltip(
+                          message: 'Clinician is not available that day.',
+                          child: Center(
+                            child: Container(
+                              width: 34,
+                              height: 34,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .errorContainer,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                '${day.day}',
+                                style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onErrorContainer),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
                       calendarFormat: CalendarFormat.month,
                       availableGestures: AvailableGestures.horizontalSwipe,
-                      headerStyle: const HeaderStyle(formatButtonVisible: false, titleCentered: true),
+                      headerStyle: const HeaderStyle(
+                          formatButtonVisible: false, titleCentered: true),
                       onDaySelected: (selected, focused) {
                         setState(() {
                           _selectedDay = selected;
@@ -136,7 +163,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
     if (_selectedDay == null) {
       return const Padding(
         padding: EdgeInsets.all(24),
-        child: Center(child: Text('Select an available day to see open times.')),
+        child:
+            Center(child: Text('Select an available day to see open times.')),
       );
     }
     if (_loadingSlots) {
@@ -159,7 +187,8 @@ class _CalendarScreenState extends ConsumerState<CalendarScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Available times', style: Theme.of(context).textTheme.titleMedium),
+          Text('Available times',
+              style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,

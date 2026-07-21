@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Appointment;
 use App\Models\Clinician;
 use Carbon\Carbon;
 
@@ -99,6 +100,20 @@ class AvailabilityService
      */
     public function openDates(int $clinicianId, Carbon $from, Carbon $to): array
     {
+        return collect($this->dateStatuses($clinicianId, $from, $to))
+            ->filter(fn (string $status) => $status === 'open')
+            ->keys()
+            ->all();
+    }
+
+    /**
+     * Availability status for every date in a bounded range. Relationships and
+     * appointments are loaded once so calendar rendering does not query per day.
+     *
+     * @return array<string, string> Y-m-d => open|blocked|full|off
+     */
+    public function dateStatuses(int $clinicianId, Carbon $from, Carbon $to): array
+    {
         $clinician = Clinician::with(['weeklyAvailabilities', 'dateOverrides'])
             ->find($clinicianId);
 
@@ -106,14 +121,45 @@ class AvailabilityService
             return [];
         }
 
-        $dates = [];
+        $busy = Appointment::where('clinician_id', $clinicianId)
+            ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
+            ->where(function ($query) use ($from, $to) {
+                $query->whereBetween('scheduled_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()])
+                    ->orWhere(function ($query) use ($from, $to) {
+                        $query->whereNull('scheduled_at')
+                            ->whereBetween('requested_at', [$from->copy()->startOfDay(), $to->copy()->endOfDay()]);
+                    });
+            })
+            ->get(['scheduled_at', 'requested_at'])
+            ->map(fn (Appointment $appointment) => ($appointment->scheduled_at ?? $appointment->requested_at)->format('Y-m-d H:i'))
+            ->flip();
+
+        $statuses = [];
         for ($d = $from->copy()->startOfDay(); $d->lte($to); $d->addDay()) {
-            if (! empty($this->availableSlots($clinician, $d))) {
-                $dates[] = $d->format('Y-m-d');
+            $date = $d->format('Y-m-d');
+            $overrides = $this->overridesFor($clinician, $d);
+
+            if ($this->hasWholeDayBlock($overrides)) {
+                $statuses[$date] = 'blocked';
+
+                continue;
             }
+
+            $baseHours = $this->baseHours($clinician, $d);
+            if (empty($baseHours)) {
+                $statuses[$date] = 'off';
+
+                continue;
+            }
+
+            $availableHours = $this->availableSlots($clinician, $d);
+            $hasOpenSlot = collect($availableHours)
+                ->contains(fn (string $hour) => ! $busy->has("{$date} {$hour}"));
+
+            $statuses[$date] = $hasOpenSlot ? 'open' : 'full';
         }
 
-        return $dates;
+        return $statuses;
     }
 
     /** Overrides (from the loaded relation) that fall on $date. */

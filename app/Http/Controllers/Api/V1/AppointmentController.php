@@ -88,13 +88,16 @@ class AppointmentController extends Controller
             $to = $from->copy()->addDays(62);
         }
 
-        $dates = $this->availabilityService->openDates(
+        $availability = $this->availabilityService->dateStatuses(
             (int) $request->query('clinician_id'),
             $from,
             $to
         );
 
-        return response()->json(['data' => $dates]);
+        return response()->json([
+            'data' => collect($availability)->filter(fn (string $status) => $status === 'open')->keys()->values(),
+            'availability' => $availability,
+        ]);
     }
 
     public function index(Request $request): JsonResponse

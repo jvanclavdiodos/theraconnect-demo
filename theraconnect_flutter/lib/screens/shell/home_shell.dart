@@ -10,13 +10,56 @@ class HomeShell extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isMessaging =
+        GoRouterState.of(context).uri.path.startsWith('/messages');
+
     return Scaffold(
       body: navigationShell,
-      floatingActionButton: FloatingActionButton(
-        tooltip: 'Open Joy assistant',
-        onPressed: () => context.push('/chatbot'),
-        child: const JoyAvatar(size: 30),
-      ),
+      floatingActionButton: isMessaging
+          ? null
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Material(
+                  elevation: 4,
+                  color: Theme.of(context).colorScheme.surface,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    side: BorderSide(
+                        color: Theme.of(context).colorScheme.primary),
+                  ),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () => context.push('/chatbot'),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
+                      child: Text.rich(
+                        TextSpan(
+                          text: 'Have questions? ',
+                          children: [
+                            TextSpan(
+                              text: 'Talk to Joy.',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.primary,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                FloatingActionButton(
+                  heroTag: 'joy-assistant',
+                  tooltip: 'Open Joy assistant',
+                  onPressed: () => context.push('/chatbot'),
+                  child: const JoyAvatar(size: 30),
+                ),
+              ],
+            ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) {

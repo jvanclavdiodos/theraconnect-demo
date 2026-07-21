@@ -2,6 +2,7 @@
 
 namespace Tests\Integration;
 
+use App\Models\Appointment;
 use App\Models\Clinician;
 use App\Services\AvailabilityService;
 use Carbon\Carbon;
@@ -140,5 +141,27 @@ class AvailabilityServiceTest extends TestCase
         $this->assertContains($from->toDateString(), $open);
         $this->assertNotContains($blocked->toDateString(), $open);
         $this->assertContains($to->toDateString(), $open);
+    }
+
+    public function test_date_status_is_full_when_every_available_hour_is_booked(): void
+    {
+        $clinician = $this->clinician();
+        $date = $this->freshDate();
+        $patient = $this->createPatient();
+
+        foreach (range(8, 16) as $hour) {
+            Appointment::create([
+                'patient_id' => $patient['patient']->id,
+                'clinician_id' => $clinician->id,
+                'requested_at' => $date->copy()->setTime($hour, 0),
+                'mode' => 'in_person',
+                'status' => 'pending',
+            ]);
+        }
+
+        $statuses = $this->service->dateStatuses($clinician->id, $date, $date);
+
+        $this->assertSame('full', $statuses[$date->toDateString()]);
+        $this->assertNotContains($date->toDateString(), $this->service->openDates($clinician->id, $date, $date));
     }
 }

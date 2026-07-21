@@ -77,6 +77,8 @@ class BookingApiTest extends TestCase
         $this->assertContains('2030-12-01', $dates);
         $this->assertNotContains('2030-12-02', $dates);
         $this->assertContains('2030-12-03', $dates);
+        $response->assertJsonPath('availability.2030-12-01', 'open');
+        $response->assertJsonPath('availability.2030-12-02', 'blocked');
     }
 
     public function test_availability_validates_params(): void
