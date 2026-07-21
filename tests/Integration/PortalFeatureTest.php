@@ -105,7 +105,9 @@ class PortalFeatureTest extends TestCase
             ->get(route('portal.messages.index'))
             ->assertStatus(200)
             ->assertSee('tc-conversation-sidebar', false)
-            ->assertSee('tc-message-composer', false);
+            ->assertSee('tc-message-composer', false)
+            ->assertSee('Dr. Test')
+            ->assertSee('Testing');
 
         $conversation = Conversation::firstOrFail();
 

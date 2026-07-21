@@ -41,7 +41,8 @@ class MessagingWebTest extends TestCase
         $this->actingAs($clinician['user'], 'web')
             ->get('/messages')
             ->assertStatus(200)
-            ->assertSee('Messages');
+            ->assertSee('Messages')
+            ->assertSee('tc-conversation-sidebar', false);
     }
 
     public function test_clinician_opens_and_messages_caseload_patient(): void
@@ -56,6 +57,12 @@ class MessagingWebTest extends TestCase
             ->assertRedirect();
 
         $conversation = Conversation::firstOrFail();
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('messages.show', $conversation))
+            ->assertOk()
+            ->assertSee('tc-message-composer', false)
+            ->assertSee($patient['user']->name);
 
         // Send a message.
         $this->actingAs($clinician['user'], 'web')

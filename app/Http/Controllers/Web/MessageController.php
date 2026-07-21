@@ -58,7 +58,14 @@ class MessageController extends Controller
         $conversation->load(['patient.user', 'clinician.user', 'messages.sender']);
         $this->messages->markRead($conversation, $request->user());
 
-        return view('messages.show', compact('conversation'));
+        $clinician = $this->currentClinician($request);
+        $conversations = Conversation::where('clinician_id', $clinician->id)
+            ->with(['patient.user', 'latestMessage'])
+            ->orderByDesc('last_message_at')
+            ->get();
+        $caseload = Patient::assignedTo($clinician)->with('user')->get();
+
+        return view('messages.show', compact('conversation', 'conversations', 'caseload'));
     }
 
     public function store(Request $request, Conversation $conversation): RedirectResponse
