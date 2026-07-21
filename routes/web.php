@@ -4,6 +4,7 @@ use App\Http\Controllers\Portal\PortalAppointmentController;
 use App\Http\Controllers\Portal\PortalAssessmentController;
 use App\Http\Controllers\Portal\PortalAssignmentController;
 use App\Http\Controllers\Portal\PortalChatbotController;
+use App\Http\Controllers\Portal\PortalClinicianAvatarController;
 use App\Http\Controllers\Portal\PortalDashboardController;
 use App\Http\Controllers\Portal\PortalGoalController;
 use App\Http\Controllers\Portal\PortalMessageController;
@@ -160,6 +161,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
 | Services + Policies as the API. Patients land here after login.
 */
 Route::middleware(['auth', 'role:patient'])->prefix('portal')->name('portal.')->group(function () {
+    Route::get('/clinicians/{clinician}/avatar', PortalClinicianAvatarController::class)->name('clinicians.avatar');
     Route::get('/guide', PortalUserGuideController::class)->name('guide.show');
     Route::get('/', [PortalDashboardController::class, 'index'])->name('dashboard');
 

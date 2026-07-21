@@ -34,7 +34,11 @@
                 <a href="{{ route('portal.messages.index', ['conversation' => $thread->id]) }}"
                    class="tc-conversation-item {{ $isActive ? 'active' : '' }}"
                    @if($isActive) aria-current="page" @endif>
-                    <span class="tc-chat-avatar" aria-hidden="true">{{ $threadInitials ?: 'C' }}</span>
+                    @if($thread->clinician?->user?->hasAvatar())
+                        <img class="tc-chat-avatar tc-chat-avatar-image" src="{{ route('portal.clinicians.avatar', $thread->clinician) }}?v={{ $thread->clinician->user->updated_at->timestamp }}" alt="{{ $threadName }} profile photo">
+                    @else
+                        <span class="tc-chat-avatar" aria-hidden="true">{{ $threadInitials ?: 'C' }}</span>
+                    @endif
                     <span class="min-w-0 flex-grow-1">
                         <span class="tc-conversation-name">{{ $threadName }}</span>
                         <span class="tc-conversation-specialty">{{ $thread->clinician?->specialization ?? 'Care team clinician' }}</span>

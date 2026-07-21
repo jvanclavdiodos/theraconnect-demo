@@ -28,7 +28,11 @@
                     $isActive = $activeConversation?->id === $thread->id;
                 @endphp
                 <a href="{{ route('messages.show', $thread) }}" class="tc-conversation-item {{ $isActive ? 'active' : '' }}" @if($isActive) aria-current="page" @endif>
-                    <span class="tc-chat-avatar" aria-hidden="true">{{ $initials ?: 'P' }}</span>
+                    @if($thread->patient?->user?->hasAvatar())
+                        <img class="tc-chat-avatar tc-chat-avatar-image" src="{{ route('avatars.show', $thread->patient->user) }}?v={{ $thread->patient->user->updated_at->timestamp }}" alt="{{ $patientName }} profile photo">
+                    @else
+                        <span class="tc-chat-avatar" aria-hidden="true">{{ $initials ?: 'P' }}</span>
+                    @endif
                     <span class="min-w-0 flex-grow-1"><span class="tc-conversation-name {{ $unread ? 'fw-bold' : '' }}">{{ $patientName }}</span><span class="tc-conversation-specialty">{{ $thread->latestMessage?->body ?? 'No messages yet.' }}</span></span>
                     @if($unread)<span class="badge rounded-pill text-bg-primary" aria-label="New message">New</span>@endif
                 </a>

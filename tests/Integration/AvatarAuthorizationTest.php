@@ -3,6 +3,7 @@
 namespace Tests\Integration;
 
 use App\Models\Appointment;
+use App\Models\Conversation;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -148,5 +149,59 @@ class AvatarAuthorizationTest extends TestCase
         $this->actingAs($admin, 'web')
             ->get(route('avatars.show', $patient['user']))
             ->assertStatus(200);
+    }
+
+    public function test_patient_can_view_only_an_assigned_clinicians_avatar(): void
+    {
+        Storage::fake('local');
+        $clinician = $this->createClinician();
+        $assigned = $this->createPatient('assigned-avatar-view@test.com');
+        $other = $this->createPatient('other-avatar-view@test.com');
+        $assigned['patient']->assignClinician($clinician['clinician']);
+        $this->giveAvatar($clinician['user']);
+
+        $this->actingAs($assigned['user'], 'web')
+            ->get(route('portal.clinicians.avatar', $clinician['clinician']))
+            ->assertOk();
+
+        $this->actingAs($other['user'], 'web')
+            ->get(route('portal.clinicians.avatar', $clinician['clinician']))
+            ->assertForbidden();
+    }
+
+    public function test_patient_messaging_sidebar_displays_clinician_avatar(): void
+    {
+        Storage::fake('local');
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('patient-message-avatar@test.com');
+        $patient['patient']->assignClinician($clinician['clinician']);
+        $this->giveAvatar($clinician['user']);
+
+        $user = $clinician['user']->fresh();
+        $this->actingAs($patient['user'], 'web')
+            ->get(route('portal.messages.index'))
+            ->assertOk()
+            ->assertSee(route('portal.clinicians.avatar', $clinician['clinician']).'?v='.$user->updated_at->timestamp, false)
+            ->assertSee($user->name.' profile photo');
+    }
+
+    public function test_clinician_messaging_sidebar_displays_patient_avatar(): void
+    {
+        Storage::fake('local');
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('clinician-message-avatar@test.com');
+        $patient['patient']->assignClinician($clinician['clinician']);
+        $this->giveAvatar($patient['user']);
+        Conversation::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+        ]);
+
+        $user = $patient['user']->fresh();
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('messages.index'))
+            ->assertOk()
+            ->assertSee(route('avatars.show', $user).'?v='.$user->updated_at->timestamp, false)
+            ->assertSee($user->name.' profile photo');
     }
 }

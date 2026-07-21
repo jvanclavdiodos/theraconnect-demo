@@ -471,6 +471,7 @@ a:hover { color: var(--tc-teal-dark); }
 .tc-conversation-specialty { margin-top:.1rem;color:var(--tc-slate-light);font-size:.73rem; }
 .tc-conversation-empty { padding:1.25rem;text-align:center;color:var(--tc-slate-light);font-size:.82rem; }
 .tc-chat-avatar { width:36px;height:36px;flex:0 0 36px;border-radius:50%;display:grid;place-items:center;background:var(--tc-teal-light);color:var(--tc-teal);font-size:.72rem;font-weight:700; }
+.tc-chat-avatar-image { display:block;object-fit:cover;border:1px solid var(--tc-neutral-200); }
 .tc-chat-avatar-lg { width:42px;height:42px;flex-basis:42px;font-size:.8rem; }
 .tc-active-chat { min-width:0;min-height:0;height:100%;overflow:hidden;display:flex;flex-direction:column;background:var(--tc-surface); }
 .tc-chat-header { min-height:64px;flex:0 0 64px;padding:.7rem 1rem;display:flex;align-items:center;gap:.75rem;border-bottom:1px solid var(--tc-neutral-200); }
