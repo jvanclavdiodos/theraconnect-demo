@@ -70,6 +70,10 @@
                         <i class="bi bi-chevron-right tc-nav-chevron"></i>
                     </a>
                     @if($role === 'clinician')
+                        <a href="{{ route('guide.show') }}" class="tc-nav-item {{ $isActive('guide.show') }}">
+                            <i class="bi bi-question-circle"></i> <span>User Guide</span>
+                            <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                        </a>
                         <a href="{{ route('messages.index') }}" class="tc-nav-item {{ $isActive('messages.*') }}">
                             <i class="bi bi-chat-dots"></i> <span>Messages</span>
                             <span data-realtime-message-count data-count="{{ $msgUnread }}"

@@ -55,8 +55,8 @@
                 </span>
                 <i class="bi bi-chevron-right tc-nav-chevron {{ $unreadMessages > 0 ? 'd-none' : '' }}"></i>
             </a>
-            <a href="{{ route('portal.chatbot.index') }}" class="tc-nav-item {{ $isActive('portal.chatbot.*') }}">
-                <img src="{{ asset('img/joy-avatar.svg') }}" alt="" width="18" height="18" style="border-radius:5px;"> <span>Joy</span>
+            <a href="{{ route('portal.guide.show') }}" class="tc-nav-item {{ $isActive('portal.guide.*') }}">
+                <i class="bi bi-question-circle"></i> <span>User Guide</span>
                 <i class="bi bi-chevron-right tc-nav-chevron"></i>
             </a>
         </div>

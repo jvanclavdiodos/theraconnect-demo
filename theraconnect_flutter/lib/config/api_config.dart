@@ -6,7 +6,8 @@ class ApiConfig {
   //   adb reverse (USB) -> 'http://127.0.0.1:8080/api/v1'  (run: adb reverse tcp:8080 tcp:8080)
   //   LAN (same Wi-Fi)  -> 'http://<PC-LAN-IP>:8080/api/v1'
   //   Android emulator  -> 'http://10.0.2.2:8080/api/v1'
-  static const String baseUrl = 'https://theraconnect-demo-production.up.railway.app/api/v1';
+  static const String baseUrl =
+      'https://theraconnect-demo-production.up.railway.app/api/v1';
   static const Duration connectTimeout = Duration(seconds: 10);
   static const Duration receiveTimeout = Duration(seconds: 15);
 
@@ -29,4 +30,5 @@ class ApiConfig {
   static const String notificationsEndpoint = '/notifications';
   static const String deviceTokenEndpoint = '/device-token';
   static const String chatbotMessageEndpoint = '/chatbot/message';
+  static const String userGuideEndpoint = '/guide';
 }

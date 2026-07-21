@@ -11,6 +11,7 @@ use App\Http\Controllers\Portal\PortalMoodLogController;
 use App\Http\Controllers\Portal\PortalNoteController;
 use App\Http\Controllers\Portal\PortalNotificationController;
 use App\Http\Controllers\Portal\PortalProfileController;
+use App\Http\Controllers\Portal\PortalUserGuideController;
 use App\Http\Controllers\Web\AccountController;
 use App\Http\Controllers\Web\ActivityLogController;
 use App\Http\Controllers\Web\AuthenticatedSessionController;
@@ -23,9 +24,11 @@ use App\Http\Controllers\Web\NotificationController;
 use App\Http\Controllers\Web\NotificationLogController;
 use App\Http\Controllers\Web\PatientController;
 use App\Http\Controllers\Web\PatientNoteController;
+use App\Http\Controllers\Web\PatientRecordExportController;
 use App\Http\Controllers\Web\PatientRequestController;
 use App\Http\Controllers\Web\ProgressController;
 use App\Http\Controllers\Web\RegisterController;
+use App\Http\Controllers\Web\UserGuideController;
 use App\Http\Controllers\Web\WebAppointmentController;
 use App\Http\Controllers\Web\WebAssignmentController;
 use Illuminate\Support\Facades\Route;
@@ -105,6 +108,8 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     // Clinicians only; the controller always loads the current user's own
     // clinician, so there is no cross-clinician access.
     Route::middleware('role:clinician')->group(function () {
+        Route::get('/guide', UserGuideController::class)->name('guide.show');
+        Route::get('/patients/{patient}/record.pdf', PatientRecordExportController::class)->name('patients.record.pdf');
         Route::get('/availability/month', [ClinicianAvailabilityController::class, 'month'])->name('availability.month');
         Route::get('/availability/day', [ClinicianAvailabilityController::class, 'day'])->name('availability.day');
         Route::post('/availability/toggle-day', [ClinicianAvailabilityController::class, 'toggleDay'])->name('availability.toggleDay');
@@ -155,6 +160,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
 | Services + Policies as the API. Patients land here after login.
 */
 Route::middleware(['auth', 'role:patient'])->prefix('portal')->name('portal.')->group(function () {
+    Route::get('/guide', PortalUserGuideController::class)->name('guide.show');
     Route::get('/', [PortalDashboardController::class, 'index'])->name('dashboard');
 
     // Appointments + clinician-first booking

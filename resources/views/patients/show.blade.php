@@ -17,6 +17,11 @@
         <h2 class="mb-0">{{ $patient->user->name }}</h2>
     </div>
     <div>
+        @can('exportRecord', $patient)
+        <a href="{{ route('patients.record.pdf', $patient) }}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-file-earmark-pdf"></i> Export record
+        </a>
+        @endcan
         <a href="{{ route('patients.progress', $patient) }}" class="btn btn-success btn-sm">
             <i class="bi bi-graph-up-arrow"></i> View progress
         </a>

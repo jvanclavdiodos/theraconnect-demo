@@ -12,6 +12,11 @@ class HomeShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       body: navigationShell,
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Open Joy assistant',
+        onPressed: () => context.push('/chatbot'),
+        child: const JoyAvatar(size: 30),
+      ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: navigationShell.currentIndex,
         onDestinationSelected: (index) {
@@ -40,11 +45,6 @@ class HomeShell extends ConsumerWidget {
             icon: Icon(Icons.forum_outlined),
             selectedIcon: Icon(Icons.forum),
             label: 'Messages',
-          ),
-          const NavigationDestination(
-            icon: JoyAvatar(size: 24),
-            selectedIcon: JoyAvatar(size: 24),
-            label: 'Joy',
           ),
         ],
       ),

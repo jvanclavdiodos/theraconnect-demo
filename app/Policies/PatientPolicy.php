@@ -7,6 +7,13 @@ use App\Models\User;
 
 class PatientPolicy
 {
+    public function exportRecord(User $user, Patient $patient): bool
+    {
+        return $user->role === 'clinician'
+            && $user->clinician !== null
+            && $patient->isAssignedTo($user->clinician);
+    }
+
     /**
      * Who may view a patient record on the web dashboard. Admins see every
      * patient; a clinician sees only patients assigned to them. Patients never

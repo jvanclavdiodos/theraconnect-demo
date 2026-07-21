@@ -440,6 +440,7 @@ a:hover { color: var(--tc-teal-dark); }
 
 /* Alpine: keep reactive blocks hidden until Alpine initializes */
 [x-cloak] { display: none !important; }
+.tc-joy{position:fixed;right:1rem;bottom:1rem;z-index:1040}.tc-joy-launcher{width:56px;height:56px;border:0;border-radius:50%;background:var(--tc-surface);box-shadow:0 5px 20px rgba(15,23,42,.22)}.tc-joy-panel{position:absolute;right:0;bottom:68px;width:min(380px,calc(100vw - 2rem));height:min(560px,calc(100vh - 7rem));background:var(--tc-surface);border:1px solid var(--tc-neutral-200);border-radius:8px;box-shadow:0 12px 32px rgba(15,23,42,.22);display:flex;flex-direction:column;overflow:hidden}.tc-joy-header,.tc-joy-form{padding:.75rem;display:flex;align-items:center;justify-content:space-between;gap:.5rem;border-bottom:1px solid var(--tc-neutral-200)}.tc-joy-form{border-top:1px solid var(--tc-neutral-200);border-bottom:0}.tc-joy-messages{flex:1;overflow-y:auto;padding:.75rem}.tc-joy-messages span{display:inline-block;max-width:82%}.modal-open .tc-joy{display:none}@media(max-width:575.98px){.tc-joy{right:.75rem;bottom:.75rem}.tc-joy-panel{width:calc(100vw - 1.5rem);height:min(70vh,560px)}}
 
 /* Password strength meter + requirements checklist */
 .pw-reqs { display: flex; flex-direction: column; gap: 0.15rem; }

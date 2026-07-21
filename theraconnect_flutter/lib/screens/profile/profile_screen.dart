@@ -28,12 +28,16 @@ class ProfileScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  ProfileAvatar(hasAvatar: profile.valueOrNull?.hasAvatar ?? false),
+                  ProfileAvatar(
+                      hasAvatar: profile.valueOrNull?.hasAvatar ?? false),
                   const SizedBox(height: 12),
-                  Text(authState.user?.name ?? '', style: Theme.of(context).textTheme.titleLarge),
-                  Text(authState.user?.email ?? '', style: Theme.of(context).textTheme.bodyMedium),
+                  Text(authState.user?.name ?? '',
+                      style: Theme.of(context).textTheme.titleLarge),
+                  Text(authState.user?.email ?? '',
+                      style: Theme.of(context).textTheme.bodyMedium),
                   const SizedBox(height: 4),
-                  const Chip(label: Text('Patient', style: TextStyle(fontSize: 12))),
+                  const Chip(
+                      label: Text('Patient', style: TextStyle(fontSize: 12))),
                 ],
               ),
             ),
@@ -41,8 +45,10 @@ class ProfileScreen extends ConsumerWidget {
 
           // ── Clinician request status banner ───────────────────────────────
           profile.whenOrNull(
-            data: (patient) => _ClinicianRequestBanner(patient: patient, colorScheme: colorScheme),
-          ) ?? const SizedBox.shrink(),
+                data: (patient) => _ClinicianRequestBanner(
+                    patient: patient, colorScheme: colorScheme),
+              ) ??
+              const SizedBox.shrink(),
 
           const SizedBox(height: 16),
 
@@ -54,7 +60,8 @@ class ProfileScreen extends ConsumerWidget {
                   padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                   child: Align(
                     alignment: Alignment.centerLeft,
-                    child: Text('Account', style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: Text('Account',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
                 ListTile(
@@ -89,6 +96,12 @@ class ProfileScreen extends ConsumerWidget {
                   onTap: () => context.push('/progress'),
                 ),
                 ListTile(
+                  leading: const Icon(Icons.help_outline),
+                  title: const Text('User Guide'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push('/guide'),
+                ),
+                ListTile(
                   leading: const Icon(Icons.download),
                   title: const Text('Downloads'),
                   trailing: const Icon(Icons.chevron_right),
@@ -106,7 +119,8 @@ class ProfileScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Appearance', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Appearance',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   SegmentedButton<ThemeMode>(
                     segments: const [
@@ -152,7 +166,8 @@ class ProfileScreen extends ConsumerWidget {
                       padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
                       child: Align(
                         alignment: Alignment.centerLeft,
-                        child: Text('Personal Info', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text('Personal Info',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
                     if (patient.dateOfBirth != null)
@@ -179,7 +194,8 @@ class ProfileScreen extends ConsumerWidget {
                         title: const Text('Employment Status'),
                         subtitle: Text(patient.employmentStatus!),
                       ),
-                    if (patient.personalIssues != null && patient.personalIssues!.isNotEmpty)
+                    if (patient.personalIssues != null &&
+                        patient.personalIssues!.isNotEmpty)
                       ListTile(
                         leading: const Icon(Icons.favorite_border),
                         title: const Text('Personal Issues'),
@@ -238,7 +254,8 @@ class _ClinicianRequestBanner extends StatelessWidget {
   final Patient? patient;
   final ColorScheme colorScheme;
 
-  const _ClinicianRequestBanner({required this.patient, required this.colorScheme});
+  const _ClinicianRequestBanner(
+      {required this.patient, required this.colorScheme});
 
   @override
   Widget build(BuildContext context) {
@@ -260,7 +277,11 @@ class _ClinicianRequestBanner extends StatelessWidget {
           colorScheme.error,
           'Your clinician request was not approved. Please contact the clinic.',
         ),
-      _ => (Icons.info_outline, colorScheme.primary, 'Clinician status: $status'),
+      _ => (
+          Icons.info_outline,
+          colorScheme.primary,
+          'Clinician status: $status'
+        ),
     };
 
     return Padding(

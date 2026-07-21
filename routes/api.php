@@ -16,6 +16,7 @@ use App\Http\Controllers\Api\V1\PatientNoteController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\RealtimeConfigController;
 use App\Http\Controllers\Api\V1\SubmissionController;
+use App\Http\Controllers\Api\V1\UserGuideController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
@@ -59,6 +60,7 @@ Route::prefix('v1')->group(function () {
         Route::put('/auth/password', [PasswordController::class, 'update'])->middleware('throttle:password-change');
 
         Route::middleware('throttle:api')->group(function () {
+            Route::get('/guide', UserGuideController::class);
             Route::get('/notifications', [NotificationController::class, 'index']);
             Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
 

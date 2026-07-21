@@ -28,6 +28,7 @@ import 'screens/profile/profile_screen.dart';
 import 'screens/profile/edit_profile_screen.dart';
 import 'screens/profile/change_password_screen.dart';
 import 'screens/downloads/downloads_screen.dart';
+import 'screens/guide/user_guide_screen.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -57,12 +58,13 @@ final routerProvider = Provider<GoRouter>((ref) {
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     refreshListenable: refresh,
-    initialLocation:
-        ref.read(authProvider).status == AuthState.authenticated ? '/dashboard' : '/login',
+    initialLocation: ref.read(authProvider).status == AuthState.authenticated
+        ? '/dashboard'
+        : '/login',
     redirect: (context, state) {
       final authStatus = ref.read(authProvider).status;
-      final isAuthRoute =
-          state.matchedLocation == '/login' || state.matchedLocation == '/register';
+      final isAuthRoute = state.matchedLocation == '/login' ||
+          state.matchedLocation == '/register';
 
       if (authStatus == AuthState.authenticated && isAuthRoute) {
         return '/dashboard';
@@ -158,23 +160,20 @@ final routerProvider = Provider<GoRouter>((ref) {
                 path: '/messages/:id',
                 builder: (context, state) {
                   final id = int.parse(state.pathParameters['id']!);
-                  final title = state.extra is String ? state.extra as String : null;
+                  final title =
+                      state.extra is String ? state.extra as String : null;
                   return MessageThreadScreen(conversationId: id, title: title);
                 },
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/chatbot',
-                builder: (context, state) => const ChatbotScreen(),
               ),
             ],
           ),
         ],
       ),
       // Profile + secondary screens live on the root navigator: pushed over the
+      GoRoute(
+        path: '/chatbot',
+        builder: (context, state) => const ChatbotScreen(),
+      ),
       // shell as full-screen pages (no bottom nav, each has its own back
       // button). Profile is opened from the dashboard account header — the
       // Profile tab was removed from the bottom nav to reduce crowding.
@@ -212,6 +211,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           final id = int.parse(state.pathParameters['id']!);
           return AssessmentFillScreen(assessmentId: id);
         },
+      ),
+      GoRoute(
+        path: '/guide',
+        builder: (context, state) => const UserGuideScreen(),
       ),
       GoRoute(
         path: '/downloads',
