@@ -103,7 +103,9 @@ class PortalFeatureTest extends TestCase
         // Opening the inbox creates the conversation.
         $this->actingAs($patient['user'], 'web')
             ->get(route('portal.messages.index'))
-            ->assertStatus(200);
+            ->assertStatus(200)
+            ->assertSee('tc-conversation-sidebar', false)
+            ->assertSee('tc-message-composer', false);
 
         $conversation = Conversation::firstOrFail();
 
