@@ -62,6 +62,7 @@ class MessagingWebTest extends TestCase
             ->get(route('messages.show', $conversation))
             ->assertOk()
             ->assertSee('tc-message-composer', false)
+            ->assertSee('data-realtime-fragment="messages-sidebar"', false)
             ->assertSee($patient['user']->name);
 
         // Send a message.
@@ -77,6 +78,11 @@ class MessagingWebTest extends TestCase
             'Hello from your clinician',
             Message::where('conversation_id', $conversation->id)->first()->body
         );
+        $message = Message::where('conversation_id', $conversation->id)->firstOrFail();
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('messages.show', $conversation))
+            ->assertOk()
+            ->assertSee('data-message-id="'.$message->id.'"', false);
         // Patient was notified.
         $this->assertDatabaseHas('notifications', [
             'user_id' => $patient['user']->id,

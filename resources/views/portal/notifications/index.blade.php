@@ -8,6 +8,7 @@
 @endsection
 
 @section('content')
+<div data-realtime-fragment="notifications">
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="tc-page-title">Notifications</h1>
@@ -72,6 +73,7 @@
 </div>
 
 <div class="mt-3">{{ $notifications->links() }}</div>
+</div>
 
 @push('scripts')
 <script>

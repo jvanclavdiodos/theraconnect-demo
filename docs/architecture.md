@@ -127,7 +127,7 @@ Committed notification/message/appointment change
   -> existing page/provider API refresh
 ```
 
-Events contain only IDs, type/status/change, and timestamps. Message and notification bodies are not broadcast. `routes/channels.php` authorizes both browser sessions and Sanctum tokens; conversation access delegates to `ConversationPolicy`. Browser pages defer refresh while a form or modal is active. Reconnects trigger a state refresh so events missed while offline do not leave stale state.
+Events contain only IDs, type/status/change, and timestamps. Message and notification bodies are not broadcast. `routes/channels.php` authorizes both browser sessions and Sanctum tokens; conversation access delegates to `ConversationPolicy`. Browser message and notification pages refetch their existing server-rendered state and merge stable DOM fragments; message IDs prevent sender-side duplicates, and new rows scroll into view only when the reader was already near the bottom. Appointment pages defer refresh while a form or modal is active. Browser and Flutter reconnects trigger state refreshes so events missed while offline do not leave stale state.
 
 ## Web Navigation and Guards
 

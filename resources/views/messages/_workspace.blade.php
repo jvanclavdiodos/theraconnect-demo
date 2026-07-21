@@ -18,7 +18,7 @@
             </div>
             @if($caseload->isEmpty())<p class="text-muted small mt-2 mb-0">No patients are assigned to you yet.</p>@endif
         </form>
-        <nav class="tc-conversation-list">
+        <nav class="tc-conversation-list" data-realtime-fragment="messages-sidebar">
             @forelse($conversations as $thread)
                 @php
                     $patientName = $thread->patient?->user?->name ?? 'Patient';
@@ -58,7 +58,7 @@
             <div class="tc-message-thread" id="thread">
                 @forelse($activeConversation->messages->sortBy('created_at') as $message)
                     @php $mine = $message->sender_id === $me; @endphp
-                    <div class="tc-message-row {{ $mine ? 'outgoing' : 'incoming' }}"><div class="tc-message-bubble"><div class="tc-message-body">{{ $message->body }}</div><time class="tc-message-time" datetime="{{ $message->created_at->toIso8601String() }}">{{ $message->created_at->format('M j, g:i A') }}</time></div></div>
+                    <div class="tc-message-row {{ $mine ? 'outgoing' : 'incoming' }}" data-message-id="{{ $message->id }}"><div class="tc-message-bubble"><div class="tc-message-body">{{ $message->body }}</div><time class="tc-message-time" datetime="{{ $message->created_at->toIso8601String() }}">{{ $message->created_at->format('M j, g:i A') }}</time></div></div>
                 @empty
                     <div class="tc-chat-empty"><i class="bi bi-chat-square-text" aria-hidden="true"></i><span>No messages yet. Say hello below.</span></div>
                 @endforelse

@@ -22,7 +22,7 @@
             <span>Care team</span>
             <span class="badge text-bg-light">{{ $conversations->count() }}</span>
         </div>
-        <nav class="tc-conversation-list">
+        <nav class="tc-conversation-list" data-realtime-fragment="messages-sidebar">
             @forelse($conversations as $thread)
                 @php
                     $threadName = $thread->clinician?->user?->name ?? 'Clinician';
@@ -78,7 +78,7 @@
             <div class="tc-message-thread" id="thread">
                 @forelse($conversation->messages as $message)
                     @php $mine = $message->sender_id === auth()->id(); @endphp
-                    <div class="tc-message-row {{ $mine ? 'outgoing' : 'incoming' }}">
+                    <div class="tc-message-row {{ $mine ? 'outgoing' : 'incoming' }}" data-message-id="{{ $message->id }}">
                         <div class="tc-message-bubble">
                             <div class="tc-message-body">{{ $message->body }}</div>
                             <time class="tc-message-time" datetime="{{ $message->created_at->toIso8601String() }}">{{ $message->created_at->format('M j, g:i A') }}</time>

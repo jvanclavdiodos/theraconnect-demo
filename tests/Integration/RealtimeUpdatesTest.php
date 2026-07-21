@@ -9,6 +9,8 @@ use App\Models\Conversation;
 use App\Services\AppointmentService;
 use App\Services\MessageService;
 use App\Services\NotificationService;
+use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
+use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -17,6 +19,47 @@ use Tests\TestCase;
 
 class RealtimeUpdatesTest extends TestCase
 {
+    public function test_realtime_events_are_queued_and_after_commit(): void
+    {
+        Event::fake([
+            NotificationCreated::class,
+            MessageCreated::class,
+            AppointmentUpdated::class,
+        ]);
+
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('realtime-contracts@test.com');
+        $conversation = Conversation::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+        ]);
+        $message = $conversation->messages()->create([
+            'sender_id' => $patient['user']->id,
+            'body' => 'Hello',
+        ]);
+        $notification = $patient['user']->notifications()->create([
+            'type' => 'message_received',
+            'title' => 'New message',
+            'body' => 'You have a new message.',
+            'channel' => 'fcm',
+        ]);
+        $appointment = app(AppointmentService::class)->create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => now()->addDay(),
+            'mode' => 'online',
+        ]);
+
+        foreach ([
+            new MessageCreated($message),
+            new NotificationCreated($notification),
+            new AppointmentUpdated($appointment, 'created'),
+        ] as $event) {
+            $this->assertInstanceOf(ShouldBroadcast::class, $event);
+            $this->assertInstanceOf(ShouldDispatchAfterCommit::class, $event);
+        }
+    }
+
     public function test_notification_message_and_appointment_changes_dispatch_realtime_events(): void
     {
         Event::fake([
@@ -159,6 +202,22 @@ class RealtimeUpdatesTest extends TestCase
             ->assertJsonMissingPath('data.secret');
 
         $this->assertSame('realtime.test', $response->json('data.host'));
+    }
+
+    public function test_notification_pages_expose_a_realtime_merge_target(): void
+    {
+        $patient = $this->createPatient('realtime-notification-view@test.com');
+        $clinician = $this->createClinician();
+
+        $this->actingAs($patient['user'], 'web')
+            ->get(route('portal.notifications.index'))
+            ->assertOk()
+            ->assertSee('data-realtime-fragment="notifications"', false);
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('notifications.index'))
+            ->assertOk()
+            ->assertSee('data-realtime-fragment="notifications"', false);
     }
 
     public function test_only_admin_can_authorize_the_admin_appointment_channel(): void

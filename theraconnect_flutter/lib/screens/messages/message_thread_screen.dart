@@ -27,6 +27,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   bool _refreshQueued = false;
   bool _sending = false;
   final _controller = TextEditingController();
+  final _scrollController = ScrollController();
   late final RealtimeService _realtime;
   StreamSubscription<RealtimeEvent>? _realtimeSubscription;
 
@@ -37,8 +38,9 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     unawaited(_realtime.subscribeConversation(widget.conversationId));
     _realtimeSubscription = _realtime.events
         .where((event) =>
-            event.name == 'message.created' &&
-            event.data['conversation_id'] == widget.conversationId)
+            event.name == 'connected' ||
+            (event.name == 'message.created' &&
+                event.data['conversation_id'] == widget.conversationId))
         .listen((_) => _load());
     _load();
   }
@@ -48,6 +50,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
     _realtimeSubscription?.cancel();
     unawaited(_realtime.unsubscribeConversation(widget.conversationId));
     _controller.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -56,6 +59,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       _refreshQueued = true;
       return;
     }
+    final shouldScrollToBottom = _isAtBottom;
     _refreshing = true;
     try {
       final messages =
@@ -65,6 +69,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         _messages = messages;
         _loading = false;
       });
+      if (shouldScrollToBottom) _scrollToBottom();
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
@@ -83,6 +88,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   Future<void> _send() async {
     final body = _controller.text.trim();
     if (body.isEmpty || _sending) return;
+    final shouldScrollToBottom = _isAtBottom;
     setState(() => _sending = true);
     try {
       final message = await ref
@@ -96,6 +102,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         _controller.clear();
         _sending = false;
       });
+      if (shouldScrollToBottom) _scrollToBottom();
       ref.invalidate(conversationsProvider);
     } catch (e) {
       if (!mounted) return;
@@ -104,6 +111,21 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         SnackBar(content: Text(ApiError.fromException(e).userMessage)),
       );
     }
+  }
+
+  bool get _isAtBottom {
+    if (!_scrollController.hasClients) return true;
+
+    return _scrollController.position.maxScrollExtent -
+            _scrollController.position.pixels <=
+        80;
+  }
+
+  void _scrollToBottom() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      _scrollController.jumpTo(_scrollController.position.maxScrollExtent);
+    });
   }
 
   @override
@@ -120,6 +142,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                     : RefreshIndicator(
                         onRefresh: _load,
                         child: ListView.builder(
+                          controller: _scrollController,
                           padding: const EdgeInsets.all(12),
                           itemCount: _messages.length,
                           itemBuilder: (context, i) =>
