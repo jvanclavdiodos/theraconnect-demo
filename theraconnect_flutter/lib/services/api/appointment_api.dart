@@ -43,7 +43,7 @@ class AppointmentApi {
   }
 
   /// Y-m-d dates the clinician has at least one open slot in [from, to].
-  Future<Map<String, String>> getAvailability({
+  Future<List<String>> getAvailability({
     required int clinicianId,
     required String from,
     required String to,
@@ -57,8 +57,8 @@ class AppointmentApi {
           'to': to,
         },
       );
-      final data = response.data['availability'] as Map<String, dynamic>;
-      return data.map((date, status) => MapEntry(date, status as String));
+      final data = response.data['data'] as List<dynamic>;
+      return data.map((e) => e as String).toList();
     } on DioException catch (e) {
       throw handleDioError(e);
     }

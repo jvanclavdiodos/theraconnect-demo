@@ -7,7 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Appointment;
 use App\Models\Clinician;
 use App\Services\AppointmentService;
-use App\Services\AvailabilityService;
 use App\Services\NotificationService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
@@ -21,7 +20,6 @@ class PortalAppointmentController extends Controller
     public function __construct(
         private AppointmentService $appointments,
         private NotificationService $notifications,
-        private AvailabilityService $availability,
     ) {}
 
     public function index(Request $request): View
@@ -101,11 +99,8 @@ class PortalAppointmentController extends Controller
         }
 
         $date = $validated['date'] ?? null;
-        $dateStatuses = $selectedClinician
-            ? $this->availability->dateStatuses($selectedClinician->id, now()->startOfDay(), now()->addDays(62)->endOfDay())
-            : [];
 
-        return view('portal.appointments.book', compact('clinicians', 'selectedClinician', 'slots', 'date', 'dateStatuses'));
+        return view('portal.appointments.book', compact('clinicians', 'selectedClinician', 'slots', 'date'));
     }
 
     public function store(Request $request): RedirectResponse

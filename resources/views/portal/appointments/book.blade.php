@@ -39,54 +39,14 @@
             <div class="card-header"><strong>2. Date</strong></div>
             <div class="card-body">
                 @if($selectedClinician)
-                    @php
-                        $calendarStart = now()->startOfDay();
-                        $calendarEnd = now()->addDays(62)->endOfDay();
-                        $months = collect();
-                        for ($month = $calendarStart->copy()->startOfMonth(); $month->lte($calendarEnd); $month->addMonth()) {
-                            $months->push($month->copy());
-                        }
-                    @endphp
-                    <div class="tc-booking-calendars">
-                        @foreach($months as $month)
-                            <section aria-label="{{ $month->format('F Y') }}">
-                                <h2 class="h6 text-center mb-2">{{ $month->format('F Y') }}</h2>
-                                <div class="tc-booking-calendar" role="grid">
-                                    @foreach(['S','M','T','W','T','F','S'] as $weekday)
-                                        <span class="tc-booking-weekday" role="columnheader">{{ $weekday }}</span>
-                                    @endforeach
-                                    @for($blank = 0; $blank < $month->dayOfWeek; $blank++)
-                                        <span aria-hidden="true"></span>
-                                    @endfor
-                                    @for($day = 1; $day <= $month->daysInMonth; $day++)
-                                        @php
-                                            $calendarDate = $month->copy()->day($day);
-                                            $key = $calendarDate->format('Y-m-d');
-                                            $status = $dateStatuses[$key] ?? 'off';
-                                            $inRange = $calendarDate->betweenIncluded($calendarStart, $calendarEnd);
-                                            $isOpen = $inRange && $status === 'open';
-                                            $isSelected = $date === $key;
-                                        @endphp
-                                        @if($isOpen)
-                                            <a href="{{ route('portal.appointments.book', ['clinician_id' => $selectedClinician->id, 'date' => $key]) }}"
-                                               class="tc-booking-day {{ $isSelected ? 'active' : '' }}"
-                                               aria-label="{{ $calendarDate->format('F j, Y') }}{{ $isSelected ? ', selected' : ', available' }}"
-                                               aria-current="{{ $isSelected ? 'date' : 'false' }}">{{ $day }}</a>
-                                        @else
-                                            <span class="tc-booking-day unavailable" role="gridcell" tabindex="0"
-                                                  data-bs-toggle="tooltip" data-bs-title="Clinician is not available that day."
-                                                  aria-disabled="true"
-                                                  aria-label="{{ $calendarDate->format('F j, Y') }}. Clinician is not available that day.">{{ $day }}</span>
-                                        @endif
-                                    @endfor
-                                </div>
-                            </section>
-                        @endforeach
-                    </div>
-                    <div class="d-flex gap-3 small mt-3" aria-label="Calendar legend">
-                        <span><i class="bi bi-square-fill text-primary me-1"></i>Available</span>
-                        <span><i class="bi bi-square-fill text-danger me-1"></i>Unavailable</span>
-                    </div>
+                    <form method="GET" action="{{ route('portal.appointments.book') }}">
+                        <input type="hidden" name="clinician_id" value="{{ $selectedClinician->id }}">
+                        <label for="date" class="form-label">Pick a date</label>
+                        <input type="date" id="date" name="date" class="form-control"
+                               min="{{ now()->format('Y-m-d') }}" value="{{ $date }}"
+                               onchange="this.form.submit()">
+                        <noscript><button class="btn btn-primary mt-2 w-100">Show times</button></noscript>
+                    </form>
                 @else
                     <p class="text-muted mb-0">Select a clinician first.</p>
                 @endif
