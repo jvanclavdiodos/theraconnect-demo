@@ -29,7 +29,8 @@ RUN docker-php-ext-install \
     mbstring \
     zip \
     gd \
-    intl
+    intl \
+    pcntl
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
