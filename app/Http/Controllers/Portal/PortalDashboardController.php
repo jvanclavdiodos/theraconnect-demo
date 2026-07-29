@@ -17,10 +17,15 @@ class PortalDashboardController extends Controller
         $patient = $request->user()->patient;
         abort_unless($patient !== null, 404, 'Patient profile not found.');
 
-        $upcoming = Appointment::where('patient_id', $patient->id)
-            ->whereIn('status', ['pending', 'approved', 'rescheduled'])
+        $upcomingQuery = Appointment::where('patient_id', $patient->id)
+            ->upcoming();
+
+        $upcomingAppointmentsCount = (clone $upcomingQuery)->count();
+
+        $upcoming = $upcomingQuery
             ->with('clinician.user')
-            ->orderBy('requested_at')
+            ->orderByRaw('COALESCE(scheduled_at, requested_at) ASC')
+            ->orderBy('id')
             ->take(5)
             ->get();
 
@@ -37,7 +42,12 @@ class PortalDashboardController extends Controller
             ->count();
 
         return view('portal.dashboard', compact(
-            'patient', 'upcoming', 'pendingAssignments', 'pendingAssessments', 'unreadNotifications'
+            'patient',
+            'upcoming',
+            'upcomingAppointmentsCount',
+            'pendingAssignments',
+            'pendingAssessments',
+            'unreadNotifications'
         ));
     }
 }

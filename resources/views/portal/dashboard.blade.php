@@ -41,7 +41,7 @@
         <a href="{{ route('portal.appointments.index') }}" class="text-decoration-none">
             <div class="tc-kpi">
                 <div class="tc-kpi-head"><span class="tc-kpi-icon teal"><i class="bi bi-calendar-check"></i></span></div>
-                <div class="tc-kpi-value">{{ $upcoming->count() }}</div>
+                <div class="tc-kpi-value">{{ $upcomingAppointmentsCount }}</div>
                 <div class="tc-kpi-label">Upcoming appointments</div>
             </div>
         </a>
@@ -92,8 +92,8 @@
                     <tr style="position: relative; cursor: pointer;">
                         <td>
                             <a href="{{ route('portal.appointments.show', $appt) }}" class="stretched-link text-decoration-none text-reset"
-                               aria-label="View appointment for {{ $appt->clinician?->user?->name ?? 'your clinician' }} on {{ ($appt->scheduled_at ?? $appt->requested_at)->format('M j, g:i A') }}">
-                                {{ ($appt->scheduled_at ?? $appt->requested_at)->format('D, M j · g:i A') }}
+                               aria-label="View appointment for {{ $appt->clinician?->user?->name ?? 'your clinician' }} on {{ $appt->appointmentAt()->format('M j, g:i A') }}">
+                                {{ $appt->appointmentAt()->format('D, M j · g:i A') }}
                             </a>
                         </td>
                         <td>{{ $appt->clinician?->user?->name ?? '—' }}</td>

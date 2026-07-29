@@ -92,7 +92,7 @@
                         @endif
                         <div class="flex-grow-1 min-w-0">
                             <div class="tc-row-title text-truncate">{{ $appt->patient->user->name }}</div>
-                            <div class="tc-row-sub">{{ $appt->requested_at->format('M d, h:i A') }}</div>
+                            <div class="tc-row-sub">{{ $appt->appointmentAt()->format('M d, h:i A') }}</div>
                         </div>
                         <div class="d-flex align-items-center gap-2">
                             <span class="tc-mode {{ $appt->mode === 'online' ? 'online' : 'in-person' }}">

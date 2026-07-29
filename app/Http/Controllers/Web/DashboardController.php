@@ -10,8 +10,6 @@ use Illuminate\View\View;
 
 class DashboardController extends Controller
 {
-    private const UPCOMING_STATUSES = ['pending', 'approved', 'rescheduled'];
-
     public function index(): View
     {
         $user = auth()->user();
@@ -35,14 +33,7 @@ class DashboardController extends Controller
         $upcomingAppointments = $appointments()
             ->whereNotNull('patient_id')
             ->whereHas('patient')
-            ->whereIn('status', self::UPCOMING_STATUSES)
-            ->where(function ($query) {
-                $query->where('scheduled_at', '>=', now())
-                    ->orWhere(function ($pending) {
-                        $pending->whereNull('scheduled_at')
-                            ->where('requested_at', '>=', now());
-                    });
-            })
+            ->upcoming()
             ->with('patient.user')
             ->orderByRaw('COALESCE(scheduled_at, requested_at) ASC')
             ->take(5)

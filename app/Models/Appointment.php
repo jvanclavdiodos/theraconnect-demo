@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -10,6 +12,8 @@ use Illuminate\Support\Carbon;
 class Appointment extends Model
 {
     use SoftDeletes;
+
+    public const UPCOMING_STATUSES = ['pending', 'approved', 'rescheduled'];
 
     /** Online meeting links stop working this many hours after the appointment. */
     public const MEETING_LINK_TTL_HOURS = 5;
@@ -44,6 +48,26 @@ class Appointment extends Model
     public function clinician(): BelongsTo
     {
         return $this->belongsTo(Clinician::class);
+    }
+
+    public function scopeUpcoming(Builder $query, ?CarbonInterface $asOf = null): Builder
+    {
+        $cutoff = $asOf ?? now();
+
+        return $query
+            ->whereIn('status', self::UPCOMING_STATUSES)
+            ->where(function (Builder $timeQuery) use ($cutoff) {
+                $timeQuery->where('scheduled_at', '>=', $cutoff)
+                    ->orWhere(function (Builder $requestedQuery) use ($cutoff) {
+                        $requestedQuery->whereNull('scheduled_at')
+                            ->where('requested_at', '>=', $cutoff);
+                    });
+            });
+    }
+
+    public function appointmentAt(): CarbonInterface
+    {
+        return $this->scheduled_at ?? $this->requested_at;
     }
 
     /** When the online meeting link stops being offered (scheduled_at + TTL). */

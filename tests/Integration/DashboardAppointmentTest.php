@@ -3,6 +3,7 @@
 namespace Tests\Integration;
 
 use App\Models\Appointment;
+use Carbon\Carbon;
 use Tests\TestCase;
 
 class DashboardAppointmentTest extends TestCase
@@ -75,5 +76,83 @@ class DashboardAppointmentTest extends TestCase
             ->assertOk()
             ->assertSeeInOrder(['Rescheduled Future', 'Later Appointment'])
             ->assertDontSee('Moved Into Past');
+    }
+
+    public function test_clinician_dashboard_displays_effective_future_time_for_rescheduled_appointment(): void
+    {
+        $now = Carbon::parse('2030-07-30 12:00:00');
+        $this->travelTo($now);
+        $clinician = $this->createClinician();
+
+        $this->appointment($clinician, 'dashboard-effective@test.com', 'Effective Future', [
+            'requested_at' => $now->copy()->subDays(2),
+            'scheduled_at' => $now->copy()->addDay()->setTime(15, 30),
+            'status' => 'rescheduled',
+        ]);
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('dashboard'))
+            ->assertOk()
+            ->assertSee('Effective Future')
+            ->assertSee('Jul 31, 03:30 PM')
+            ->assertDontSee('Jul 28, 12:00 PM');
+    }
+
+    public function test_patient_dashboard_counts_all_future_appointments_and_excludes_elapsed_entries(): void
+    {
+        $now = Carbon::parse('2030-07-30 12:00:00');
+        $this->travelTo($now);
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('dashboard-patient@test.com');
+
+        foreach (range(1, 6) as $offset) {
+            Appointment::create([
+                'patient_id' => $patient['patient']->id,
+                'clinician_id' => $clinician['clinician']->id,
+                'requested_at' => $now->copy()->subDay(),
+                'scheduled_at' => $now->copy()->addHours($offset),
+                'mode' => 'in_person',
+                'status' => 'approved',
+            ]);
+        }
+
+        Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => $now->copy()->addDay(),
+            'scheduled_at' => $now->copy()->subMinute(),
+            'mode' => 'in_person',
+            'status' => 'approved',
+        ]);
+        Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => $now->copy()->addDay(),
+            'scheduled_at' => null,
+            'mode' => 'online',
+            'status' => 'cancelled',
+        ]);
+
+        $otherPatient = $this->createPatient('dashboard-other-patient@test.com');
+        Appointment::create([
+            'patient_id' => $otherPatient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => $now->copy()->addHour(),
+            'scheduled_at' => null,
+            'mode' => 'online',
+            'status' => 'pending',
+        ]);
+
+        $this->actingAs($patient['user'], 'web')
+            ->get(route('portal.dashboard'))
+            ->assertOk()
+            ->assertViewHas('upcomingAppointmentsCount', 6)
+            ->assertViewHas('upcoming', function ($appointments) use ($now, $patient): bool {
+                return $appointments->count() === 5
+                    && $appointments->every(
+                        fn (Appointment $appointment) => $appointment->patient_id === $patient['patient']->id
+                            && $appointment->appointmentAt()->greaterThanOrEqualTo($now)
+                    );
+            });
     }
 }
