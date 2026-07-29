@@ -16,7 +16,8 @@ class PortalNotificationController extends Controller
         $notifications = Notification::where('user_id', $request->user()->id)
             ->general()
             ->latest()
-            ->paginate(20);
+            ->orderByDesc('id')
+            ->paginate(Notification::PER_PAGE);
 
         return view('portal.notifications.index', compact('notifications'));
     }

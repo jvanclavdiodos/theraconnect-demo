@@ -8,6 +8,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Notification extends Model
 {
+    public const PER_PAGE = 10;
+
     public const MESSAGE_RECEIVED = 'message_received';
 
     protected $fillable = [

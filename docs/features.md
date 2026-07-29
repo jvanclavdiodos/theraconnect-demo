@@ -46,7 +46,7 @@ Shared staff and portal pages use the visual tokens and component classes in `pu
 | Push notifications | mobile FCM lifecycle | `FcmService`, `SendPushNotification`, Flutter `FcmService` | device_tokens, Firebase | Missing FCM configuration should no-op without breaking business workflows. Token register/delete endpoints are patient-only. |
 | Transactional email | queued job/mailable | `SendEmailNotification`, `NotificationEmail` | notifications/email tracking; mail config | Allow-list specific appointment/request/assessment/assignment types. Do not add message body email casually. |
 | Reminders | scheduler/queue | `GenerateAppointmentReminders`, `GenerateAssignmentReminders` | appointments/assignments/notifications | Appointment reminders run the morning and night before; assignment reminders run hourly. Requires scheduler and queue worker. Keep phase/time-based idempotency or repeated schedule runs can duplicate notices. |
-| Clinic chatbot | portal/mobile chatbot screens; admin content CRUD | `ChatbotService`, `ChatbotIntent/Response`, API/portal controllers | chatbot tables; Gemini optional | Gemini sees typed message plus generic KB prompt, no derived PHI. Fallback is Jaccard matching. Crisis handling wording is high risk. |
+| Clinic chatbot | portal/mobile chatbot screens; admin content CRUD | `ChatbotService`, `ChatbotIntent/Response`, API/portal controllers | chatbot tables; Gemini optional | Explicit crisis language is handled locally; strong FAQ/wellbeing matches return approved text; other requests receive only top retrieved evidence. Generated factual answers must cite a retrieved intent, and generated wellbeing suggestions stay within a low-risk toolbox and point back to a clinician. |
 
 ## Administration, Audit, and Operations
 

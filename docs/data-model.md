@@ -73,6 +73,7 @@ The migration names are a concise schema/change ledger:
 - `2026_06_09` to `2026_06_18`: assignment attachments/original name, device-token uniqueness.
 - `2026_06_19` to `2026_06_28`: clinician assignment/request fields, availability, conversation/messages, notes, profile/avatar, no-show, assessments, mood/goals/activity log, appointment cancelled notification type.
 - `2026_07_06`: email delivery tracking fields on notifications.
+- `2026_07_30`: additive Joy response-bank intents for navigation limits, common wellbeing support, grounding, sleep, and clinician contact; existing administrator-edited intents are not overwritten.
 - `2026_07_12`: terms acceptance timestamp/version on users.
 - `2026_07_13`: many-to-many clinician/patient caseload pivot and historical relationship backfill.
 

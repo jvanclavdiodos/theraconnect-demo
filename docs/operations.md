@@ -17,7 +17,7 @@ Use `.env.example` and `.env.railway.example` as key inventories only. Do not co
 | CORS/Sanctum | `CORS_ALLOWED_ORIGINS`, `SANCTUM_STATEFUL_DOMAINS`, `SANCTUM_TOKEN_PREFIX` | `config/cors.php`, `config/sanctum.php` |
 | FCM | `FCM_PROJECT_ID`, `FCM_CREDENTIALS`, `FCM_CREDENTIALS_B64` | `config/services.php`, `FcmService`, entrypoint |
 | Jitsi | `JITSI_BASE_URL`, `JITSI_ROOM_PREFIX` | `config/services.php`, `JitsiService` |
-| Gemini | `GEMINI_API_KEY`, `GEMINI_CHATBOT_MODEL` | `config/services.php`, `ChatbotService` |
+| Gemini | `GEMINI_API_KEY`, `GEMINI_CHATBOT_MODEL` | `config/services.php`, `ChatbotService`; model changes require only an environment update and web-service redeploy |
 | Demo seed | `SEED_DEMO`, `DEMO_PASSWORD` | `docker/entrypoint.sh`, seeders |
 
 ## Deployment Shape
@@ -57,7 +57,7 @@ One Reverb replica with scaling disabled is the efficient starting topology for 
 | Laravel Reverb | private browser/mobile notification, message, and appointment invalidation | Broadcast enqueue/send failures are logged without rolling back domain work; reconnect causes clients to refetch current state. |
 | AWS S3-compatible storage | Laravel filesystem disk for sensitive uploads | Local private disk is fallback. Production needs a private persistent bucket; container storage is ephemeral. |
 | Jitsi | `JitsiService` meeting links in appointments | Generates unguessable room URL; no observed server-side Jitsi authentication/token integration. |
-| Google Gemini API | `ChatbotService` | Optional; 5s connect / 15s total timeout; logs warning and uses database/Jaccard fallback. |
+| Google Gemini API | `ChatbotService` | Optional; high-confidence approved answers stay local, lower-confidence requests receive only retrieved knowledge, and failures use the approved local fallback. Explicit crisis language never reaches Gemini. |
 | Cropper.js / Flutter `image_cropper` | patient web and mobile profile-photo adjustment | Web falls back to the normal validated upload if the pinned CDN script is unavailable; mobile cancellation leaves the current avatar unchanged. |
 | MySQL | all durable backend data, queued jobs/cache/sessions when configured | `/api/v1/health` reports 503 if a simple DB query fails. |
 
@@ -83,6 +83,16 @@ One Reverb replica with scaling disabled is the efficient starting topology for 
 | after transaction commit | queued `BroadcastEvent` | sends notification/message/appointment invalidation through Reverb |
 
 Queue workers must be running for asynchronous delivery. With `sync`, jobs execute during request processing; with `database` and no worker, business data persists but jobs remain queued.
+
+## Joy AI Operations
+
+- `GEMINI_CHATBOT_MODEL` defaults to the stable `gemini-3.5-flash-lite`. Set it on the Railway web service and redeploy to change models; Joy is request-driven and does not require this variable on the worker, scheduler, or Reverb services.
+- Keep `GEMINI_API_KEY` only in Railway variables. Never expose it to Blade, JavaScript, Flutter, logs, screenshots, or committed environment files.
+- The service handles exact, high-confidence FAQ matches locally. Gemini receives the patient's message plus at most three relevant approved knowledge entries, not the full database or patient record.
+- Google Gemini free-tier terms may permit submitted content to be used to improve provider products. Complete a privacy and data-processing review before sending production patient text; prefer an appropriately configured paid account when its terms prohibit such use.
+- Provider failures, invalid output, missing evidence, and timeouts return an approved local answer or fallback. Logs contain exception class/status only and must not contain the patient's message.
+- Crisis detection and response are deterministic and run before the provider request. Clinic leadership must periodically review the crisis wording and Philippine contact information; it is safety content, not model-generated content.
+- Synthetic evaluation prompts should cover approved FAQs, paraphrases, spelling errors, unsupported facts, prompt injection, general support, and English/Filipino crisis language before changing the model or retrieval thresholds.
 
 ## Testing Strategy
 
