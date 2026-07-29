@@ -41,7 +41,7 @@
                 </a>
                 @php
                     $notifUnread = \App\Models\Notification::where('user_id', auth()->id())
-                        ->whereNull('read_at')->count();
+                        ->unreadGeneral()->count();
                 @endphp
                 <a href="{{ route('notifications.index') }}" class="tc-nav-item {{ $isActive('notifications.index') }}">
                     <i class="bi bi-bell"></i> <span>Notifications</span>

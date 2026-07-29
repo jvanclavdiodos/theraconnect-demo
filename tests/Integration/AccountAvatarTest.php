@@ -8,6 +8,32 @@ use Tests\TestCase;
 
 class AccountAvatarTest extends TestCase
 {
+    private function validAvatar(string $name = 'avatar.png'): UploadedFile
+    {
+        $png = base64_decode(
+            'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=',
+            true
+        );
+
+        return UploadedFile::fake()->createWithContent($name, $png);
+    }
+
+    public function test_clinician_account_exposes_crop_controls_and_size_guidance(): void
+    {
+        $clinician = $this->createClinician();
+
+        $this->actingAs($clinician['user'], 'web')
+            ->get(route('account.edit'))
+            ->assertOk()
+            ->assertSee('Adjust profile photo')
+            ->assertSee('data-avatar-crop-form', false)
+            ->assertSee('data-avatar-zoom', false)
+            ->assertSee('data-avatar-rotate', false)
+            ->assertSee('2 MB or smaller')
+            ->assertSee('cropperjs/1.6.2/cropper.min.js', false)
+            ->assertSee('js/avatar-cropper.js', false);
+    }
+
     public function test_clinician_uploads_and_serves_avatar(): void
     {
         Storage::fake('local');
@@ -15,7 +41,7 @@ class AccountAvatarTest extends TestCase
 
         $this->actingAs($clinician['user'], 'web')
             ->post('/account/avatar', [
-                'avatar' => UploadedFile::fake()->image('me.jpg', 800, 800),
+                'avatar' => $this->validAvatar('me.png'),
             ])
             ->assertRedirect();
 

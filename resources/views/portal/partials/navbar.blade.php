@@ -1,6 +1,6 @@
 @php
     $unreadNotifications = auth()->check()
-        ? \App\Models\Notification::where('user_id', auth()->id())->whereNull('read_at')->count()
+        ? \App\Models\Notification::where('user_id', auth()->id())->unreadGeneral()->count()
         : 0;
 @endphp
 <nav class="navbar navbar-expand-lg navbar-light">

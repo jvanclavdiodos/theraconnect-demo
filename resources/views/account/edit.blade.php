@@ -28,16 +28,22 @@
             </div>
         </div>
 
-        <form action="{{ route('account.avatar.update') }}" method="POST" enctype="multipart/form-data">
+        <form id="avatar-upload-form" action="{{ route('account.avatar.update') }}" method="POST"
+              enctype="multipart/form-data" data-avatar-crop-form>
             @csrf
             <div class="mb-2">
-                <input type="file" name="avatar" accept="image/png,image/jpeg,image/webp"
-                       data-validate-file data-max-bytes="2097152" data-allowed-extensions="jpg,jpeg,png,webp"
+                <label for="avatar-input" class="form-label visually-hidden">Choose profile photo</label>
+                <input id="avatar-input" type="file" name="avatar" accept="image/png,image/jpeg,image/webp"
+                       data-avatar-input data-max-source-bytes="10485760"
                        class="form-control @error('avatar') is-invalid @enderror" required>
-                @error('avatar') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                <div class="form-text">JPG, PNG, or WEBP, up to 2&nbsp;MB. Square, max 1024×1024 pixels.</div>
+                <div class="invalid-feedback d-block" data-avatar-error @unless($errors->has('avatar')) hidden @endunless>
+                    @error('avatar'){{ $message }}@enderror
+                </div>
+                <div class="form-text">JPG, PNG, or WebP. The adjusted photo must be 2 MB or smaller.</div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Upload picture</button>
+            <button type="submit" class="btn btn-primary btn-sm" data-avatar-submit>
+                <i class="bi bi-camera me-1"></i> Adjust and upload
+            </button>
             @if ($user->hasAvatar())
                 <button type="submit" form="remove-avatar" class="btn btn-outline-danger btn-sm">Remove</button>
             @endif
@@ -50,9 +56,7 @@
     </div>
 </div>
 
-@push('scripts')
-    <script src="{{ asset('js/file-upload.js') }}" defer></script>
-@endpush
+@include('partials.avatar-cropper')
 
 <div class="card shadow-sm mt-3" style="max-width: 540px;" x-data="passwordField({ requireConfirm: true })">
     <div class="card-header bg-white"><strong>Change password</strong></div>

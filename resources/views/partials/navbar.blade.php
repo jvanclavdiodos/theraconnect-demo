@@ -13,7 +13,7 @@
         @auth
             @php
                 $navUnread = \App\Models\Notification::where('user_id', auth()->id())
-                    ->whereNull('read_at')->count();
+                    ->unreadGeneral()->count();
             @endphp
             <button type="button" class="btn btn-outline-secondary btn-sm"
                     @click="$store.theme.toggle()"

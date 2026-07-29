@@ -88,7 +88,7 @@ Patient or clinician thread UI
   -> messages row + unread markers + recipient in-app/push notification
 ```
 
-`message_received` is intentionally push/in-app only; it is excluded from transactional email to avoid sending sensitive snippets by email.
+`message_received` is intentionally push/in-app only; it is excluded from transactional email to avoid sending sensitive snippets by email. Message notifications are also excluded from the general notification inbox/count and surface through conversation unread state beside Messages instead.
 
 ### Assessments, mood, and goals
 

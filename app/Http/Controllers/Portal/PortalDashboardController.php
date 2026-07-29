@@ -33,7 +33,7 @@ class PortalDashboardController extends Controller
             ->get();
 
         $unreadNotifications = Notification::where('user_id', $request->user()->id)
-            ->whereNull('read_at')
+            ->unreadGeneral()
             ->count();
 
         return view('portal.dashboard', compact(

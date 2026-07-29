@@ -2,11 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Notification extends Model
 {
+    public const MESSAGE_RECEIVED = 'message_received';
+
     protected $fillable = [
         'user_id',
         'type',
@@ -35,5 +38,16 @@ class Notification extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    /** Notifications shown in the general inbox; messages have their own unread UI. */
+    public function scopeGeneral(Builder $query): Builder
+    {
+        return $query->where('type', '!=', self::MESSAGE_RECEIVED);
+    }
+
+    public function scopeUnreadGeneral(Builder $query): Builder
+    {
+        return $query->general()->whereNull('read_at');
     }
 }

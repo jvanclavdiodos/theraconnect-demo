@@ -11,7 +11,6 @@
 @php
     $icon = fn($type) => match(true) {
         str_starts_with($type, 'appointment') => 'bi-calendar-check',
-        $type === 'message_received' => 'bi-chat-dots',
         str_starts_with($type, 'assignment') => 'bi-clipboard-check',
         str_starts_with($type, 'assessment') => 'bi-card-checklist',
         default => 'bi-bell',
@@ -22,7 +21,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="tc-page-title">Notifications</h1>
-        <p class="tc-page-sub mb-0">New bookings, messages, and schedule changes.</p>
+        <p class="tc-page-sub mb-0">Appointments, assignments, assessments, and account updates.</p>
     </div>
     @if($notifications->whereNull('read_at')->count())
         <form method="POST" action="{{ route('notifications.readAll') }}">

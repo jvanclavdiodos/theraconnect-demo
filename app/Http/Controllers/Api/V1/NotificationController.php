@@ -12,6 +12,7 @@ class NotificationController extends Controller
     public function index(): JsonResponse
     {
         $notifications = Notification::where('user_id', auth()->id())
+            ->general()
             ->latest()
             ->paginate(20);
 
@@ -28,6 +29,7 @@ class NotificationController extends Controller
     public function markRead(int $id): JsonResponse
     {
         $notification = Notification::where('user_id', auth()->id())
+            ->general()
             ->findOrFail($id);
 
         $notification->update(['read_at' => now()]);

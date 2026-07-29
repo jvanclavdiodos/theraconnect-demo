@@ -12,7 +12,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h1 class="tc-page-title">Notifications</h1>
-        <p class="tc-page-sub mb-0">Updates about your appointments, assignments, and messages.</p>
+        <p class="tc-page-sub mb-0">Updates about your appointments, assignments, assessments, and account.</p>
     </div>
     @if($notifications->where('read_at', null)->count())
         <form method="POST" action="{{ route('portal.notifications.readAll') }}"

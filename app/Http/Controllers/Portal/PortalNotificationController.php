@@ -14,6 +14,7 @@ class PortalNotificationController extends Controller
     public function index(Request $request): View
     {
         $notifications = Notification::where('user_id', $request->user()->id)
+            ->general()
             ->latest()
             ->paginate(20);
 
@@ -23,6 +24,7 @@ class PortalNotificationController extends Controller
     public function markRead(Request $request, int $id): JsonResponse|RedirectResponse
     {
         Notification::where('user_id', $request->user()->id)
+            ->general()
             ->findOrFail($id)
             ->update(['read_at' => now()]);
 
@@ -38,7 +40,7 @@ class PortalNotificationController extends Controller
     public function markAllRead(Request $request): JsonResponse|RedirectResponse
     {
         Notification::where('user_id', $request->user()->id)
-            ->whereNull('read_at')
+            ->unreadGeneral()
             ->update(['read_at' => now()]);
 
         if ($request->expectsJson()) {

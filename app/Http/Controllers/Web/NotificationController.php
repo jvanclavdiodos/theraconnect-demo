@@ -18,6 +18,7 @@ class NotificationController extends Controller
     public function index(Request $request): View
     {
         $notifications = Notification::where('user_id', $request->user()->id)
+            ->general()
             ->latest()
             ->paginate(20);
 
@@ -27,6 +28,7 @@ class NotificationController extends Controller
     public function markRead(Request $request, int $id): RedirectResponse
     {
         Notification::where('user_id', $request->user()->id)
+            ->general()
             ->findOrFail($id)
             ->update(['read_at' => now()]);
 
@@ -36,7 +38,7 @@ class NotificationController extends Controller
     public function markAllRead(Request $request): RedirectResponse
     {
         Notification::where('user_id', $request->user()->id)
-            ->whereNull('read_at')
+            ->unreadGeneral()
             ->update(['read_at' => now()]);
 
         return back()->with('status', 'All notifications marked as read.');

@@ -147,11 +147,13 @@ if (config?.enabled && config.userId && window.Echo) {
 
     window.Echo.private(`users.${config.userId}`)
         .listen('.notification.created', (event) => {
-            incrementCounters('[data-realtime-notification-count]');
             if (event.type === 'message_received') {
                 incrementCounters('[data-realtime-message-count]');
                 refreshResource('messages');
+                return;
             }
+
+            incrementCounters('[data-realtime-notification-count]');
             refreshResource('notifications');
         })
         .listen('.appointment.updated', () => refreshResource('appointments'));
