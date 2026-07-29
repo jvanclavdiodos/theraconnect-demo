@@ -36,6 +36,7 @@ class Assignment {
   final String? description;
   final String? attachmentUrl;
   final String? attachmentName;
+  final int fileRetentionDays;
   final String? dueDate;
   final String? submissionStatus;
   final String? submittedAt;
@@ -52,6 +53,7 @@ class Assignment {
     this.description,
     this.attachmentUrl,
     this.attachmentName,
+    this.fileRetentionDays = 30,
     this.dueDate,
     this.submissionStatus,
     this.submittedAt,
@@ -70,11 +72,13 @@ class Assignment {
       description: json['description'] as String?,
       attachmentUrl: json['attachment_url'] as String?,
       attachmentName: json['attachment_name'] as String?,
+      fileRetentionDays: (json['file_retention_days'] as num?)?.toInt() ?? 30,
       dueDate: json['due_date'] as String?,
       submissionStatus: json['submission_status'] as String?,
       submittedAt: json['submitted_at'] as String?,
       submission: json['submission'] is Map<String, dynamic>
-          ? AssignmentSubmission.fromJson(json['submission'] as Map<String, dynamic>)
+          ? AssignmentSubmission.fromJson(
+              json['submission'] as Map<String, dynamic>)
           : null,
       createdAt: json['created_at'] as String?,
       updatedAt: json['updated_at'] as String?,
@@ -91,6 +95,7 @@ class Assignment {
       'description': description,
       'attachment_url': attachmentUrl,
       'attachment_name': attachmentName,
+      'file_retention_days': fileRetentionDays,
       'due_date': dueDate,
       'submission_status': submissionStatus,
       'submitted_at': submittedAt,

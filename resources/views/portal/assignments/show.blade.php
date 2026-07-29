@@ -54,6 +54,7 @@
                             <i class="bi bi-paperclip me-1"></i> {{ $submission->original_name }}
                         </a>
                     @endif
+                    <p class="small text-muted">Uploaded worksheet and submission files are kept for {{ config('theraconnect.assignment_file_retention_days', 30) }} days.</p>
                 @endif
 
                 @if($submission && $submission->status === 'reviewed')
@@ -72,7 +73,7 @@
                             <input type="file" name="file" class="form-control @error('file') is-invalid @enderror"
                                    accept=".pdf,.doc,.docx,.txt,.rtf,.jpg,.jpeg,.png"
                                    data-validate-file data-max-bytes="10485760" data-allowed-extensions="pdf,doc,docx,txt,rtf,jpg,jpeg,png">
-                            <div class="form-text">PDF, DOC, DOCX, TXT, RTF, JPG, or PNG. Max 10 MB.</div>
+                            <div class="form-text">PDF, DOC, DOCX, TXT, RTF, JPG, or PNG. Max 10 MB. Uploaded files are kept for {{ config('theraconnect.assignment_file_retention_days', 30) }} days.</div>
                             @error('file')<div class="invalid-feedback">{{ $message }}</div>@enderror
                         </div>
                         <button type="submit" class="btn btn-primary w-100">{{ $submission ? 'Update submission' : 'Submit' }}</button>

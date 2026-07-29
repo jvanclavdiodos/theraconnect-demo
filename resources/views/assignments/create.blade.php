@@ -60,7 +60,7 @@
                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.rtf,.jpg,.jpeg,.png"
                            data-validate-file data-max-bytes="10485760" data-allowed-extensions="pdf,doc,docx,xls,xlsx,ppt,pptx,txt,rtf,jpg,jpeg,png">
                     @error('attachment')<div class="invalid-feedback">{{ $message }}</div>@enderror
-                    <small class="text-muted">PDF, Office documents, text, or images. Max 10 MB. The patient can download this from the mobile app.</small>
+                    <small class="text-muted">PDF, Office documents, text, or images. Max 10 MB. The patient can download this from the mobile app. Uploaded files are kept for {{ config('theraconnect.assignment_file_retention_days', 30) }} days.</small>
                 </div>
             </div>
 

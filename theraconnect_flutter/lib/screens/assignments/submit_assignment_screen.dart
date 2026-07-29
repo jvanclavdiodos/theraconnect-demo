@@ -13,10 +13,12 @@ class SubmitAssignmentScreen extends ConsumerStatefulWidget {
   const SubmitAssignmentScreen({super.key, required this.assignmentId});
 
   @override
-  ConsumerState<SubmitAssignmentScreen> createState() => _SubmitAssignmentScreenState();
+  ConsumerState<SubmitAssignmentScreen> createState() =>
+      _SubmitAssignmentScreenState();
 }
 
-class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen> {
+class _SubmitAssignmentScreenState
+    extends ConsumerState<SubmitAssignmentScreen> {
   final _contentController = TextEditingController();
   String? _filePath;
   String? _fileName;
@@ -44,7 +46,9 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
 
     if (content.isEmpty && _filePath == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: const Text('Please provide text or a file.'), backgroundColor: colorScheme.error),
+        SnackBar(
+            content: const Text('Please provide text or a file.'),
+            backgroundColor: colorScheme.error),
       );
       return;
     }
@@ -67,7 +71,9 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
         ref.invalidate(assignmentDetailProvider(widget.assignmentId));
         ref.read(assignmentsProvider.notifier).loadAssignments();
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Assignment submitted!'), backgroundColor: AppTheme.success),
+          const SnackBar(
+              content: Text('Assignment submitted!'),
+              backgroundColor: AppTheme.success),
         );
         context.pop();
       }
@@ -76,7 +82,8 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
 
   @override
   Widget build(BuildContext context) {
-    final detailAsync = ref.watch(assignmentDetailProvider(widget.assignmentId));
+    final detailAsync =
+        ref.watch(assignmentDetailProvider(widget.assignmentId));
 
     return detailAsync.when(
       data: (a) => _buildContent(context, a),
@@ -103,7 +110,8 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(assignment.title, style: Theme.of(context).textTheme.titleLarge),
+                  Text(assignment.title,
+                      style: Theme.of(context).textTheme.titleLarge),
                   if (assignment.dueDate != null) ...[
                     const SizedBox(height: 4),
                     Text('Due: ${assignment.dueDate}'),
@@ -127,14 +135,25 @@ class _SubmitAssignmentScreenState extends ConsumerState<SubmitAssignmentScreen>
             onPressed: _pickFile,
             icon: const Icon(Icons.attach_file),
             label: Text(_fileName ?? 'Attach file (optional)'),
-            style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+            style: OutlinedButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48)),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Uploaded files are kept for ${assignment.fileRetentionDays} days.',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
           ),
           const SizedBox(height: 24),
           FilledButton(
             onPressed: _submitting ? null : _submit,
-            style: FilledButton.styleFrom(minimumSize: const Size(double.infinity, 48)),
+            style: FilledButton.styleFrom(
+                minimumSize: const Size(double.infinity, 48)),
             child: _submitting
-                ? CircularProgressIndicator(strokeWidth: 2, color: Theme.of(context).colorScheme.onPrimary)
+                ? CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Theme.of(context).colorScheme.onPrimary)
                 : const Text('Submit Assignment'),
           ),
         ],

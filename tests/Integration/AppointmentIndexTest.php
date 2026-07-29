@@ -5,6 +5,7 @@ namespace Tests\Integration;
 use App\Models\Appointment;
 use App\Models\Clinician;
 use App\Models\User;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class AppointmentIndexTest extends TestCase
@@ -119,6 +120,25 @@ class AppointmentIndexTest extends TestCase
             ->get('/appointments')
             ->assertOk()
             ->assertSee('No booking reason provided');
+    }
+
+    public function test_patient_profile_photo_is_shown_in_the_appointments_table(): void
+    {
+        Storage::fake('local');
+        $clinician = $this->createClinician();
+        $appointment = $this->appointmentFor(
+            $clinician['clinician']->id,
+            'Photo Patient',
+            'photo-appointment@test.com',
+            '2030-12-06 09:00:00'
+        );
+        $appointment->patient->user->update(['avatar_path' => 'avatars/photo.jpg']);
+
+        $this->actingAs($clinician['user'])
+            ->get('/appointments')
+            ->assertOk()
+            ->assertSee(route('avatars.show', $appointment->patient->user), false)
+            ->assertSee('Photo Patient profile photo');
     }
 
     private function createClinicianWithIdentity(string $name, string $email): array

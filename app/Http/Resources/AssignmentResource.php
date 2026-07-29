@@ -19,6 +19,7 @@ class AssignmentResource extends JsonResource
             'title' => $this->title,
             'description' => $this->description,
             'attachment_name' => $this->attachment_name,
+            'file_retention_days' => (int) config('theraconnect.assignment_file_retention_days', 30),
             // Authenticated download route — worksheet is on the private disk and
             // requires the patient's bearer token (handled by the Dio client).
             'attachment_url' => $this->attachment_path

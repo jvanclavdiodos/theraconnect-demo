@@ -11,7 +11,7 @@ Use `.env.example` and `.env.railway.example` as key inventories only. Do not co
 | Database | `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | `config/database.php`, migrations |
 | Browser session | `SESSION_DRIVER`, `SESSION_CONNECTION`, `SESSION_TABLE`, `SESSION_SECURE_COOKIE`, `SESSION_ENCRYPT`, `SESSION_LIFETIME` | `config/session.php` |
 | Queue/cache/logging | `QUEUE_CONNECTION`, `DB_QUEUE_*`, `CACHE_STORE`, `LOG_CHANNEL`, `LOG_STACK`, `LOG_LEVEL` | `config/queue.php`, `config/cache.php`, `config/logging.php` |
-| Storage | `FILESYSTEM_DISK`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_ENDPOINT` | `config/filesystems.php` |
+| Storage | `FILESYSTEM_DISK`, `LOCAL_FILESYSTEM_ROOT`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_ENDPOINT`, `ASSIGNMENT_FILE_RETENTION_DAYS` | `config/filesystems.php`, `config/theraconnect.php` |
 | Mail | `MAIL_*` values | `config/mail.php`, `SendEmailNotification` |
 | Realtime | `BROADCAST_CONNECTION`, `REVERB_APP_*`, `REVERB_HOST`, `REVERB_PORT`, `REVERB_SCHEME`, `REVERB_SERVER_*`, `REVERB_ALLOWED_ORIGINS`, `REVERB_SCALING_ENABLED` | `config/broadcasting.php`, `config/reverb.php` |
 | CORS/Sanctum | `CORS_ALLOWED_ORIGINS`, `SANCTUM_STATEFUL_DOMAINS`, `SANCTUM_TOKEN_PREFIX` | `config/cors.php`, `config/sanctum.php` |
@@ -36,6 +36,8 @@ Use `.env.example` and `.env.railway.example` as key inventories only. Do not co
 - `railway.scheduler.json`: Railway cron invokes `php artisan schedule:run` every minute.
 - `railway.reverb.json`: separate long-running Reverb WebSocket service. Give it a public Railway domain and do not attach the web app HTTP health check to it.
 - The web service migration process is in the entrypoint. Confirm the deployed service is the Laravel app service, then run `php artisan migrate --force` in its Railway console only when required by deployment procedure.
+- Private uploads must use persistent storage. Prefer `FILESYSTEM_DISK=s3` with a private S3-compatible bucket. Alternatively, attach a Railway Volume and set `FILESYSTEM_DISK=local` plus `LOCAL_FILESYSTEM_ROOT` to a directory in the mounted volume (for example `/data/private`). Without one of these configurations, avatars and assignment uploads disappear on redeploy.
+- The scheduler runs `assignments:purge-expired-files` daily. It removes worksheet and submission file bytes after `ASSIGNMENT_FILE_RETENTION_DAYS` (30 by default) while retaining assignment/submission text and status records.
 
 For Railway realtime deployment:
 

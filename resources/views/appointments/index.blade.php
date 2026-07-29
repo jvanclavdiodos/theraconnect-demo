@@ -88,7 +88,15 @@
                     <tr>
                         <td>
                             <div class="d-flex align-items-center gap-2">
-                                <span class="tc-cell-avatar">{{ $initials($appt->patient->user->name) }}</span>
+                                @if($appt->patient->user->hasAvatar())
+                                    <img src="{{ route('avatars.show', $appt->patient->user) }}?v={{ $appt->patient->user->updated_at?->timestamp }}"
+                                         alt="{{ $appt->patient->user->name }} profile photo"
+                                         class="tc-cell-avatar tc-cell-avatar-image"
+                                         onerror="this.hidden=true;this.nextElementSibling.hidden=false">
+                                    <span class="tc-cell-avatar" hidden>{{ $initials($appt->patient->user->name) }}</span>
+                                @else
+                                    <span class="tc-cell-avatar">{{ $initials($appt->patient->user->name) }}</span>
+                                @endif
                                 <span class="fw-semibold">{{ $appt->patient->user->name }}</span>
                             </div>
                         </td>

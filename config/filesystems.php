@@ -32,7 +32,10 @@ return [
 
         'local' => [
             'driver' => 'local',
-            'root' => storage_path('app/private'),
+            // Railway containers are ephemeral. Point this at a mounted
+            // volume (for example /data/private) or use the S3 disk in
+            // production so private uploads survive redeployments.
+            'root' => env('LOCAL_FILESYSTEM_ROOT') ?: storage_path('app/private'),
             'serve' => true,
             'throw' => false,
             'report' => false,
