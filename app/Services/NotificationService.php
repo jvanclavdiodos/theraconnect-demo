@@ -12,6 +12,10 @@ use Throwable;
 
 class NotificationService
 {
+    public const APPOINTMENT_REMINDER_DAY_BEFORE = 'day_before';
+
+    public const APPOINTMENT_REMINDER_NIGHT_BEFORE = 'night_before';
+
     public const EMAIL_TYPES = [
         'appointment_requested',
         'appointment_approved',
@@ -160,14 +164,27 @@ class NotificationService
         );
     }
 
-    public function appointmentReminder(int $userId, int $appointmentId, string $time): Notification
-    {
+    public function appointmentReminder(
+        int $userId,
+        int $appointmentId,
+        string $time,
+        string $reminderKind = self::APPOINTMENT_REMINDER_DAY_BEFORE,
+        ?string $reminderFor = null
+    ): Notification {
+        $isNightBefore = $reminderKind === self::APPOINTMENT_REMINDER_NIGHT_BEFORE;
+
         return $this->create(
             $userId,
             'appointment_reminder',
-            'Appointment Reminder',
-            "Reminder: you have an appointment tomorrow at {$time}.",
-            ['appointment_id' => $appointmentId]
+            $isNightBefore ? 'Appointment Tomorrow' : 'Appointment Reminder',
+            $isNightBefore
+                ? "Your appointment is tomorrow at {$time}. Please review the details and prepare anything you need."
+                : "Reminder: you have an appointment tomorrow at {$time}.",
+            [
+                'appointment_id' => $appointmentId,
+                'reminder_kind' => $reminderKind,
+                'reminder_for' => $reminderFor,
+            ]
         );
     }
 

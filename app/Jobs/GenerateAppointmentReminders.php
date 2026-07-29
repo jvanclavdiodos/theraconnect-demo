@@ -12,26 +12,37 @@ class GenerateAppointmentReminders implements ShouldQueue
 {
     use Queueable;
 
+    public const DAY_BEFORE = NotificationService::APPOINTMENT_REMINDER_DAY_BEFORE;
+
+    public const NIGHT_BEFORE = NotificationService::APPOINTMENT_REMINDER_NIGHT_BEFORE;
+
+    public function __construct(public string $reminderKind = self::DAY_BEFORE) {}
+
     public function handle(NotificationService $service): void
     {
+        if (! in_array($this->reminderKind, [self::DAY_BEFORE, self::NIGHT_BEFORE], true)) {
+            throw new \InvalidArgumentException('Unsupported appointment reminder kind.');
+        }
+
         $tomorrow = now()->addDay()->toDateString();
 
         $appointments = Appointment::whereDate('scheduled_at', $tomorrow)
             ->whereIn('status', ['approved', 'rescheduled'])
+            ->whereHas('patient.user')
             ->with('patient.user')
             ->get();
 
         foreach ($appointments as $appointment) {
-            // Idempotency guard: skip if we already reminded this user about
-            // this appointment within the last day. Without this check, a
-            // scheduler overlap / manual re-run / retry-after-failure would
-            // fan out duplicate reminder notifications + duplicate push
-            // dispatches for the same appointment. Mirrors the dedup pattern
-            // in GenerateAssignmentReminders::handle (lines 27-31).
+            $reminderFor = $appointment->scheduled_at->format('Y-m-d H:i:s');
+
+            // A phase + scheduled-time key allows the morning and night
+            // reminders once each, while a later reschedule can generate a
+            // fresh pair for the new appointment time.
             $alreadyReminded = Notification::where('type', 'appointment_reminder')
                 ->where('user_id', $appointment->patient->user->id)
-                ->where('created_at', '>=', now()->subDay())
                 ->whereJsonContains('data->appointment_id', $appointment->id)
+                ->whereJsonContains('data->reminder_kind', $this->reminderKind)
+                ->whereJsonContains('data->reminder_for', $reminderFor)
                 ->exists();
 
             if ($alreadyReminded) {
@@ -42,7 +53,9 @@ class GenerateAppointmentReminders implements ShouldQueue
             $notification = $service->appointmentReminder(
                 $appointment->patient->user->id,
                 $appointment->id,
-                $time
+                $time,
+                $this->reminderKind,
+                $reminderFor
             );
 
             $service->dispatchDeliveries($notification);

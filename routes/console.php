@@ -16,8 +16,12 @@ Schedule::call(function () {
 })->hourly();
 
 Schedule::call(function () {
-    dispatch(new GenerateAppointmentReminders);
+    dispatch(new GenerateAppointmentReminders(GenerateAppointmentReminders::DAY_BEFORE));
 })->dailyAt('08:00');
+
+Schedule::call(function () {
+    dispatch(new GenerateAppointmentReminders(GenerateAppointmentReminders::NIGHT_BEFORE));
+})->dailyAt('20:00');
 
 Schedule::call(function () {
     dispatch(new MarkOverdueNoShows);

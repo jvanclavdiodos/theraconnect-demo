@@ -12,6 +12,8 @@ This index lists observable application features, their primary ownership, and t
 | Terms/User Agreement and Privacy Notice | web Bootstrap modal; Flutter dialog | web registration JS/Alpine + Flutter `RegisterScreen`, `TermsOfService` | `users.terms_accepted_at`, `terms_version`; Data Privacy Act notice | Backend acceptance is authoritative. Keep web/mobile notice text aligned, configure the clinic PIC/DPO identity, and update `TermsOfService::CURRENT_VERSION` whenever material content changes. |
 | Profile/avatar/password | staff account, portal profile, Flutter profile screens | `AccountController`, `PortalProfileController`, `ProfileController`, `PasswordController` | users/patients; profile API | Patient and staff web clients crop avatars to a square before upload. The shared request requires an image no larger than 2 MB and 1024x1024; avatar access remains authorization-gated. |
 
+Shared staff and portal pages use the visual tokens and component classes in `public/css/theraconnect.css`. Preserve the restrained healthcare palette, 8px card geometry, responsive page shell, visible keyboard focus, and Bootstrap-compatible component conventions when adding UI.
+
 ## Appointment and Availability
 
 | Feature | Entry and UI | Ownership | Data/API | Dependencies and modification hazards |
@@ -43,7 +45,7 @@ This index lists observable application features, their primary ownership, and t
 | Realtime updates | browser navigation/lists and Flutter providers/active message thread | broadcast events, `RealtimeEventDispatcher`, Echo, Flutter `RealtimeService` | Reverb; `/realtime/config`, `/broadcasting/auth` | Private channels only. Payloads are invalidation metadata, not clinical content. Queue/Reverb failure must never fail the original transaction. |
 | Push notifications | mobile FCM lifecycle | `FcmService`, `SendPushNotification`, Flutter `FcmService` | device_tokens, Firebase | Missing FCM configuration should no-op without breaking business workflows. Token register/delete endpoints are patient-only. |
 | Transactional email | queued job/mailable | `SendEmailNotification`, `NotificationEmail` | notifications/email tracking; mail config | Allow-list specific appointment/request/assessment/assignment types. Do not add message body email casually. |
-| Reminders | scheduler/queue | `GenerateAppointmentReminders`, `GenerateAssignmentReminders` | appointments/assignments/notifications | Requires scheduler and queue worker. Keep idempotency or repeated schedule runs can duplicate notices. |
+| Reminders | scheduler/queue | `GenerateAppointmentReminders`, `GenerateAssignmentReminders` | appointments/assignments/notifications | Appointment reminders run the morning and night before; assignment reminders run hourly. Requires scheduler and queue worker. Keep phase/time-based idempotency or repeated schedule runs can duplicate notices. |
 | Clinic chatbot | portal/mobile chatbot screens; admin content CRUD | `ChatbotService`, `ChatbotIntent/Response`, API/portal controllers | chatbot tables; Gemini optional | Gemini sees typed message plus generic KB prompt, no derived PHI. Fallback is Jaccard matching. Crisis handling wording is high risk. |
 
 ## Administration, Audit, and Operations

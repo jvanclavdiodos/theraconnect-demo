@@ -76,7 +76,8 @@ One Reverb replica with scaling disabled is the efficient starting topology for 
 | Schedule | Job | Effect |
 |---|---|---|
 | hourly | `GenerateAssignmentReminders` | creates/dispatches assignment deadline reminders |
-| daily 08:00 | `GenerateAppointmentReminders` | creates/dispatches appointment reminders |
+| daily 08:00 | `GenerateAppointmentReminders::DAY_BEFORE` | creates/dispatches the day-before appointment reminder |
+| daily 20:00 | `GenerateAppointmentReminders::NIGHT_BEFORE` | creates/dispatches the additional night-before appointment reminder |
 | daily 02:00 | `MarkOverdueNoShows` | marks eligible appointments no-show |
 | after transaction commit | `SendPushNotification`, `SendEmailNotification` | delivery channels for created notifications |
 | after transaction commit | queued `BroadcastEvent` | sends notification/message/appointment invalidation through Reverb |

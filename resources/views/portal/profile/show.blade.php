@@ -17,11 +17,11 @@
         <div class="card shadow-sm">
             <div class="card-body text-center">
                 @if(auth()->user()->hasAvatar())
-                    <img src="{{ route('portal.profile.avatar') }}" alt="avatar" class="rounded-circle mb-3"
-                         style="width:96px;height:96px;object-fit:cover;border:1px solid #dee2e6;">
+                    <img src="{{ route('portal.profile.avatar') }}" alt="avatar" class="tc-profile-avatar tc-profile-avatar-lg mb-3">
                 @else
-                    <div class="rounded-circle bg-light d-inline-flex align-items-center justify-content-center mb-3"
-                         style="width:96px;height:96px;"><i class="bi bi-person fs-1 text-secondary"></i></div>
+                    <div class="tc-profile-avatar tc-profile-avatar-lg tc-profile-avatar-fallback mb-3">
+                        <i class="bi bi-person fs-1" aria-hidden="true"></i>
+                    </div>
                 @endif
                 <h5 class="mb-0">{{ $patient->user->name }}</h5>
                 <div class="text-muted small">{{ $patient->user->email }}</div>

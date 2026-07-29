@@ -7,18 +7,20 @@
 @endsection
 
 @section('content')
-<h2>My Account</h2>
+<div class="mb-4">
+    <h1 class="tc-page-title mb-1">My Account</h1>
+    <p class="tc-page-sub mb-0">Manage your profile picture and account security.</p>
+</div>
 
-<div class="card shadow-sm mt-3" style="max-width: 540px;">
+<div class="tc-account-grid">
+<div class="card">
     <div class="card-header bg-white"><strong>Profile picture</strong></div>
     <div class="card-body">
         <div class="d-flex align-items-center gap-3 mb-3">
             @if ($user->hasAvatar())
-                <img src="{{ route('avatars.show', $user) }}" alt="avatar"
-                     style="width:88px;height:88px;border-radius:50%;object-fit:cover;border:1px solid #dee2e6;">
+                <img src="{{ route('avatars.show', $user) }}" alt="avatar" class="tc-profile-avatar">
             @else
-                <span class="rounded-circle d-inline-flex align-items-center justify-content-center"
-                      style="width:88px;height:88px;background:var(--tc-teal,#0D6E8A);color:#fff;font-size:1.75rem;">
+                <span class="tc-profile-avatar tc-profile-avatar-fallback">
                     {{ collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn($p) => mb_strtoupper(mb_substr($p,0,1)))->implode('') ?: 'U' }}
                 </span>
             @endif
@@ -56,9 +58,7 @@
     </div>
 </div>
 
-@include('partials.avatar-cropper')
-
-<div class="card shadow-sm mt-3" style="max-width: 540px;" x-data="passwordField({ requireConfirm: true })">
+<div class="card" x-data="passwordField({ requireConfirm: true })">
     <div class="card-header bg-white"><strong>Change password</strong></div>
     <div class="card-body">
         <form action="{{ route('account.password.update') }}" method="POST">
@@ -81,4 +81,7 @@
         </form>
     </div>
 </div>
+</div>
+
+@include('partials.avatar-cropper')
 @endsection
