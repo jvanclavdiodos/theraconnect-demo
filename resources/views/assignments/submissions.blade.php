@@ -21,11 +21,6 @@
     <a href="{{ route('assignments.index') }}" class="btn btn-outline-secondary btn-sm">Back to Assignments</a>
 </div>
 
-<div class="alert alert-info py-2" role="note">
-    <i class="bi bi-clock-history me-1" aria-hidden="true"></i>
-    Uploaded worksheets and submission files are kept for {{ config('theraconnect.assignment_file_retention_days', 30) }} days. Assignment and submission text remains available after the files are removed.
-</div>
-
 @if ($assignment->description || $assignment->hasAttachment())
     <div class="card shadow-sm mb-4">
         <div class="card-body">

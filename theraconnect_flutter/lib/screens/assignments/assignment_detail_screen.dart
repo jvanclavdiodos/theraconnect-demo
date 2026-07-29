@@ -176,7 +176,8 @@ class _AssignmentDetailScreenState
                           ? const SizedBox(
                               height: 18,
                               width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
+                              child:
+                                  CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.download),
                       label: Text(
@@ -231,16 +232,6 @@ class _AssignmentDetailScreenState
           if (assignment.submission != null) ...[
             const SizedBox(height: 16),
             SubmissionPreview(submission: assignment.submission!),
-          ],
-          if (assignment.hasAttachment ||
-              (assignment.submission?.hasFile ?? false)) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Uploaded files are kept for ${assignment.fileRetentionDays} days.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
           ],
           const SizedBox(height: 24),
           if (!assignment.isReviewed)

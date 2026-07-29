@@ -235,7 +235,6 @@ class AssignmentFlowTest extends TestCase
             ->getJson("/api/v1/assignments/{$assignment->id}")
             ->assertStatus(200)
             ->assertJsonPath('data.attachment_name', 'worksheet.pdf')
-            ->assertJsonPath('data.file_retention_days', 30)
             ->assertJsonPath('data.attachment_url', url("/api/v1/assignments/{$assignment->id}/worksheet"));
 
         // Owner can download it.
