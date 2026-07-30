@@ -101,7 +101,7 @@ Queue workers must be running for asynchronous delivery. With `sync`, jobs execu
 
 - `GEMINI_CHATBOT_MODEL` defaults to the stable `gemini-3.5-flash-lite`. Set it on the Railway web service and redeploy to change models; Joy is request-driven and does not require this variable on the worker, scheduler, or Reverb services.
 - Keep `GEMINI_API_KEY` only in Railway variables. Never expose it to Blade, JavaScript, Flutter, logs, screenshots, or committed environment files.
-- The service handles exact, high-confidence FAQ matches locally. Gemini receives the patient's message plus at most three relevant approved knowledge entries, not the full database or patient record.
+- The service handles exact, high-confidence FAQ matches locally. Gemini receives the patient's message plus at most three relevant approved knowledge entries, not the full database or patient record. It may answer low-risk general therapy and healthcare questions with explicit uncertainty, but TheraConnect-specific facts and policies still require approved evidence.
 - Google Gemini free-tier terms may permit submitted content to be used to improve provider products. Complete a privacy and data-processing review before sending production patient text; prefer an appropriately configured paid account when its terms prohibit such use.
 - Provider failures, invalid output, missing evidence, and timeouts return an approved local answer or fallback. Logs contain exception class/status only and must not contain the patient's message.
 - Crisis detection and response are deterministic and run before the provider request. Clinic leadership must periodically review the crisis wording and Philippine contact information; it is safety content, not model-generated content.

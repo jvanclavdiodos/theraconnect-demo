@@ -72,7 +72,6 @@
                     <strong class="tc-chat-clinician-name">{{ $clinicianName }}</strong>
                     <span class="tc-chat-clinician-meta">{{ $conversation->clinician?->specialization ?? 'Clinician' }}</span>
                 </span>
-                <span class="tc-chat-status ms-auto"><i class="bi bi-shield-check" aria-hidden="true"></i> Secure conversation</span>
             </header>
 
             <div class="tc-message-thread" id="thread">

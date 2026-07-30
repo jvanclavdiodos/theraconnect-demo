@@ -53,7 +53,6 @@
             <header class="tc-chat-header">
                 <span class="tc-chat-avatar tc-chat-avatar-lg" aria-hidden="true">{{ $patientInitials ?: 'P' }}</span>
                 <span class="min-w-0"><strong class="tc-chat-clinician-name">{{ $patientName }}</strong><span class="tc-chat-clinician-meta">Patient</span></span>
-                <span class="tc-chat-status ms-auto"><i class="bi bi-shield-check" aria-hidden="true"></i> Secure conversation</span>
             </header>
             <div class="tc-message-thread" id="thread">
                 @forelse($activeConversation->messages->sortBy('created_at') as $message)

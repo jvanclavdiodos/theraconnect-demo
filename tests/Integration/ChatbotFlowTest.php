@@ -271,6 +271,88 @@ class ChatbotFlowTest extends TestCase
         ));
     }
 
+    public function test_general_therapy_information_does_not_require_an_intent_match(): void
+    {
+        config(['services.gemini.key' => 'test-key']);
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [[
+                    'content' => [
+                        'parts' => [['text' => json_encode([
+                            'reply' => 'A therapy session often lasts about 45 to 60 minutes, although the length can vary.',
+                            'category' => 'general_information',
+                            'evidence_id' => '',
+                        ])]],
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $result = app(ChatbotService::class)
+            ->resolve('How long does a typical therapy session last?');
+
+        $this->assertSame('general_information', $result['intent_key']);
+        $this->assertFalse($result['is_fallback']);
+        $this->assertStringContainsString('45 to 60 minutes', $result['reply']);
+        $this->assertStringContainsString('TheraConnect', $result['reply']);
+
+        Http::assertSent(fn ($request) => str_contains(
+            $request['systemInstruction']['parts'][0]['text'],
+            'Clearly distinguish general information from TheraConnect-specific facts'
+        ));
+    }
+
+    public function test_general_prescription_cost_question_gets_a_qualified_answer(): void
+    {
+        config(['services.gemini.key' => 'test-key']);
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [[
+                    'content' => [
+                        'parts' => [['text' => json_encode([
+                            'reply' => 'Medication costs are commonly separate from therapy fees. Whether someone can prescribe depends on the clinician\'s professional qualifications, so please confirm the clinic\'s services and fees directly.',
+                            'category' => 'general_information',
+                            'evidence_id' => '',
+                        ])]],
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $result = app(ChatbotService::class)
+            ->resolve('Will prescriptions add cost to my therapy session or will they be free?');
+
+        $this->assertSame('general_information', $result['intent_key']);
+        $this->assertFalse($result['is_fallback']);
+        $this->assertStringContainsString('commonly separate', $result['reply']);
+        $this->assertStringContainsString('professional qualifications', $result['reply']);
+    }
+
+    public function test_general_information_cannot_include_medication_changing_advice(): void
+    {
+        config(['services.gemini.key' => 'test-key']);
+        Http::fake([
+            'generativelanguage.googleapis.com/*' => Http::response([
+                'candidates' => [[
+                    'content' => [
+                        'parts' => [['text' => json_encode([
+                            'reply' => 'You should stop taking your medication before therapy.',
+                            'category' => 'general_information',
+                            'evidence_id' => '',
+                        ])]],
+                    ],
+                ]],
+            ]),
+        ]);
+
+        $result = app(ChatbotService::class)
+            ->resolve('What usually happens with medication during therapy?');
+
+        $this->assertSame('fallback', $result['intent_key']);
+        $this->assertTrue($result['is_fallback']);
+        $this->assertStringNotContainsString('stop taking', $result['reply']);
+    }
+
     public function test_generated_medication_advice_is_rejected(): void
     {
         config(['services.gemini.key' => 'test-key']);
