@@ -11,7 +11,7 @@
 @php
     $statusColor = fn($s) => match($s) {
         'approved' => 'success', 'pending', 'rescheduled' => 'warning',
-        'rejected', 'cancelled', 'no_show' => 'danger', 'completed' => 'info', default => 'secondary',
+        'rejected', 'cancelled', 'no_show', 'expired' => 'danger', 'completed' => 'info', default => 'secondary',
     };
 @endphp
 
@@ -30,7 +30,7 @@
         <label for="appointment-status" class="form-label small fw-semibold">Status</label>
         <select id="appointment-status" name="status" class="form-select">
             <option value="">All statuses</option>
-            @foreach(['pending' => 'Pending', 'approved' => 'Approved', 'rescheduled' => 'Rescheduled', 'completed' => 'Completed', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled', 'no_show' => 'No-show'] as $value => $label)
+            @foreach(['pending' => 'Pending', 'approved' => 'Approved', 'rescheduled' => 'Rescheduled', 'completed' => 'Completed', 'rejected' => 'Rejected', 'cancelled' => 'Cancelled', 'no_show' => 'No-show', 'expired' => 'Expired'] as $value => $label)
                 <option value="{{ $value }}" @selected($status === $value)>{{ $label }}</option>
             @endforeach
         </select>

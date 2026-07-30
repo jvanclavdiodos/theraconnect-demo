@@ -111,6 +111,8 @@ class Appointment {
         return 'Completed';
       case 'cancelled':
         return 'Cancelled';
+      case 'expired':
+        return 'Expired';
       default:
         return status;
     }

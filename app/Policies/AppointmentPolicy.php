@@ -69,6 +69,6 @@ class AppointmentPolicy
         }
 
         // Patients may not cancel appointments in terminal states.
-        return ! in_array($appointment->status, ['completed', 'rejected']);
+        return ! in_array($appointment->status, ['completed', 'rejected', 'expired']);
     }
 }

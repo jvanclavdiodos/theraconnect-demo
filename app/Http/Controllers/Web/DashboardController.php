@@ -28,7 +28,10 @@ class DashboardController extends Controller
             ? Appointment::where('clinician_id', $clinicianId)
             : Appointment::query();
 
-        $pendingAppointments = $appointments()->where('status', 'pending')->count();
+        $pendingAppointments = $appointments()
+            ->where('status', 'pending')
+            ->where('requested_at', '>', now())
+            ->count();
         $todayAppointments = $appointments()->whereDate('scheduled_at', today())->count();
         $upcomingAppointments = $appointments()
             ->whereNotNull('patient_id')

@@ -15,6 +15,8 @@ class Appointment extends Model
 
     public const UPCOMING_STATUSES = ['pending', 'approved', 'rescheduled'];
 
+    public const TERMINAL_STATUSES = ['rejected', 'completed', 'cancelled', 'no_show', 'expired'];
+
     /** Online meeting links stop working this many hours after the appointment. */
     public const MEETING_LINK_TTL_HOURS = 5;
 

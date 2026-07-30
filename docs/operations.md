@@ -79,6 +79,7 @@ One Reverb replica with scaling disabled is the efficient starting topology for 
 | daily 08:00 | `GenerateAppointmentReminders::DAY_BEFORE` | creates/dispatches the day-before appointment reminder |
 | daily 20:00 | `GenerateAppointmentReminders::NIGHT_BEFORE` | creates/dispatches the additional night-before appointment reminder |
 | daily 02:00 | `MarkOverdueNoShows` | marks eligible appointments no-show |
+| every minute | `ExpirePendingAppointments` | marks pending requests expired once their requested time passes |
 | after transaction commit | `SendPushNotification`, `SendEmailNotification` | delivery channels for created notifications |
 | after transaction commit | queued `BroadcastEvent` | sends notification/message/appointment invalidation through Reverb |
 

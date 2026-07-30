@@ -28,7 +28,7 @@ class PortalAppointmentController extends Controller
         abort_unless($patient !== null, 404);
 
         $validated = $request->validate([
-            'status' => ['nullable', 'in:pending,approved,rejected,rescheduled,completed,cancelled,no_show'],
+            'status' => ['nullable', 'in:pending,approved,rejected,rescheduled,completed,cancelled,no_show,expired'],
             'mode' => ['nullable', 'in:online,in_person'],
             'sort' => ['nullable', 'in:appointment_date'],
             'direction' => ['nullable', 'in:asc,desc'],

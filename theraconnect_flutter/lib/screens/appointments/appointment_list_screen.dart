@@ -29,6 +29,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
     'rejected': 'Rejected',
     'cancelled': 'Cancelled',
     'no_show': 'No-show',
+    'expired': 'Expired',
   };
 
   @override
@@ -73,7 +74,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
         'pending' => AppTheme.amber,
         'rescheduled' => AppTheme.blue,
         'completed' => scheme.primary,
-        'rejected' || 'cancelled' || 'no_show' => scheme.error,
+        'rejected' || 'cancelled' || 'no_show' || 'expired' => scheme.error,
         _ => scheme.onSurfaceVariant,
       };
 

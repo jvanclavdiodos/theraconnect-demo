@@ -28,7 +28,7 @@ class AppointmentService
         $dayEnd = Carbon::parse($date)->endOfDay()->format('Y-m-d H:i:s');
 
         $activeAppointments = Appointment::whereIn('clinician_id', $clinicianIds)
-            ->whereNotIn('status', ['cancelled', 'rejected', 'completed'])
+            ->whereNotIn('status', Appointment::TERMINAL_STATUSES)
             ->where(function ($q) use ($dayStart, $dayEnd) {
                 $q->whereBetween('scheduled_at', [$dayStart, $dayEnd])
                     ->orWhere(function ($q2) use ($dayStart, $dayEnd) {
@@ -93,7 +93,7 @@ class AppointmentService
                             ->where('requested_at', $at);
                     });
             })
-            ->whereNotIn('status', ['cancelled', 'rejected', 'completed']);
+            ->whereNotIn('status', Appointment::TERMINAL_STATUSES);
 
         if ($lock) {
             $query->lockForUpdate();
@@ -165,53 +165,84 @@ class AppointmentService
         return $this->broadcastChange($appointment->fresh(), 'no_show');
     }
 
+    public function expire(Appointment $appointment): Appointment
+    {
+        return DB::transaction(function () use ($appointment) {
+            $locked = Appointment::lockForUpdate()->findOrFail($appointment->id);
+
+            if ($locked->status !== 'pending' || $locked->requested_at->isFuture()) {
+                return $locked;
+            }
+
+            $locked->update(['status' => 'expired']);
+
+            return $this->broadcastChange($locked->fresh(), 'expired');
+        });
+    }
+
     public function approve(Appointment $appointment, ?string $scheduledAt = null): Appointment
     {
-        // State guard: only `pending` (first approval) and `rescheduled`
-        // (re-approval after the patient moved the slot) may transition to
-        // `approved`. Previously the service happily flipped a `completed`,
-        // `cancelled`, `rejected`, or `no_show` appointment back to
-        // `approved` — desyncing attendance metrics, regenerating a meeting
-        // link for a closed case, and corrupting clinical reporting.
-        // Mirrors the precondition check that the `complete` action already
-        // enforced (WebAppointmentController::complete:96).
-        if (! in_array($appointment->status, ['pending', 'rescheduled'], true)) {
-            throw new InvalidStateException(
-                "An appointment in the '{$appointment->status}' state cannot be approved."
-            );
-        }
+        return DB::transaction(function () use ($appointment, $scheduledAt) {
+            $appointment = Appointment::lockForUpdate()->findOrFail($appointment->id);
 
-        $appointment->update([
-            'status' => 'approved',
-            'scheduled_at' => $scheduledAt ?? $appointment->requested_at,
-            'meeting_link' => $this->resolveMeetingLink($appointment),
-        ]);
+            if ($appointment->status === 'pending' && ! $appointment->requested_at->isFuture()) {
+                throw new InvalidStateException('This appointment request has expired.');
+            }
 
-        // Approval establishes a care relationship without replacing any
-        // clinicians already assigned to the patient.
-        if ($appointment->clinician_id) {
-            $appointment->patient->assignClinician($appointment->clinician_id);
-        }
+            // State guard: only `pending` (first approval) and `rescheduled`
+            // (re-approval after the patient moved the slot) may transition to
+            // `approved`. Previously the service happily flipped a `completed`,
+            // `cancelled`, `rejected`, or `no_show` appointment back to
+            // `approved` — desyncing attendance metrics, regenerating a meeting
+            // link for a closed case, and corrupting clinical reporting.
+            // Mirrors the precondition check that the `complete` action already
+            // enforced (WebAppointmentController::complete:96).
+            if (! in_array($appointment->status, ['pending', 'rescheduled'], true)) {
+                throw new InvalidStateException(
+                    "An appointment in the '{$appointment->status}' state cannot be approved."
+                );
+            }
 
-        return $this->broadcastChange($appointment->fresh(), 'approved');
+            $appointment->update([
+                'status' => 'approved',
+                'scheduled_at' => $scheduledAt ?? $appointment->requested_at,
+                'meeting_link' => $this->resolveMeetingLink($appointment),
+            ]);
+
+            // Approval establishes a care relationship without replacing any
+            // clinicians already assigned to the patient.
+            if ($appointment->clinician_id) {
+                $appointment->patient->assignClinician($appointment->clinician_id);
+            }
+
+            return $this->broadcastChange($appointment->fresh(), 'approved');
+        });
     }
 
     public function reject(Appointment $appointment): Appointment
     {
-        // State guard: only `pending` appointments may be rejected. Rejecting
-        // a `completed`/`cancelled`/`no_show`/`rejected` appointment rewrites
-        // a finalized record (desyncs attendance / clinical reporting).
-        // `rescheduled`/`approved` appointments are kept out of the reject
-        // path too — those would need a cancellation flow instead.
-        if ($appointment->status !== 'pending') {
-            throw new InvalidStateException(
-                "An appointment in the '{$appointment->status}' state cannot be rejected."
-            );
-        }
+        return DB::transaction(function () use ($appointment) {
+            $appointment = Appointment::lockForUpdate()->findOrFail($appointment->id);
 
-        $appointment->update(['status' => 'rejected']);
+            if ($appointment->status === 'pending' && ! $appointment->requested_at->isFuture()) {
+                throw new InvalidStateException('This appointment request has expired.');
+            }
 
-        return $this->broadcastChange($appointment->fresh(), 'rejected');
+            // State guard: only `pending` appointments may be rejected. Rejecting
+            // a `completed`/`cancelled`/`no_show`/`rejected` appointment rewrites
+            // a finalized record (desyncs attendance / clinical reporting).
+            // `rescheduled`/`approved` appointments are kept out of the reject
+            // path too — those would need a cancellation flow instead.
+            if ($appointment->status !== 'pending') {
+                throw new InvalidStateException(
+                    "An appointment in the '{$appointment->status}' state cannot be rejected."
+                );
+            }
+
+            $appointment->update(['status' => 'rejected']);
+
+            return $this->broadcastChange($appointment->fresh(), 'rejected');
+        });
     }
 
     /**

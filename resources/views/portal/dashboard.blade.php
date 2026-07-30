@@ -10,7 +10,7 @@
     $firstName = explode(' ', trim(auth()->user()->name))[0] ?? '';
     $statusColor = fn($s) => match($s) {
         'approved' => 'success', 'pending', 'rescheduled' => 'warning',
-        'rejected', 'cancelled', 'no_show' => 'danger', 'completed' => 'info', default => 'secondary',
+        'rejected', 'cancelled', 'no_show', 'expired' => 'danger', 'completed' => 'info', default => 'secondary',
     };
 @endphp
 

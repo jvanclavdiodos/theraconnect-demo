@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\ExpirePendingAppointments;
 use App\Jobs\GenerateAppointmentReminders;
 use App\Jobs\GenerateAssignmentReminders;
 use App\Jobs\MarkOverdueNoShows;
@@ -26,3 +27,7 @@ Schedule::call(function () {
 Schedule::call(function () {
     dispatch(new MarkOverdueNoShows);
 })->dailyAt('02:00');
+
+Schedule::call(function () {
+    dispatch(new ExpirePendingAppointments);
+})->everyMinute();

@@ -14,7 +14,7 @@
     $filters = [
         '' => 'All', 'pending' => 'Pending', 'approved' => 'Approved',
         'rejected' => 'Rejected', 'completed' => 'Completed', 'cancelled' => 'Cancelled',
-        'no_show' => 'No-show',
+        'no_show' => 'No-show', 'expired' => 'Expired',
     ];
     $modeFilters = [
         '' => 'All modes',
@@ -111,7 +111,7 @@
                             <span class="badge bg-{{ match($appt->status) {
                                 'approved' => 'success',
                                 'pending', 'rescheduled' => 'warning',
-                                'rejected', 'cancelled', 'no_show' => 'danger',
+                                'rejected', 'cancelled', 'no_show', 'expired' => 'danger',
                                 'completed' => 'info',
                                 default => 'secondary'
                             } }}">{{ $appt->status === 'no_show' ? 'No-show' : ucfirst($appt->status) }}</span>

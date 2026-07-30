@@ -12,7 +12,7 @@
 @php
     $statusColor = match($appointment->status) {
         'approved' => 'success', 'pending', 'rescheduled' => 'warning',
-        'rejected', 'cancelled', 'no_show' => 'danger', 'completed' => 'info', default => 'secondary',
+        'rejected', 'cancelled', 'no_show', 'expired' => 'danger', 'completed' => 'info', default => 'secondary',
     };
     $canCancel = in_array($appointment->status, ['pending', 'approved', 'rescheduled']);
 @endphp

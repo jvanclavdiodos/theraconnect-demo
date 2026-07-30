@@ -35,7 +35,7 @@ class WebAppointmentController extends Controller
         }
 
         $validated = $request->validate([
-            'status' => ['nullable', 'in:pending,approved,rejected,completed,cancelled,rescheduled,no_show'],
+            'status' => ['nullable', 'in:pending,approved,rejected,completed,cancelled,rescheduled,no_show,expired'],
             'mode' => ['nullable', 'in:online,in_person'],
             'sort' => ['nullable', 'in:requested_at'],
             'direction' => ['nullable', 'in:asc,desc'],
@@ -47,6 +47,10 @@ class WebAppointmentController extends Controller
 
         if ($validStatus) {
             $query->where('status', $validStatus);
+
+            if ($validStatus === 'pending') {
+                $query->where('requested_at', '>', now());
+            }
         }
 
         if ($validMode) {
@@ -68,7 +72,7 @@ class WebAppointmentController extends Controller
 
         try {
             $notification = DB::transaction(function () use ($appointment) {
-                $this->appointmentService->approve($appointment);
+                $appointment = $this->appointmentService->approve($appointment);
 
                 return $this->notificationService->appointmentApproved(
                     $appointment->patient->user->id,
