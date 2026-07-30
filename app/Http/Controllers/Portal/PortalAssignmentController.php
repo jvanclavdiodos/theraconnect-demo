@@ -26,7 +26,7 @@ class PortalAssignmentController extends Controller
         $assignments = Assignment::where('patient_id', $patient->id)
             ->with(['clinician.user', 'submissions'])
             ->latest()
-            ->paginate(15);
+            ->paginate(10);
 
         return view('portal.assignments.index', compact('assignments'));
     }

@@ -1,3 +1,4 @@
+@php($showJoy = ! request()->routeIs('portal.chatbot.*', 'portal.messages.*'))
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
 <head>
@@ -58,7 +59,8 @@
 
     @stack('styles')
 </head>
-<body x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false"
+<body @class(['tc-has-joy' => $showJoy])
+      x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false"
       data-realtime-resources="@yield('realtime-resources')"
       data-realtime-conversation="@yield('realtime-conversation')">
     <div class="d-flex" id="wrapper">
@@ -87,9 +89,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-    @unless(request()->routeIs('portal.chatbot.*', 'portal.messages.*'))
+    @if($showJoy)
         @include('portal.partials.joy-widget')
-    @endunless
+    @endif
     @include('partials.bootstrap-overlays')
     {{-- Alpine Focus plugin (must load BEFORE Alpine core). --}}
     <script defer src="https://cdn.jsdelivr.net/npm/@alpinejs/focus@3.14.1/dist/cdn.min.js" crossorigin="anonymous"></script>

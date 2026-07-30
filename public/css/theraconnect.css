@@ -479,6 +479,10 @@ body {
   padding-bottom: 2.5rem;
 }
 
+.tc-has-joy .tc-page-shell {
+  padding-bottom: 8rem;
+}
+
 .tc-breadcrumb-shell {
   padding-top: 1rem;
 }
@@ -802,6 +806,10 @@ textarea.form-control {
   .tc-page-shell {
     padding-top: 1.15rem;
     padding-bottom: 2rem;
+  }
+
+  .tc-has-joy .tc-page-shell {
+    padding-bottom: 7rem;
   }
 
   .tc-breadcrumb-shell {
