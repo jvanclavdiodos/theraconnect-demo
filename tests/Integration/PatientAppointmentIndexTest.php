@@ -57,8 +57,13 @@ class PatientAppointmentIndexTest extends TestCase
             ->get('/portal/appointments?status=approved&mode=online&sort=appointment_date&direction=desc');
 
         $response->assertOk()
-            ->assertViewHas('appointments', fn ($appointments) => $appointments->count() === 15 && $appointments->total() === 16)
+            ->assertViewHas('appointments', fn ($appointments) => $appointments->count() === 10
+                && $appointments->perPage() === 10
+                && $appointments->total() === 16
+                && $appointments->lastPage() === 2)
             ->assertSee('status=approved', false)
+            ->assertSee('mode=online', false)
+            ->assertSee('page=2', false)
             ->assertDontSee('OTHER PATIENT MARKER');
     }
 

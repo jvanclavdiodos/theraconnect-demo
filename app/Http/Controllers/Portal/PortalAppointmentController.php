@@ -52,7 +52,7 @@ class PortalAppointmentController extends Controller
         $appointments = $query
             ->orderByRaw("COALESCE(scheduled_at, requested_at) {$direction}")
             ->orderBy('id', $direction)
-            ->paginate(15)
+            ->paginate(10)
             ->withQueryString();
 
         return view('portal.appointments.index', compact('appointments', 'status', 'mode', 'direction'));
