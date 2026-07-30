@@ -448,6 +448,7 @@ class DemoSeeder extends Seeder
                 'patient_id' => $p1->id,
                 'score' => $score,
                 'note' => $note,
+                'logged_on' => $now->copy()->addDays($daysAgo)->toDateString(),
                 'created_at' => $now->copy()->addDays($daysAgo)->setTime(8, 30),
                 'updated_at' => $now->copy()->addDays($daysAgo)->setTime(8, 30),
             ]);
@@ -468,6 +469,7 @@ class DemoSeeder extends Seeder
                 'patient_id' => $p3->id,
                 'score' => $score,
                 'note' => $note,
+                'logged_on' => $now->copy()->addDays($daysAgo)->toDateString(),
                 'created_at' => $now->copy()->addDays($daysAgo)->setTime(9, 0),
                 'updated_at' => $now->copy()->addDays($daysAgo)->setTime(9, 0),
             ]);
@@ -487,6 +489,7 @@ class DemoSeeder extends Seeder
                 'patient_id' => $p2->id,
                 'score' => $score,
                 'note' => $note,
+                'logged_on' => $now->copy()->addDays($daysAgo)->toDateString(),
                 'created_at' => $now->copy()->addDays($daysAgo)->setTime(20, 0),
                 'updated_at' => $now->copy()->addDays($daysAgo)->setTime(20, 0),
             ]);
@@ -503,6 +506,7 @@ class DemoSeeder extends Seeder
                 'patient_id' => $p4->id,
                 'score' => $score,
                 'note' => $note,
+                'logged_on' => $now->copy()->addDays($daysAgo)->toDateString(),
                 'created_at' => $now->copy()->addDays($daysAgo)->setTime(21, 0),
                 'updated_at' => $now->copy()->addDays($daysAgo)->setTime(21, 0),
             ]);

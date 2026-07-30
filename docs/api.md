@@ -65,8 +65,8 @@ Base path: `/api/v1`. Routes are defined in `routes/api.php`. The API is a patie
 | GET | `/assessments` | assigned assessments | assessment list |
 | GET | `/assessments/{assessment}` | owned assessment | fill screen |
 | POST | `/assessments/{assessment}/submit` | responses payload | completed assessment | fill screen |
-| GET | `/mood-logs` | patient-owned mood entries | mood provider/screens |
-| POST | `/mood-logs` | mood score/note/date data | created mood entry | mood UI |
+| GET | `/mood-logs` | patient-owned mood entries plus server `today`, completion state, and today entry | mood provider/screens |
+| POST | `/mood-logs` | score and optional note; server assigns the Asia/Manila `logged_on` date | `201` created entry or `409` with the existing daily entry | mood UI |
 | GET | `/goals` | read-only therapy goals/ratings | progress UI |
 | GET | `/notes` | clinician-shared patient notes | notes UI |
 

@@ -48,7 +48,7 @@ This is an index of important, maintained source files. It intentionally exclude
 | `Portal/PortalAssignmentController.php`, `portal/assignments/*` | patient assignments/submissions/downloads |
 | `Portal/PortalAssessmentController.php`, `portal/assessments/*` | list/fill/submit assessments |
 | `Portal/PortalMessageController.php`, `portal/messages/*` | patient conversation and sending |
-| `Portal/PortalMoodLogController.php`, `portal/mood/index.blade.php` | patient mood logs |
+| `Portal/PortalMoodLogController.php`, `portal/mood/index.blade.php` | immutable daily patient mood check-in and completion state |
 | `Portal/PortalGoalController.php`, `portal/goals/index.blade.php` | read-only goals |
 | `Portal/PortalNoteController.php`, `portal/notes/index.blade.php` | shared notes |
 | `Portal/PortalNotificationController.php`, `portal/notifications/*` | notification inbox/read state |

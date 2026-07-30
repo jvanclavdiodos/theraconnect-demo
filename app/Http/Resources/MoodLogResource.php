@@ -13,6 +13,7 @@ class MoodLogResource extends JsonResource
             'id' => $this->id,
             'score' => $this->score,
             'note' => $this->note,
+            'logged_on' => $this->logged_on?->toDateString(),
             'created_at' => $this->created_at,
         ];
     }

@@ -46,7 +46,8 @@ ChatbotIntent --* ChatbotResponse
 | `assignments` / `Assignment` | clinician task, due date, optional private attachment | belongs to patient/clinician; has submissions. |
 | `assignment_submissions` / `Submission` | patient text/file submission and review data | exposes extension/preview helpers; file access must be policy checked. |
 | `assessments` / `Assessment` | clinician-assigned instrument and patient responses/status | model derives title and severity; support is defined in `App\Support\Assessments`. |
-| `mood_logs` / `MoodLog` | patient mood check-ins | patient-owned and cast dates/metadata. |
+| `mood_logs` / `MoodLog` | one immutable patient mood check-in per Manila calendar date | `logged_on` is the canonical date; unique `(patient_id, logged_on)` prevents duplicate daily entries. |
+| `mood_log_archives` | legacy duplicate mood rows removed from active trends | Preserves original score, note, timestamps, and the retained mood-log ID during the approved cleanup migration. |
 | `therapy_goals` / `TherapyGoal` | clinician-created goals/status | has ratings and latest rating. |
 | `goal_ratings` / `GoalRating` | Goal Attainment Scale-type rating/note/optional appointment link | belongs to goal; model derives human label. |
 | `patient_notes` / `PatientNote` | clinician-authored notes visible under policy | belongs to patient and clinician; treat contents as highly sensitive. |

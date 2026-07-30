@@ -2,25 +2,38 @@
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\DuplicateMoodLogException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MoodLogResource;
+use App\Services\MoodLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class MoodLogController extends Controller
 {
+    public function __construct(private MoodLogService $moodLogs) {}
+
     /** Recent mood check-ins for the authenticated patient (newest first). */
     public function index(): JsonResponse
     {
         $patient = $this->getPatient();
 
         $logs = $patient->moodLogs()
-            ->latest()
+            ->orderByDesc('logged_on')
+            ->orderByDesc('created_at')
             ->take(60)
             ->get();
+        $today = $this->moodLogs->today();
+        $todayLog = $logs->first(fn ($log) => $log->logged_on->toDateString() === $today)
+            ?? $this->moodLogs->todayFor($patient, $today);
 
         return response()->json([
             'data' => MoodLogResource::collection($logs),
+            'meta' => [
+                'today' => $today,
+                'today_completed' => $todayLog !== null,
+                'today_log' => $todayLog ? new MoodLogResource($todayLog) : null,
+            ],
         ]);
     }
 
@@ -37,7 +50,14 @@ class MoodLogController extends Controller
             'note' => ['nullable', 'string', 'max:255'],
         ]);
 
-        $log = $patient->moodLogs()->create($validated);
+        try {
+            $log = $this->moodLogs->createDaily($patient, $validated);
+        } catch (DuplicateMoodLogException $exception) {
+            return response()->json([
+                'message' => $exception->getMessage(),
+                'data' => new MoodLogResource($exception->moodLog),
+            ], 409);
+        }
 
         return response()->json([
             'data' => new MoodLogResource($log),

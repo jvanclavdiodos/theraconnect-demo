@@ -49,10 +49,15 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
       }
     } catch (e) {
       if (mounted) {
+        final error = ApiError.fromException(e);
+        if (error.statusCode == 409) {
+          ref.invalidate(moodLogsProvider);
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(ApiError.fromException(e).userMessage),
-            backgroundColor: colorScheme.error,
+            content: Text(error.userMessage),
+            backgroundColor:
+                error.statusCode == 409 ? AppTheme.success : colorScheme.error,
           ),
         );
       }
@@ -64,6 +69,9 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
   @override
   Widget build(BuildContext context) {
     final moodAsync = ref.watch(moodLogsProvider);
+    final todayLog = moodAsync.valueOrNull?.todayLog;
+    final todayCompleted = moodAsync.valueOrNull?.todayCompleted ?? false;
+    final moodLoading = moodAsync.isLoading;
     final pendingCount = ref
             .watch(assessmentsProvider)
             .valueOrNull
@@ -89,58 +97,96 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('How are you feeling right now?',
-                        style: Theme.of(context).textTheme.titleMedium),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Text('1'),
-                        Expanded(
-                          child: Slider(
-                            value: _score,
-                            min: 1,
-                            max: 10,
-                            divisions: 9,
-                            label: '${_score.round()}',
-                            onChanged: (v) => setState(() => _score = v),
-                          ),
+                    if (moodLoading) ...[
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(24),
+                          child: CircularProgressIndicator(),
                         ),
-                        const Text('10'),
-                      ],
-                    ),
-                    Center(
-                      child: Text(
-                        '${_score.round()} · ${_moodLabel(_score.round())}',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: _moodColor(_score.round()),
-                            fontWeight: FontWeight.bold),
                       ),
-                    ),
-                    const SizedBox(height: 12),
-                    TextField(
-                      controller: _noteController,
-                      maxLength: 255,
-                      decoration: const InputDecoration(
-                        labelText: 'Add a note (optional)',
-                        border: OutlineInputBorder(),
+                    ] else if (todayCompleted && todayLog != null) ...[
+                      Center(
+                        child: Column(
+                          children: [
+                            const Icon(Icons.check_circle,
+                                color: AppTheme.success, size: 44),
+                            const SizedBox(height: 8),
+                            Text(
+                              "Today's check-in is complete",
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                            const SizedBox(height: 8),
+                            Chip(
+                              label: Text(
+                                  '${todayLog.score} - ${_moodLabel(todayLog.score)}'),
+                              backgroundColor: _moodColor(todayLog.score)
+                                  .withValues(alpha: 0.12),
+                            ),
+                            if (todayLog.note?.isNotEmpty == true) ...[
+                              const SizedBox(height: 8),
+                              Text(todayLog.note!, textAlign: TextAlign.center),
+                            ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    FilledButton.icon(
-                      onPressed: _logging ? null : _logMood,
-                      icon: _logging
-                          ? SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: Theme.of(context).colorScheme.onPrimary,
-                              ))
-                          : const Icon(Icons.add),
-                      label: const Text('Log mood'),
-                      style: FilledButton.styleFrom(
-                          minimumSize: const Size(double.infinity, 48)),
-                    ),
+                    ] else ...[
+                      Text('How have you felt overall today?',
+                          style: Theme.of(context).textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Text('1'),
+                          Expanded(
+                            child: Slider(
+                              value: _score,
+                              min: 1,
+                              max: 10,
+                              divisions: 9,
+                              label: '${_score.round()}',
+                              onChanged: (v) => setState(() => _score = v),
+                            ),
+                          ),
+                          const Text('10'),
+                        ],
+                      ),
+                      Center(
+                        child: Text(
+                          '${_score.round()} · ${_moodLabel(_score.round())}',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleLarge
+                              ?.copyWith(
+                                  color: _moodColor(_score.round()),
+                                  fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _noteController,
+                        maxLength: 255,
+                        decoration: const InputDecoration(
+                          labelText: 'Add a note (optional)',
+                          border: OutlineInputBorder(),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      FilledButton.icon(
+                        onPressed: _logging ? null : _logMood,
+                        icon: _logging
+                            ? SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
+                                ))
+                            : const Icon(Icons.add),
+                        label: const Text("Save today's check-in"),
+                        style: FilledButton.styleFrom(
+                            minimumSize: const Size(double.infinity, 48)),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -175,13 +221,15 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             moodAsync.when(
-              data: (logs) {
+              data: (feed) {
+                final logs = feed.logs;
                 if (logs.isEmpty) {
                   return const Card(
                     child: Padding(
                       padding: EdgeInsets.all(24),
                       child: Center(
-                          child: Text('No check-ins yet. Log your first above.')),
+                          child:
+                              Text('No check-ins yet. Log your first above.')),
                     ),
                   );
                 }
@@ -192,8 +240,8 @@ class _MyProgressScreenState extends ConsumerState<MyProgressScreen> {
                   ),
                 );
               },
-              loading: () =>
-                  const Center(child: Padding(
+              loading: () => const Center(
+                  child: Padding(
                       padding: EdgeInsets.all(24),
                       child: CircularProgressIndicator())),
               error: (e, _) =>
@@ -305,7 +353,7 @@ class _MoodTrend extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    (m.createdAt ?? '').split('T').first.split('-').skip(1).join('/'),
+                    m.loggedOn.split('-').skip(1).join('/'),
                     style: Theme.of(context).textTheme.labelSmall,
                     maxLines: 1,
                     overflow: TextOverflow.clip,

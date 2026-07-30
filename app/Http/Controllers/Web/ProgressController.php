@@ -63,7 +63,8 @@ class ProgressController extends Controller
 
         // Recent mood check-ins (oldest → newest) for a denser between-scale trend.
         $moodLogs = MoodLog::where('patient_id', $patient->id)
-            ->latest()
+            ->orderByDesc('logged_on')
+            ->orderByDesc('created_at')
             ->take(30)
             ->get()
             ->reverse()

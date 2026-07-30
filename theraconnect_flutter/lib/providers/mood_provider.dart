@@ -8,7 +8,6 @@ final moodApiProvider = Provider<MoodApi>((ref) {
 });
 
 /// The patient's recent mood check-ins (newest first).
-final moodLogsProvider =
-    FutureProvider.autoDispose<List<MoodLog>>((ref) async {
+final moodLogsProvider = FutureProvider.autoDispose<MoodLogFeed>((ref) async {
   return ref.watch(moodApiProvider).getMoodLogs();
 });

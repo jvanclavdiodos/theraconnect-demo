@@ -11,12 +11,14 @@ class MoodLog extends Model
         'patient_id',
         'score',
         'note',
+        'logged_on',
     ];
 
     protected function casts(): array
     {
         return [
             'score' => 'integer',
+            'logged_on' => 'date',
         ];
     }
 

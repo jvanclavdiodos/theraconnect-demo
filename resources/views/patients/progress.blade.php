@@ -212,7 +212,7 @@
                     <tbody>
                         <tr class="text-muted small">
                             @foreach ($moodLogs as $m)
-                                <td class="text-center">{{ $m->created_at->format('M d') }}</td>
+                                <td class="text-center">{{ $m->logged_on->format('M d') }}</td>
                             @endforeach
                         </tr>
                         <tr class="fw-semibold">
