@@ -14,6 +14,12 @@
             @php
                 $navUnread = \App\Models\Notification::where('user_id', auth()->id())
                     ->unreadGeneral()->count();
+                $navName = auth()->user()->name;
+                $navInitials = collect(explode(' ', trim($navName)))
+                    ->filter()
+                    ->take(2)
+                    ->map(fn($part) => mb_strtoupper(mb_substr($part, 0, 1)))
+                    ->implode('');
             @endphp
             <button type="button" class="btn btn-outline-secondary btn-sm"
                     @click="$store.theme.toggle()"
@@ -28,11 +34,16 @@
                     {{ $navUnread > 9 ? '9+' : $navUnread }}
                 </span>
             </a>
-            <span class="tc-user-pill d-none d-sm-inline-flex">
-                <i class="bi bi-person-circle"></i>
-                {{ auth()->user()->name }}
-                <span class="badge bg-secondary">{{ ucfirst(auth()->user()->role) }}</span>
-            </span>
+            <a href="{{ route('account.edit') }}"
+               class="tc-navbar-account"
+               title="View profile" aria-label="View profile">
+                @if(auth()->user()->hasAvatar())
+                    <img src="{{ route('avatars.show', auth()->user()) }}" alt="" class="tc-navbar-avatar">
+                @else
+                    <span class="tc-navbar-avatar tc-navbar-avatar-fallback" aria-hidden="true">{{ $navInitials ?: 'U' }}</span>
+                @endif
+                <span class="tc-navbar-account-name">{{ $navName }}</span>
+            </a>
             <form method="POST" action="{{ route('logout') }}" class="mb-0">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger btn-sm">

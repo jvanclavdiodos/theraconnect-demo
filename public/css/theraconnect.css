@@ -232,11 +232,11 @@ a:hover { color: var(--tc-teal-dark); }
 }
 .tc-user-pill .badge { font-weight: 600; }
 .tc-navbar-avatar {
-  width: 22px;
-  height: 22px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   object-fit: cover;
-  flex: 0 0 22px;
+  flex: 0 0 28px;
 }
 .tc-navbar-avatar-fallback {
   display: inline-flex;
@@ -246,6 +246,33 @@ a:hover { color: var(--tc-teal-dark); }
   color: #fff;
   font-size: 0.65rem;
   font-weight: 700;
+}
+.tc-navbar-account {
+  min-width: 0;
+  max-width: 220px;
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--tc-slate);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.tc-navbar-account:hover,
+.tc-navbar-account:focus-visible {
+  border-color: var(--tc-neutral-200);
+  background: var(--tc-neutral-100);
+  color: var(--tc-slate);
+}
+.tc-navbar-account-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* ------------------------------------------------------------------- Cards */

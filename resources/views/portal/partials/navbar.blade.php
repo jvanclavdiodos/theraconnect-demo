@@ -35,14 +35,14 @@
                 </span>
             </a>
             <a href="{{ route('portal.profile.show') }}"
-               class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2"
+               class="tc-navbar-account"
                title="View profile" aria-label="View profile">
                 @if(auth()->user()->hasAvatar())
                     <img src="{{ route('portal.profile.avatar') }}" alt="" class="tc-navbar-avatar">
                 @else
                     <span class="tc-navbar-avatar tc-navbar-avatar-fallback" aria-hidden="true">{{ $initials ?: 'U' }}</span>
                 @endif
-                <span class="d-none d-sm-inline">Profile</span>
+                <span class="tc-navbar-account-name">{{ $name }}</span>
             </a>
             <form method="POST" action="{{ route('logout') }}" class="mb-0">
                 @csrf
