@@ -35,40 +35,48 @@
 {{-- KPI cards --}}
 <div class="row g-4 mb-4">
     <div class="col-6 col-xl-3">
-        <div class="tc-kpi">
-            <div class="tc-kpi-head">
-                <span class="tc-kpi-icon teal"><i class="bi bi-calendar-check"></i></span>
+        <a href="{{ route('appointments.index') }}" class="text-decoration-none" aria-label="View appointments">
+            <div class="tc-kpi">
+                <div class="tc-kpi-head">
+                    <span class="tc-kpi-icon teal"><i class="bi bi-calendar-check"></i></span>
+                </div>
+                <div class="tc-kpi-value">{{ $todayAppointments }}</div>
+                <div class="tc-kpi-label">Today's Appointments</div>
             </div>
-            <div class="tc-kpi-value">{{ $todayAppointments }}</div>
-            <div class="tc-kpi-label">Today's Appointments</div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-xl-3">
-        <div class="tc-kpi">
-            <div class="tc-kpi-head">
-                <span class="tc-kpi-icon amber"><i class="bi bi-clock-history"></i></span>
+        <a href="{{ route('appointments.index', ['status' => 'pending']) }}" class="text-decoration-none" aria-label="View pending appointment requests">
+            <div class="tc-kpi">
+                <div class="tc-kpi-head">
+                    <span class="tc-kpi-icon amber"><i class="bi bi-clock-history"></i></span>
+                </div>
+                <div class="tc-kpi-value">{{ $pendingAppointments }}</div>
+                <div class="tc-kpi-label">Pending Requests</div>
             </div>
-            <div class="tc-kpi-value">{{ $pendingAppointments }}</div>
-            <div class="tc-kpi-label">Pending Requests</div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-xl-3">
-        <div class="tc-kpi">
-            <div class="tc-kpi-head">
-                <span class="tc-kpi-icon green"><i class="bi bi-people"></i></span>
+        <a href="{{ route('patients.index') }}" class="text-decoration-none" aria-label="View active patients">
+            <div class="tc-kpi">
+                <div class="tc-kpi-head">
+                    <span class="tc-kpi-icon green"><i class="bi bi-people"></i></span>
+                </div>
+                <div class="tc-kpi-value">{{ $totalPatients }}</div>
+                <div class="tc-kpi-label">Active Patients</div>
             </div>
-            <div class="tc-kpi-value">{{ $totalPatients }}</div>
-            <div class="tc-kpi-label">Active Patients</div>
-        </div>
+        </a>
     </div>
     <div class="col-6 col-xl-3">
-        <div class="tc-kpi">
-            <div class="tc-kpi-head">
-                <span class="tc-kpi-icon blue"><i class="bi bi-clipboard-check"></i></span>
+        <a href="{{ route('assignments.index') }}" class="text-decoration-none" aria-label="View assignments">
+            <div class="tc-kpi">
+                <div class="tc-kpi-head">
+                    <span class="tc-kpi-icon blue"><i class="bi bi-clipboard-check"></i></span>
+                </div>
+                <div class="tc-kpi-value">{{ $pendingAssignments->count() }}</div>
+                <div class="tc-kpi-label">Pending Assignments</div>
             </div>
-            <div class="tc-kpi-value">{{ $pendingAssignments->count() }}</div>
-            <div class="tc-kpi-label">Pending Assignments</div>
-        </div>
+        </a>
     </div>
 </div>
 
