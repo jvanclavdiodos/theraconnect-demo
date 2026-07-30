@@ -1,11 +1,5 @@
 @php
     $isActive = fn(string $route) => request()->routeIs($route) ? 'active' : '';
-    $name = auth()->check() ? auth()->user()->name : '';
-    $initials = collect(explode(' ', trim($name)))
-        ->filter()->take(2)
-        ->map(fn($p) => mb_strtoupper(mb_substr($p, 0, 1)))
-        ->implode('');
-
     $patient = auth()->user()->patient ?? null;
     $unreadMessages = 0;
     if ($patient) {
@@ -82,19 +76,4 @@
         </div>
     </nav>
 
-    @auth
-        <div class="tc-sidebar-footer">
-            <a href="{{ route('portal.profile.show') }}" class="tc-user-chip text-decoration-none text-reset" title="My account">
-                @if(auth()->user()->hasAvatar())
-                    <img src="{{ route('portal.profile.avatar') }}" alt="avatar" class="tc-avatar" style="object-fit:cover;padding:0;">
-                @else
-                    <span class="tc-avatar">{{ $initials ?: 'U' }}</span>
-                @endif
-                <div class="overflow-hidden">
-                    <div class="tc-user-name text-truncate">{{ $name }}</div>
-                    <div class="tc-user-role">Patient</div>
-                </div>
-            </a>
-        </div>
-    @endauth
 </aside>

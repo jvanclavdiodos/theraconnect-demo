@@ -231,6 +231,22 @@ a:hover { color: var(--tc-teal-dark); }
   color: var(--tc-slate-mid); font-size: 0.85rem;
 }
 .tc-user-pill .badge { font-weight: 600; }
+.tc-navbar-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 22px;
+}
+.tc-navbar-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--tc-teal);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+}
 
 /* ------------------------------------------------------------------- Cards */
 .card {

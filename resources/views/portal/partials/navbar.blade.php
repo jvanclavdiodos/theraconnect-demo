@@ -2,6 +2,11 @@
     $unreadNotifications = auth()->check()
         ? \App\Models\Notification::where('user_id', auth()->id())->unreadGeneral()->count()
         : 0;
+    $name = auth()->check() ? auth()->user()->name : '';
+    $initials = collect(explode(' ', trim($name)))
+        ->filter()->take(2)
+        ->map(fn($part) => mb_strtoupper(mb_substr($part, 0, 1)))
+        ->implode('');
 @endphp
 <nav class="navbar navbar-expand-lg navbar-light">
     @auth
@@ -29,10 +34,16 @@
                     {{ $unreadNotifications > 9 ? '9+' : $unreadNotifications }}
                 </span>
             </a>
-            <span class="tc-user-pill d-none d-sm-inline-flex">
-                <i class="bi bi-person-circle"></i>
-                {{ auth()->user()->name }}
-            </span>
+            <a href="{{ route('portal.profile.show') }}"
+               class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center gap-2"
+               title="View profile" aria-label="View profile">
+                @if(auth()->user()->hasAvatar())
+                    <img src="{{ route('portal.profile.avatar') }}" alt="" class="tc-navbar-avatar">
+                @else
+                    <span class="tc-navbar-avatar tc-navbar-avatar-fallback" aria-hidden="true">{{ $initials ?: 'U' }}</span>
+                @endif
+                <span class="d-none d-sm-inline">Profile</span>
+            </a>
             <form method="POST" action="{{ route('logout') }}" class="mb-0">
                 @csrf
                 <button type="submit" class="btn btn-outline-danger btn-sm">
