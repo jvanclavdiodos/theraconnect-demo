@@ -40,9 +40,9 @@ class ConversationController extends Controller
             ], 422);
         }
 
-        $clinicianId = $request->integer('clinician_id') ?: null;
-        $clinician = $clinicianId
-            ? $clinicians->firstWhere('id', $clinicianId)
+        $clinicianPublicId = $request->string('clinician_id')->toString() ?: null;
+        $clinician = $clinicianPublicId
+            ? $clinicians->firstWhere('public_id', $clinicianPublicId)
             : ($clinicians->count() === 1 ? $clinicians->first() : null);
 
         if (! $clinician) {

@@ -35,7 +35,7 @@ class StoreAppointmentRequest extends FormRequest
             ],
             'mode' => ['required', 'in:in_person,online'],
             'reason' => ['nullable', 'string', 'max:500'],
-            'clinician_id' => ['nullable', 'exists:clinicians,id'],
+            'clinician_id' => ['nullable', 'string', 'exists:clinicians,public_id'],
         ];
     }
 }

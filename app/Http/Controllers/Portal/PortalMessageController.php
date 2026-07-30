@@ -23,9 +23,9 @@ class PortalMessageController extends Controller
         abort_unless($patient !== null, 404);
 
         $conversations = $this->messages->ensureAssignedConversations($patient);
-        $selectedId = $request->integer('conversation');
+        $selectedId = $request->string('conversation')->toString();
         $conversation = $selectedId
-            ? $conversations->firstWhere('id', $selectedId)
+            ? $conversations->firstWhere('public_id', $selectedId)
             : $conversations->first();
 
         abort_if($selectedId && ! $conversation, 404);
@@ -51,9 +51,9 @@ class PortalMessageController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'data' => [
-                    'id' => $message->id,
-                    'conversation_id' => $message->conversation_id,
-                    'sender_id' => $message->sender_id,
+                    'public_id' => $message->public_id,
+                    'conversation_public_id' => $message->conversation->public_id,
+                    'sender_public_id' => $message->sender->public_id,
                     'body' => $message->body,
                     'created_at' => $message->created_at?->toIso8601String(),
                     'created_at_label' => $message->created_at?->format('M j, g:i A'),

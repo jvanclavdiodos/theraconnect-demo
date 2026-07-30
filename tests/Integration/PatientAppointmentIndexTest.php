@@ -95,8 +95,8 @@ class PatientAppointmentIndexTest extends TestCase
             ->getJson('/api/v1/appointments?status=approved&mode=online&sort=appointment_date&direction=asc')
             ->assertOk()
             ->assertJsonPath('meta.total', 2)
-            ->assertJsonPath('data.0.id', $older->id)
-            ->assertJsonPath('data.1.id', $newer->id);
+            ->assertJsonPath('data.0.public_id', $older->public_id)
+            ->assertJsonPath('data.1.public_id', $newer->public_id);
 
         $this->withHeaders($this->apiHeaders($token))
             ->getJson('/api/v1/appointments?direction=sideways')

@@ -23,7 +23,7 @@ class StoreAssignmentRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'patient_id' => ['required', 'exists:patients,id'],
+            'patient_id' => ['required', 'string', 'exists:patients,public_id'],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'due_date' => ['nullable', 'date'],
@@ -38,7 +38,7 @@ class StoreAssignmentRequest extends FormRequest
         // Admins must attribute the assignment to a clinician; clinicians
         // authoring their own assignments do not send clinician_id.
         if (! auth()->user()?->clinician) {
-            $rules['clinician_id'] = ['required', 'exists:clinicians,id'];
+            $rules['clinician_id'] = ['required', 'string', 'exists:clinicians,public_id'];
         }
 
         return $rules;

@@ -13,7 +13,7 @@ class TherapyGoalResource extends JsonResource
         $latest = $this->whenLoaded('latestRating');
 
         return [
-            'id' => $this->id,
+            'public_id' => $this->public_id,
             'description' => $this->description,
             'status' => $this->status,
             'target_date' => $this->target_date?->toDateString(),

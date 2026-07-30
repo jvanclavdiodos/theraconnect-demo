@@ -1,6 +1,6 @@
 /// The patient's own submission for an assignment (for in-app preview).
 class AssignmentSubmission {
-  final int id;
+  final String id;
   final String? content;
   final String? originalName;
   final String kind; // image | pdf | text | other
@@ -16,7 +16,7 @@ class AssignmentSubmission {
 
   factory AssignmentSubmission.fromJson(Map<String, dynamic> json) {
     return AssignmentSubmission(
-      id: json['id'] as int,
+      id: json['public_id'] as String,
       content: json['content'] as String?,
       originalName: json['original_name'] as String?,
       kind: (json['kind'] as String?) ?? 'other',
@@ -28,10 +28,10 @@ class AssignmentSubmission {
 }
 
 class Assignment {
-  final int id;
-  final int clinicianId;
+  final String id;
+  final String clinicianId;
   final String? clinicianName;
-  final int patientId;
+  final String patientId;
   final String title;
   final String? description;
   final String? attachmentUrl;
@@ -62,10 +62,10 @@ class Assignment {
 
   factory Assignment.fromJson(Map<String, dynamic> json) {
     return Assignment(
-      id: json['id'] as int,
-      clinicianId: json['clinician_id'] as int,
+      id: json['public_id'] as String,
+      clinicianId: json['clinician_public_id'] as String,
       clinicianName: json['clinician_name'] as String?,
-      patientId: json['patient_id'] as int,
+      patientId: json['patient_public_id'] as String,
       title: json['title'] as String,
       description: json['description'] as String?,
       attachmentUrl: json['attachment_url'] as String?,
@@ -83,10 +83,10 @@ class Assignment {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'clinician_id': clinicianId,
+      'public_id': id,
+      'clinician_public_id': clinicianId,
       'clinician_name': clinicianName,
-      'patient_id': patientId,
+      'patient_public_id': patientId,
       'title': title,
       'description': description,
       'attachment_url': attachmentUrl,

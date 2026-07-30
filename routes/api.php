@@ -62,7 +62,7 @@ Route::prefix('v1')->group(function () {
         Route::middleware('throttle:api')->group(function () {
             Route::get('/guide', UserGuideController::class);
             Route::get('/notifications', [NotificationController::class, 'index']);
-            Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead']);
+            Route::post('/notifications/{notification:public_id}/read', [NotificationController::class, 'markRead']);
 
             Route::post('/device-token', [DeviceTokenController::class, 'store']);
             Route::delete('/device-token', [DeviceTokenController::class, 'destroy']);
@@ -79,20 +79,20 @@ Route::prefix('v1')->group(function () {
             Route::get('/schedules/availability', [AppointmentController::class, 'availability']);
             Route::get('/appointments', [AppointmentController::class, 'index']);
             Route::post('/appointments', [AppointmentController::class, 'store']);
-            Route::get('/appointments/{id}', [AppointmentController::class, 'show']);
-            Route::delete('/appointments/{id}', [AppointmentController::class, 'destroy']);
+            Route::get('/appointments/{appointment:public_id}', [AppointmentController::class, 'show']);
+            Route::delete('/appointments/{appointment:public_id}', [AppointmentController::class, 'destroy']);
 
             Route::get('/assignments', [AssignmentController::class, 'index']);
-            Route::get('/assignments/{id}', [AssignmentController::class, 'show']);
-            Route::get('/assignments/{id}/worksheet', [AssignmentController::class, 'downloadWorksheet']);
-            Route::post('/assignments/{id}/submit', [SubmissionController::class, 'store']);
-            Route::get('/submissions/{id}/file', [SubmissionController::class, 'downloadFile']);
+            Route::get('/assignments/{assignment:public_id}', [AssignmentController::class, 'show']);
+            Route::get('/assignments/{assignment:public_id}/worksheet', [AssignmentController::class, 'downloadWorksheet']);
+            Route::post('/assignments/{assignment:public_id}/submit', [SubmissionController::class, 'store']);
+            Route::get('/submissions/{submission:public_id}/file', [SubmissionController::class, 'downloadFile']);
 
             Route::get('/notes', [PatientNoteController::class, 'index']);
 
             Route::get('/assessments', [AssessmentController::class, 'index']);
-            Route::get('/assessments/{assessment}', [AssessmentController::class, 'show']);
-            Route::post('/assessments/{assessment}/submit', [AssessmentController::class, 'submit']);
+            Route::get('/assessments/{assessment:public_id}', [AssessmentController::class, 'show']);
+            Route::post('/assessments/{assessment:public_id}/submit', [AssessmentController::class, 'submit']);
 
             Route::get('/mood-logs', [MoodLogController::class, 'index']);
             Route::post('/mood-logs', [MoodLogController::class, 'store']);
@@ -101,8 +101,8 @@ Route::prefix('v1')->group(function () {
 
             Route::get('/conversations', [ConversationController::class, 'index']);
             Route::post('/conversations', [ConversationController::class, 'store']);
-            Route::get('/conversations/{conversation}/messages', [ConversationController::class, 'messages']);
-            Route::post('/conversations/{conversation}/messages', [ConversationController::class, 'send']);
+            Route::get('/conversations/{conversation:public_id}/messages', [ConversationController::class, 'messages']);
+            Route::post('/conversations/{conversation:public_id}/messages', [ConversationController::class, 'send']);
         });
 
         Route::middleware('throttle:chatbot')->group(function () {

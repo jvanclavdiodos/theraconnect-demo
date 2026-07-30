@@ -144,7 +144,7 @@ class ProgressController extends Controller
 
         $this->goals->rate($goal, $validated['rating'], $validated['note'] ?? null);
 
-        return redirect()->route('patients.progress', $goal->patient_id)
+        return redirect()->route('patients.progress', $goal->patient)
             ->with('status', 'Progress rated.');
     }
 
@@ -159,7 +159,7 @@ class ProgressController extends Controller
 
         $this->goals->setStatus($goal, $validated['status']);
 
-        return redirect()->route('patients.progress', $goal->patient_id)
+        return redirect()->route('patients.progress', $goal->patient)
             ->with('status', 'Goal updated.');
     }
 

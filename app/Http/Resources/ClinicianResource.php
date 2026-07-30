@@ -10,7 +10,7 @@ class ClinicianResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
+            'public_id' => $this->public_id,
             'name' => $this->relationLoaded('user') ? $this->user?->name : null,
             'specialization' => $this->specialization,
         ];

@@ -124,8 +124,8 @@ class FcmService {
   /// Maps the backend push `data` payload to an in-app route.
   String _routeFor(Map<String, dynamic> data) {
     final type = (data['type'] ?? '').toString();
-    final appointmentId = data['appointment_id']?.toString();
-    final assignmentId = data['assignment_id']?.toString();
+    final appointmentId = data['appointment_public_id']?.toString();
+    final assignmentId = data['assignment_public_id']?.toString();
 
     if (type.startsWith('appointment')) {
       return appointmentId != null ? '/appointments/$appointmentId' : '/appointments';

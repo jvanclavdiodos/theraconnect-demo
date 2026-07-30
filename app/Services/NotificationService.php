@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Events\NotificationCreated;
 use App\Jobs\SendEmailNotification;
 use App\Jobs\SendPushNotification;
+use App\Models\Appointment;
+use App\Models\Assignment;
 use App\Models\Notification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -181,7 +183,7 @@ class NotificationService
                 ? "Your appointment is tomorrow at {$time}. Please review the details and prepare anything you need."
                 : "Reminder: you have an appointment tomorrow at {$time}.",
             [
-                'appointment_id' => $appointmentId,
+                'appointment_public_id' => Appointment::findOrFail($appointmentId)->public_id,
                 'reminder_kind' => $reminderKind,
                 'reminder_for' => $reminderFor,
             ]
@@ -280,7 +282,7 @@ class NotificationService
             'assignment_deadline',
             'Assignment Due Soon',
             "'{$title}' is due {$dueDate}.",
-            ['assignment_id' => $assignmentId]
+            ['assignment_public_id' => Assignment::findOrFail($assignmentId)->public_id]
         );
     }
 }

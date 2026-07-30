@@ -1,6 +1,6 @@
 @extends('layouts.portal')
 @section('realtime-resources', 'messages')
-@section('realtime-conversation', $conversation?->id)
+@section('realtime-conversation', $conversation?->public_id)
 
 @section('title', 'Messages - ' . config('app.name'))
 
@@ -31,7 +31,7 @@
                     $unread = $thread->unreadCountFor(auth()->user());
                     $isActive = $conversation?->id === $thread->id;
                 @endphp
-                <a href="{{ route('portal.messages.index', ['conversation' => $thread->id]) }}"
+                <a href="{{ route('portal.messages.index', ['conversation' => $thread->public_id]) }}"
                    class="tc-conversation-item {{ $isActive ? 'active' : '' }}"
                    @if($isActive) aria-current="page" @endif>
                     @if($thread->clinician?->user?->hasAvatar())
@@ -78,7 +78,7 @@
             <div class="tc-message-thread" id="thread">
                 @forelse($conversation->messages as $message)
                     @php $mine = $message->sender_id === auth()->id(); @endphp
-                    <div class="tc-message-row {{ $mine ? 'outgoing' : 'incoming' }}" data-message-id="{{ $message->id }}">
+                    <div class="tc-message-row {{ $mine ? 'outgoing' : 'incoming' }}" data-message-id="{{ $message->public_id }}">
                         <div class="tc-message-bubble">
                             <div class="tc-message-body">{{ $message->body }}</div>
                             <time class="tc-message-time" datetime="{{ $message->created_at->toIso8601String() }}">{{ $message->created_at->format('M j, g:i A') }}</time>

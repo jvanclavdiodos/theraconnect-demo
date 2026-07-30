@@ -10,9 +10,9 @@ class AppointmentResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'patient_id' => $this->patient_id,
-            'clinician_id' => $this->clinician_id,
+            'public_id' => $this->public_id,
+            'patient_public_id' => $this->patient?->public_id,
+            'clinician_public_id' => $this->clinician?->public_id,
             'clinician_name' => $this->relationLoaded('clinician') && $this->clinician
                 ? $this->clinician->user?->name
                 : null,

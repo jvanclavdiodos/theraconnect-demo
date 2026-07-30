@@ -46,7 +46,7 @@ class AppointmentCompleteTest extends TestCase
         $appt = $this->appointmentFor($clinician['clinician']);
 
         $this->actingAs($clinician['user'], 'web')
-            ->patch("/appointments/{$appt->id}/complete")
+            ->patch("/appointments/{$appt->public_id}/complete")
             ->assertRedirect(route('appointments.index'));
 
         $this->assertSame('completed', $appt->fresh()->status);
@@ -58,7 +58,7 @@ class AppointmentCompleteTest extends TestCase
         $appt = $this->appointmentFor($clinician['clinician'], 'pending');
 
         $this->actingAs($clinician['user'], 'web')
-            ->patch("/appointments/{$appt->id}/complete")
+            ->patch("/appointments/{$appt->public_id}/complete")
             ->assertSessionHasErrors('status');
 
         $this->assertSame('pending', $appt->fresh()->status);
@@ -71,7 +71,7 @@ class AppointmentCompleteTest extends TestCase
         $appt = $this->appointmentFor($owner['clinician']);
 
         $this->actingAs($other['user'], 'web')
-            ->patch("/appointments/{$appt->id}/complete")
+            ->patch("/appointments/{$appt->public_id}/complete")
             ->assertStatus(403);
 
         $this->assertSame('approved', $appt->fresh()->status);

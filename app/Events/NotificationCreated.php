@@ -18,7 +18,7 @@ class NotificationCreated implements ShouldBroadcast, ShouldDispatchAfterCommit
 
     public function broadcastOn(): PrivateChannel
     {
-        return new PrivateChannel('users.'.$this->notification->user_id);
+        return new PrivateChannel('users.'.$this->notification->user->public_id);
     }
 
     public function broadcastAs(): string
@@ -29,7 +29,7 @@ class NotificationCreated implements ShouldBroadcast, ShouldDispatchAfterCommit
     public function broadcastWith(): array
     {
         return [
-            'notification_id' => $this->notification->id,
+            'notification_public_id' => $this->notification->public_id,
             'type' => $this->notification->type,
             'created_at' => $this->notification->created_at?->toISOString(),
         ];

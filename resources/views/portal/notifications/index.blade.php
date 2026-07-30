@@ -50,7 +50,7 @@
                     <div class="text-muted small mt-1">{{ $n->created_at->diffForHumans() }}</div>
                 </div>
                 @unless($n->read_at)
-                    <form method="POST" action="{{ route('portal.notifications.read', $n->id) }}"
+                    <form method="POST" action="{{ route('portal.notifications.read', $n) }}"
                           x-data="{ busy: false }" @submit.prevent="mark($el, $root)">
                         @csrf
                         <button class="btn btn-sm btn-link text-decoration-none" type="submit"

@@ -94,7 +94,7 @@ class ClinicianScopingTest extends TestCase
 
         // Clinician B may not approve clinician A's appointment.
         $this->actingAs($b['user'], 'web')
-            ->patch("/appointments/{$apptA->id}/approve")
+            ->patch("/appointments/{$apptA->public_id}/approve")
             ->assertForbidden();
 
         $this->assertDatabaseHas('appointments', ['id' => $apptA->id, 'status' => 'pending']);
@@ -107,7 +107,7 @@ class ClinicianScopingTest extends TestCase
         $apptA = $this->pendingAppointment($patientA->id, $a['clinician']->id);
 
         $this->actingAs($a['user'], 'web')
-            ->patch("/appointments/{$apptA->id}/approve")
+            ->patch("/appointments/{$apptA->public_id}/approve")
             ->assertRedirect(route('appointments.index'));
 
         $this->assertDatabaseHas('appointments', ['id' => $apptA->id, 'status' => 'approved']);
@@ -122,12 +122,12 @@ class ClinicianScopingTest extends TestCase
 
         // View submissions list for A's assignment.
         $this->actingAs($b['user'], 'web')
-            ->get("/assignments/{$submission->assignment_id}/submissions")
+            ->get("/assignments/{$submission->assignment->public_id}/submissions")
             ->assertForbidden();
 
         // Download A's submission file.
         $this->actingAs($b['user'], 'web')
-            ->get("/submissions/{$submission->id}/file")
+            ->get("/submissions/{$submission->public_id}/file")
             ->assertForbidden();
     }
 
@@ -138,7 +138,7 @@ class ClinicianScopingTest extends TestCase
         $submission = $this->submissionFor($a['clinician']->id, $patientA->id);
 
         $this->actingAs($a['user'], 'web')
-            ->patch("/submissions/{$submission->id}/review")
+            ->patch("/submissions/{$submission->public_id}/review")
             ->assertRedirect();
 
         $this->assertDatabaseHas('assignment_submissions', [
@@ -180,7 +180,7 @@ class ClinicianScopingTest extends TestCase
         $patientA = $this->makePatient('pa@test.com', 'Patient A', $a['clinician']->id);
 
         // Editing an existing patient record is admin-only.
-        $this->actingAs($a['user'], 'web')->get("/patients/{$patientA->id}/edit")->assertForbidden();
+        $this->actingAs($a['user'], 'web')->get("/patients/{$patientA->public_id}/edit")->assertForbidden();
         // Clinician management is admin-only.
         $this->actingAs($a['user'], 'web')->get('/clinicians')->assertForbidden();
         // Chatbot content + notification logs are admin-only.
@@ -202,7 +202,7 @@ class ClinicianScopingTest extends TestCase
             'name' => 'New Patient',
             'email' => 'newp@test.com',
             'password' => 'Password123',
-            'assigned_clinician_id' => $b['clinician']->id, // attempt to assign to B
+            'assigned_clinician_id' => $b['clinician']->public_id, // attempt to assign to B
         ])->assertRedirect(route('patients.index'));
 
         $this->assertDatabaseHas('patients', [

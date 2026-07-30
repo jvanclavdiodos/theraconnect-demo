@@ -32,7 +32,7 @@ class NotificationApi {
     }
   }
 
-  Future<NotificationItem> markRead(int id) async {
+  Future<NotificationItem> markRead(String id) async {
     try {
       final response =
           await _client.post('${ApiConfig.notificationsEndpoint}/$id/read');

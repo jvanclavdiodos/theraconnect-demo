@@ -51,7 +51,7 @@ class NotificationFlowTest extends TestCase
         $this->assertNull($notification->fresh()->read_at);
 
         $response = $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/notifications/{$notification->id}/read");
+            ->postJson("/api/v1/notifications/{$notification->public_id}/read");
 
         $response->assertStatus(200)
             ->assertJsonPath('data.type', 'assignment_created');
@@ -76,7 +76,7 @@ class NotificationFlowTest extends TestCase
         $tokenB = $this->getApiToken($patientB['user']);
 
         $this->withHeaders($this->apiHeaders($tokenB))
-            ->postJson("/api/v1/notifications/{$notification->id}/read")
+            ->postJson("/api/v1/notifications/{$notification->public_id}/read")
             ->assertStatus(404);
     }
 

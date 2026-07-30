@@ -5,12 +5,12 @@ use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Gate;
 
-Broadcast::channel('users.{id}', function (User $user, int $id) {
-    return (int) $user->id === (int) $id;
+Broadcast::channel('users.{publicId}', function (User $user, string $publicId) {
+    return hash_equals($user->public_id, $publicId);
 }, ['guards' => ['web', 'sanctum']]);
 
-Broadcast::channel('conversations.{conversationId}', function (User $user, int $conversationId) {
-    $conversation = Conversation::find($conversationId);
+Broadcast::channel('conversations.{publicId}', function (User $user, string $publicId) {
+    $conversation = Conversation::where('public_id', $publicId)->first();
 
     return $conversation !== null
         && Gate::forUser($user)->allows('participate', $conversation);

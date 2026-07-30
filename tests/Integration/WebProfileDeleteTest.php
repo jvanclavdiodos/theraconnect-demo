@@ -21,7 +21,7 @@ class WebProfileDeleteTest extends TestCase
         $patient = $this->createPatient('doomed-p@test.com');
 
         $this->actingAs($admin, 'web')
-            ->delete("/patients/{$patient['patient']->id}");
+            ->delete("/patients/{$patient['patient']->public_id}");
 
         // Profile soft-deleted.
         $this->assertSoftDeleted('patients', ['id' => $patient['patient']->id]);
@@ -46,7 +46,7 @@ class WebProfileDeleteTest extends TestCase
         $clinician = $this->createClinician();
 
         $this->actingAs($admin, 'web')
-            ->delete("/clinicians/{$clinician['clinician']->id}");
+            ->delete("/clinicians/{$clinician['clinician']->public_id}");
 
         $this->assertSoftDeleted('clinicians', ['id' => $clinician['clinician']->id]);
         $this->assertSoftDeleted('users', ['id' => $clinician['user']->id]);
@@ -63,7 +63,7 @@ class WebProfileDeleteTest extends TestCase
         $patient = $this->createPatient('gone-p@test.com');
 
         $this->actingAs($admin, 'web')
-            ->delete("/patients/{$patient['patient']->id}");
+            ->delete("/patients/{$patient['patient']->public_id}");
 
         // API login should fail with 401 (SoftDeletes hides the user from the
         // query). Previously, the user could still login via the API because
@@ -85,7 +85,7 @@ class WebProfileDeleteTest extends TestCase
         $patient = $this->createPatient('restorable@test.com');
 
         $this->actingAs($admin, 'web')
-            ->delete("/patients/{$patient['patient']->id}");
+            ->delete("/patients/{$patient['patient']->public_id}");
 
         $trashedPatient = Patient::withTrashed()->find($patient['patient']->id);
         $trashedUser = User::withTrashed()->find($patient['user']->id);

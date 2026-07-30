@@ -81,8 +81,8 @@ class PatientController extends Controller
             'address' => ['nullable', 'string', 'max:255'],
             'emergency_contact' => ['nullable', 'string', 'max:255'],
             'assigned_clinician_ids' => ['nullable', 'array'],
-            'assigned_clinician_ids.*' => ['integer', 'exists:clinicians,id'],
-            'assigned_clinician_id' => ['nullable', 'integer', 'exists:clinicians,id'],
+            'assigned_clinician_ids.*' => ['string', 'exists:clinicians,public_id'],
+            'assigned_clinician_id' => ['nullable', 'string', 'exists:clinicians,public_id'],
         ]);
 
         // A clinician always onboards patients onto their OWN caseload — their
@@ -90,12 +90,15 @@ class PatientController extends Controller
         // can't assign a patient to someone else. An admin chooses freely (the
         // form's clinician dropdown), or leaves it unassigned.
         $actor = $request->user();
-        $assignedClinicianIds = ($actor->role === 'clinician' && $actor->clinician)
-            ? [$actor->clinician->id]
+        $assignedClinicianPublicIds = ($actor->role === 'clinician' && $actor->clinician)
+            ? []
             : array_values(array_unique(
                 $validated['assigned_clinician_ids']
                     ?? (isset($validated['assigned_clinician_id']) ? [$validated['assigned_clinician_id']] : [])
             ));
+        $assignedClinicianIds = ($actor->role === 'clinician' && $actor->clinician)
+            ? [$actor->clinician->id]
+            : Clinician::whereIn('public_id', $assignedClinicianPublicIds)->pluck('id')->all();
 
         DB::transaction(function () use ($validated, $assignedClinicianIds) {
             $user = User::create([
@@ -168,17 +171,20 @@ class PatientController extends Controller
             'emergency_contact' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
             'assigned_clinician_ids' => ['nullable', 'array'],
-            'assigned_clinician_ids.*' => ['integer', 'exists:clinicians,id'],
-            'assigned_clinician_id' => ['nullable', 'integer', 'exists:clinicians,id'],
+            'assigned_clinician_ids.*' => ['string', 'exists:clinicians,public_id'],
+            'assigned_clinician_id' => ['nullable', 'string', 'exists:clinicians,public_id'],
         ]);
 
         // Wrap user + profile updates in a transaction so a profile-row
         // failure rolls back the user's name/email change too.
         DB::transaction(function () use ($patient, $validated) {
-            $assignedClinicianIds = array_values(array_unique(
+            $assignedClinicianPublicIds = array_values(array_unique(
                 $validated['assigned_clinician_ids']
                     ?? (isset($validated['assigned_clinician_id']) ? [$validated['assigned_clinician_id']] : [])
             ));
+            $assignedClinicianIds = Clinician::whereIn('public_id', $assignedClinicianPublicIds)
+                ->pluck('id')
+                ->all();
 
             $patient->user->update([
                 'name' => $validated['name'],

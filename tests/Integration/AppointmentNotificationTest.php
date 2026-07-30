@@ -17,7 +17,7 @@ class AppointmentNotificationTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => '2030-12-31 09:00:00',
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ])
             ->assertStatus(201);
 
@@ -60,7 +60,7 @@ class AppointmentNotificationTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'web')
-            ->patch("/appointments/{$appointment->id}/reschedule", [
+            ->patch("/appointments/{$appointment->public_id}/reschedule", [
                 'scheduled_at' => '2030-12-31 11:00:00',
             ])
             ->assertRedirect();
@@ -92,7 +92,7 @@ class AppointmentNotificationTest extends TestCase
         ]);
 
         $this->actingAs($clinician['user'], 'web')
-            ->patch("/appointments/{$appointment->id}/reschedule", [
+            ->patch("/appointments/{$appointment->public_id}/reschedule", [
                 'scheduled_at' => '2030-12-31 11:00:00',
             ])
             ->assertRedirect();

@@ -57,10 +57,18 @@ class EmailNotificationDeliveryTest extends TestCase
     {
         Mail::fake();
 
+        $clinician = $this->createClinician();
         $patient = $this->createPatient();
+        $appointment = Appointment::create([
+            'patient_id' => $patient['patient']->id,
+            'clinician_id' => $clinician['clinician']->id,
+            'requested_at' => '2030-12-31 09:00:00',
+            'mode' => 'in_person',
+            'status' => 'approved',
+        ]);
         $notification = app(NotificationService::class)->appointmentReminder(
             $patient['user']->id,
-            123,
+            $appointment->id,
             '09:00 AM'
         );
 
@@ -151,7 +159,7 @@ class EmailNotificationDeliveryTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => '2030-12-31 09:00:00',
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ])
             ->assertStatus(201);
 
@@ -186,7 +194,7 @@ class EmailNotificationDeliveryTest extends TestCase
             ->andThrow(new RuntimeException('SMTP transport unavailable'));
 
         $this->actingAs($clinician['user'], 'web')
-            ->patch("/appointments/{$appointment->id}/approve")
+            ->patch("/appointments/{$appointment->public_id}/approve")
             ->assertRedirect(route('appointments.index'));
 
         $this->assertDatabaseHas('appointments', [

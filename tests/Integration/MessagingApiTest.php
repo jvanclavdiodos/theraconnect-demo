@@ -65,10 +65,10 @@ class MessagingApiTest extends TestCase
             ->assertStatus(201)
             ->json('data');
 
-        $this->assertSame($ctx['clinician']['clinician']->id, $conv['clinician_id']);
+        $this->assertSame($ctx['clinician']['clinician']->public_id, $conv['clinician_public_id']);
 
         $this->withHeaders($ctx['headers'])
-            ->postJson("/api/v1/conversations/{$conv['id']}/messages", ['body' => 'Hi doc'])
+            ->postJson("/api/v1/conversations/{$conv['public_id']}/messages", ['body' => 'Hi doc'])
             ->assertStatus(201)
             ->assertJsonPath('data.body', 'Hi doc')
             ->assertJsonPath('data.is_mine', true);
@@ -100,7 +100,7 @@ class MessagingApiTest extends TestCase
 
         // Reading the thread marks it read.
         $this->withHeaders($ctx['headers'])
-            ->getJson("/api/v1/conversations/{$conversation->id}/messages")
+            ->getJson("/api/v1/conversations/{$conversation->public_id}/messages")
             ->assertStatus(200)
             ->assertJsonPath('meta.total', 2);
 
@@ -120,7 +120,7 @@ class MessagingApiTest extends TestCase
         ]);
 
         $this->withHeaders($b['headers'])
-            ->getJson("/api/v1/conversations/{$conversation->id}/messages")
+            ->getJson("/api/v1/conversations/{$conversation->public_id}/messages")
             ->assertStatus(403);
     }
 
@@ -132,11 +132,11 @@ class MessagingApiTest extends TestCase
         $ctx['patient']['patient']->update(['assigned_clinician_id' => null]);
 
         $this->withHeaders($ctx['headers'])
-            ->getJson("/api/v1/conversations/{$conversation->id}/messages")
+            ->getJson("/api/v1/conversations/{$conversation->public_id}/messages")
             ->assertOk();
 
         $this->withHeaders($ctx['headers'])
-            ->postJson("/api/v1/conversations/{$conversation->id}/messages", ['body' => 'Not allowed'])
+            ->postJson("/api/v1/conversations/{$conversation->public_id}/messages", ['body' => 'Not allowed'])
             ->assertForbidden();
     }
 }

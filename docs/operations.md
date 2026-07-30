@@ -48,6 +48,18 @@ For Railway realtime deployment:
 
 One Reverb replica with scaling disabled is the efficient starting topology for this deployment. If multiple Reverb replicas are later required, enable Reverb scaling and provide shared Redis; do not add replicas without the shared pub/sub layer.
 
+### Public-ID Cutover
+
+The public-ID migration is a coordinated backend and Flutter contract release:
+
+1. Back up the production database and confirm the backup can be restored.
+2. Build and publish the Flutter version that reads and sends ULID `public_id` values.
+3. Deploy the Laravel release and run `php artisan migrate --force` on the Railway web service. The migration backfills existing models and converts historical notification appointment/assignment references.
+4. Smoke-test patient booking, appointment detail/cancellation, assignments, assessments, notifications, and messaging on both the portal and the new mobile build.
+5. Update `APP_DOWNLOAD_URL` to the new mobile release only after the backend migration succeeds.
+
+The migrated routes deliberately do not accept numeric IDs. An older installed mobile build that still sends numeric identifiers is incompatible with this release, so communicate or enforce the mobile update as part of deployment. Rollback requires reverting the application release and then running `php artisan migrate:rollback --force`; the down migration restores notification reference keys before removing `public_id`.
+
 ## External Services
 
 | Service | Where used | Failure behavior |

@@ -1,7 +1,7 @@
 /// A therapy goal co-defined by the clinician, optionally with the most recent
 /// Goal Attainment Scaling (GAS) rating. Read-only on the patient app.
 class TherapyGoal {
-  final int id;
+  final String id;
   final String description;
   final String status; // 'active' | 'met'
   final String? targetDate;
@@ -17,7 +17,7 @@ class TherapyGoal {
 
   factory TherapyGoal.fromJson(Map<String, dynamic> json) {
     return TherapyGoal(
-      id: json['id'] as int,
+      id: json['public_id'] as String,
       description: json['description'] as String,
       status: json['status'] as String,
       targetDate: json['target_date'] as String?,

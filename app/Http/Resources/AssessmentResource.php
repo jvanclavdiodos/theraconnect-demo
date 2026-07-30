@@ -13,7 +13,7 @@ class AssessmentResource extends JsonResource
         $def = Assessments::definition($this->instrument);
 
         return [
-            'id' => $this->id,
+            'public_id' => $this->public_id,
             'instrument' => $this->instrument,
             'title' => $this->title(),
             'name' => $def['name'] ?? null,

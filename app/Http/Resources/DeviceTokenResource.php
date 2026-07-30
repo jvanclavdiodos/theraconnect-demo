@@ -10,7 +10,6 @@ class DeviceTokenResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
             'platform' => $this->platform,
             // `last_used_at` is a Carbon instance — passing it through a
             // JsonResource applies AppServiceProvider's serializeUsing

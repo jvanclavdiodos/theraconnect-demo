@@ -10,7 +10,6 @@ class MoodLogResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
             'score' => $this->score,
             'note' => $this->note,
             'logged_on' => $this->logged_on?->toDateString(),

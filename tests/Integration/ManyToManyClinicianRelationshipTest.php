@@ -58,7 +58,7 @@ class ManyToManyClinicianRelationshipTest extends TestCase
             ->getJson('/api/v1/conversations')
             ->assertOk()
             ->assertJsonCount(1, 'data')
-            ->assertJsonPath('data.0.clinician_id', $clinician['clinician']->id);
+            ->assertJsonPath('data.0.clinician_public_id', $clinician['clinician']->public_id);
     }
 
     public function test_approving_another_clinician_preserves_existing_relationship_and_threads(): void
@@ -90,17 +90,17 @@ class ManyToManyClinicianRelationshipTest extends TestCase
             ->assertJsonCount(2, 'data');
 
         $this->assertEqualsCanonicalizing(
-            [$first['clinician']->id, $second['clinician']->id],
-            collect($response->json('data'))->pluck('clinician_id')->all()
+            [$first['clinician']->public_id, $second['clinician']->public_id],
+            collect($response->json('data'))->pluck('clinician_public_id')->all()
         );
 
         $this->withHeaders($headers)
             ->postJson('/api/v1/conversations')
             ->assertUnprocessable();
         $this->withHeaders($headers)
-            ->postJson('/api/v1/conversations', ['clinician_id' => $second['clinician']->id])
+            ->postJson('/api/v1/conversations', ['clinician_id' => $second['clinician']->public_id])
             ->assertCreated()
-            ->assertJsonPath('data.clinician_id', $second['clinician']->id);
+            ->assertJsonPath('data.clinician_public_id', $second['clinician']->public_id);
         $this->withHeaders($headers)
             ->postJson('/api/v1/conversations', ['clinician_id' => 999999])
             ->assertUnprocessable();
@@ -120,8 +120,8 @@ class ManyToManyClinicianRelationshipTest extends TestCase
             'email' => 'multi-care@test.com',
             'password' => 'Password1!',
             'assigned_clinician_ids' => [
-                $first['clinician']->id,
-                $second['clinician']->id,
+                $first['clinician']->public_id,
+                $second['clinician']->public_id,
             ],
         ])->assertRedirect(route('patients.index'));
 

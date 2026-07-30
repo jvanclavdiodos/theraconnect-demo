@@ -32,7 +32,7 @@ class MessageApi {
     }
   }
 
-  Future<List<Message>> getMessages(int conversationId) async {
+  Future<List<Message>> getMessages(String conversationId) async {
     try {
       final response = await _client
           .get('${ApiConfig.conversationsEndpoint}/$conversationId/messages');
@@ -45,7 +45,7 @@ class MessageApi {
     }
   }
 
-  Future<Message> sendMessage(int conversationId, String body) async {
+  Future<Message> sendMessage(String conversationId, String body) async {
     try {
       final response = await _client.post(
         '${ApiConfig.conversationsEndpoint}/$conversationId/messages',

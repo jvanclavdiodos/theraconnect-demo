@@ -35,9 +35,9 @@ class AssignmentController extends Controller
         ]);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Assignment $assignment): JsonResponse
     {
-        $assignment = Assignment::with(['clinician.user', 'submissions'])->findOrFail($id);
+        $assignment->load(['clinician.user', 'submissions']);
 
         Gate::authorize('view', $assignment);
 
@@ -46,10 +46,8 @@ class AssignmentController extends Controller
         ]);
     }
 
-    public function downloadWorksheet(int $id): StreamedResponse
+    public function downloadWorksheet(Assignment $assignment): StreamedResponse
     {
-        $assignment = Assignment::findOrFail($id);
-
         Gate::authorize('view', $assignment);
 
         abort_unless(

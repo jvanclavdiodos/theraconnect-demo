@@ -42,11 +42,17 @@ class AppServiceProvider extends ServiceProvider
         Carbon::serializeUsing($serializeAsWallClock);
         CarbonImmutable::serializeUsing($serializeAsWallClock);
 
-        // `{id}` route params are always numeric DB keys. Without this, a
-        // non-numeric id (e.g. /api/v1/appointments/abc) reaches a controller
-        // method type-hinted `int $id` and throws a 500 TypeError instead of a
-        // clean 404. (Route-model-bound params like {appointment} 404 already.)
-        Route::pattern('id', '[0-9]+');
+        // Publicly addressable records use canonical ULIDs. Numeric database
+        // keys remain internal primary/foreign keys and cannot resolve through
+        // these route parameters.
+        $publicIdPattern = '[0-7][0-9A-HJKMNP-TV-Z]{25}';
+        foreach ([
+            'appointment', 'assessment', 'assignment', 'clinician',
+            'conversation', 'goal', 'intent', 'note', 'notification',
+            'patient', 'submission', 'user',
+        ] as $parameter) {
+            Route::pattern($parameter, $publicIdPattern);
+        }
 
         // Rate limiter for the staff web login. Separate buckets for login vs
         // registration so a registration flood can't lock out legitimate logins

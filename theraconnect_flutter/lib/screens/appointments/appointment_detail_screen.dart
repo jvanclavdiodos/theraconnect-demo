@@ -7,7 +7,7 @@ import '../../providers/appointment_provider.dart';
 import '../../utils/date_format.dart';
 
 class AppointmentDetailScreen extends ConsumerWidget {
-  final int appointmentId;
+  final String appointmentId;
 
   const AppointmentDetailScreen({super.key, required this.appointmentId});
 

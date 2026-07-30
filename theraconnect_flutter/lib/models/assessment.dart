@@ -1,7 +1,7 @@
 /// A standardized questionnaire (PHQ-9 / GAD-7) the clinician assigned to the
 /// patient. Summary shape returned by the list endpoint.
 class Assessment {
-  final int id;
+  final String id;
   final String instrument; // 'phq9' | 'gad7'
   final String title; // e.g. "PHQ-9"
   final String? name; // e.g. "Patient Health Questionnaire (depression)"
@@ -31,7 +31,7 @@ class Assessment {
 
   factory Assessment.fromJson(Map<String, dynamic> json) {
     return Assessment(
-      id: json['id'] as int,
+      id: json['public_id'] as String,
       instrument: json['instrument'] as String,
       title: json['title'] as String,
       name: json['name'] as String?,

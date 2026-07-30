@@ -1,7 +1,7 @@
 class Submission {
-  final int id;
-  final int assignmentId;
-  final int patientId;
+  final String id;
+  final String assignmentId;
+  final String patientId;
   final String? content;
   final String? filePath;
   final String? fileUrl;
@@ -27,9 +27,9 @@ class Submission {
 
   factory Submission.fromJson(Map<String, dynamic> json) {
     return Submission(
-      id: json['id'] as int,
-      assignmentId: json['assignment_id'] as int,
-      patientId: json['patient_id'] as int,
+      id: json['public_id'] as String,
+      assignmentId: json['assignment_public_id'] as String,
+      patientId: json['patient_public_id'] as String,
       content: json['content'] as String?,
       filePath: json['file_path'] as String?,
       fileUrl: json['file_url'] as String?,
@@ -43,9 +43,9 @@ class Submission {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'assignment_id': assignmentId,
-      'patient_id': patientId,
+      'public_id': id,
+      'assignment_public_id': assignmentId,
+      'patient_public_id': patientId,
       'content': content,
       'file_path': filePath,
       'file_url': fileUrl,

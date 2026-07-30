@@ -164,7 +164,7 @@ class ClinicianAvailabilityTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => '2030-12-31 09:00:00',
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ])
             ->assertStatus(422);
 
@@ -173,7 +173,7 @@ class ClinicianAvailabilityTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => '2030-12-31 10:00:00',
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ])
             ->assertStatus(201);
     }

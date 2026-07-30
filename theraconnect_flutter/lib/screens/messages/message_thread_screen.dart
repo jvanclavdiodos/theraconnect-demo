@@ -9,7 +9,7 @@ import '../../providers/realtime_provider.dart';
 import '../../services/realtime_service.dart';
 
 class MessageThreadScreen extends ConsumerStatefulWidget {
-  final int conversationId;
+  final String conversationId;
   final String? title;
 
   const MessageThreadScreen(
@@ -40,7 +40,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         .where((event) =>
             event.name == 'connected' ||
             (event.name == 'message.created' &&
-                event.data['conversation_id'] == widget.conversationId))
+                event.data['conversation_public_id'] == widget.conversationId))
         .listen((_) => _load());
     _load();
   }

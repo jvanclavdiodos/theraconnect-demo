@@ -23,7 +23,7 @@ class AssessmentApi {
   }
 
   /// Full questionnaire (items + options) to render the fillable form.
-  Future<AssessmentDetail> getAssessment(int id) async {
+  Future<AssessmentDetail> getAssessment(String id) async {
     try {
       final response = await _client.get('${ApiConfig.assessmentsEndpoint}/$id');
       return AssessmentDetail.fromJson(
@@ -35,7 +35,7 @@ class AssessmentApi {
   }
 
   /// Submit responses (one 0–3 per item); returns the scored assessment.
-  Future<Assessment> submit(int id, List<int> responses) async {
+  Future<Assessment> submit(String id, List<int> responses) async {
     try {
       final response = await _client.post(
         '${ApiConfig.assessmentsEndpoint}/$id/submit',

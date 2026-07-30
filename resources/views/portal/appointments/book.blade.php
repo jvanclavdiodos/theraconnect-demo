@@ -18,7 +18,7 @@
             <div class="card-header"><strong>1. Clinician</strong></div>
             <div class="list-group list-group-flush">
                 @forelse($clinicians as $c)
-                    <a href="{{ route('portal.appointments.book', ['clinician_id' => $c->id]) }}"
+                    <a href="{{ route('portal.appointments.book', ['clinician_id' => $c->public_id]) }}"
                        class="list-group-item list-group-item-action d-flex align-items-center gap-2 {{ $selectedClinician && $selectedClinician->id === $c->id ? 'active' : '' }}">
                         <i class="bi bi-person-circle"></i>
                         <span>
@@ -40,7 +40,7 @@
             <div class="card-body">
                 @if($selectedClinician)
                     <form method="GET" action="{{ route('portal.appointments.book') }}">
-                        <input type="hidden" name="clinician_id" value="{{ $selectedClinician->id }}">
+                        <input type="hidden" name="clinician_id" value="{{ $selectedClinician->public_id }}">
                         <label for="date" class="form-label">Pick a date</label>
                         <input type="date" id="date" name="date" class="form-control"
                                min="{{ now()->format('Y-m-d') }}" value="{{ $date }}"
@@ -68,7 +68,7 @@
                     @else
                         <form method="POST" action="{{ route('portal.appointments.store') }}">
                             @csrf
-                            <input type="hidden" name="clinician_id" value="{{ $selectedClinician->id }}">
+                            <input type="hidden" name="clinician_id" value="{{ $selectedClinician->public_id }}">
 
                             @error('requested_at')<div class="alert alert-danger py-2">{{ $message }}</div>@enderror
 

@@ -7,7 +7,9 @@ Base path: `/api/v1`. Routes are defined in `routes/api.php`. The API is a patie
 - JSON endpoints use Laravel resources, commonly wrapped as `{ "data": ... }`.
 - Authenticated endpoints require `Authorization: Bearer <Sanctum token>` and `role:patient`.
 - General authenticated API operations use `throttle:api` (60/min/user or IP); chatbot uses 30/min; registration 3/min/IP; login 5/min/IP plus 5/min/email+IP.
-- Numeric `{id}` route parameters are constrained globally to avoid type-error 500s. Model-bound values return 404 when absent.
+- Public resources use a 26-character ULID `public_id`. Numeric primary keys remain internal and must not be accepted in URLs or API payloads.
+- Explicit route-model binding (for example, `{appointment:public_id}`) and global ULID route patterns make numeric, malformed, and unknown identifiers return 404.
+- A public ID is not authorization. Controllers continue to enforce policies, ownership, participant checks, and nested-resource relationships after binding.
 - API error messages are deliberately user-safe. Inspect request classes/resources/controllers for exact field shapes before adding fields.
 
 ## Public/Auth Endpoints
@@ -32,7 +34,7 @@ Base path: `/api/v1`. Routes are defined in `routes/api.php`. The API is a patie
 | POST | `/device-token` | FCM token and platform | Flutter `FcmService` via `NotificationApi` |
 | DELETE | `/device-token` | token/platform identifier | Flutter sign-out/token cleanup |
 | GET | `/notifications` | paginated notification resources, 10 entries per page | `NotificationApi.getNotifications` |
-| POST | `/notifications/{id}/read` | none | read state | `NotificationApi.markRead` |
+| POST | `/notifications/{notification}/read` | `notification` is its public ULID | read state | `NotificationApi.markRead` |
 | GET | `/realtime/config` | public Reverb key/host/port/scheme and auth endpoint; never secret | Flutter `RealtimeService` |
 | POST | `/broadcasting/auth` | Pusher-compatible `socket_id`, private `channel_name` | Flutter private-channel authorization |
 
@@ -45,26 +47,26 @@ Base path: `/api/v1`. Routes are defined in `routes/api.php`. The API is a patie
 | GET | `/schedules/availability` | clinician/date availability | booking UI |
 | GET | `/appointments` | paginated appointment resources | `AppointmentApi`, list/dashboard |
 | POST | `/appointments` | `StoreAppointmentRequest` (clinician, datetime, mode, optional concerns) | created appointment | booking screen |
-| GET | `/appointments/{id}` | one owned appointment | detail screen |
-| DELETE | `/appointments/{id}` | cancellation | detail/list UI |
+| GET | `/appointments/{appointment}` | public ULID; one owned appointment | detail screen |
+| DELETE | `/appointments/{appointment}` | public ULID; cancellation | detail/list UI |
 
 ## Assignments and Files
 
 | Method | Route | Request/response focus | Called by |
 |---|---|---|---|
 | GET | `/assignments` | assignment resources | assignment list |
-| GET | `/assignments/{id}` | owned assignment/detail | assignment detail |
-| GET | `/assignments/{id}/worksheet` | protected file stream | download service |
-| POST | `/assignments/{id}/submit` | `SubmissionRequest`: text and/or multipart file | submission resource | submit screen |
-| GET | `/submissions/{id}/file` | protected submission file | preview/download |
+| GET | `/assignments/{assignment}` | public ULID; owned assignment/detail | assignment detail |
+| GET | `/assignments/{assignment}/worksheet` | public ULID; protected file stream | download service |
+| POST | `/assignments/{assignment}/submit` | public ULID; `SubmissionRequest`: text and/or multipart file | submission resource | submit screen |
+| GET | `/submissions/{submission}/file` | public ULID; protected submission file | preview/download |
 
 ## Assessments, Mood, Goals, and Notes
 
 | Method | Route | Request/response focus | Called by |
 |---|---|---|---|
 | GET | `/assessments` | assigned assessments | assessment list |
-| GET | `/assessments/{assessment}` | owned assessment | fill screen |
-| POST | `/assessments/{assessment}/submit` | responses payload | completed assessment | fill screen |
+| GET | `/assessments/{assessment}` | public ULID; owned assessment | fill screen |
+| POST | `/assessments/{assessment}/submit` | public ULID; responses payload | completed assessment | fill screen |
 | GET | `/mood-logs` | patient-owned mood entries plus server `today`, completion state, and today entry | mood provider/screens |
 | POST | `/mood-logs` | score and optional note; server assigns the Asia/Manila `logged_on` date | `201` created entry or `409` with the existing daily entry | mood UI |
 | GET | `/goals` | read-only therapy goals/ratings | progress UI |
@@ -75,9 +77,9 @@ Base path: `/api/v1`. Routes are defined in `routes/api.php`. The API is a patie
 | Method | Route | Request/response focus | Called by |
 |---|---|---|---|
 | GET | `/conversations` | one conversation for every assigned/approved clinician | inbox |
-| POST | `/conversations` | opens/returns an assigned clinician conversation; `clinician_id` is required when multiple are assigned | legacy inbox/thread flow |
-| GET | `/conversations/{conversation}/messages` | participant message list | thread |
-| POST | `/conversations/{conversation}/messages` | message body | thread send |
+| POST | `/conversations` | opens/returns an assigned clinician conversation; `clinician_id` is the clinician public ULID and is required when multiple are assigned | legacy inbox/thread flow |
+| GET | `/conversations/{conversation}/messages` | public ULID; participant message list | thread |
+| POST | `/conversations/{conversation}/messages` | public ULID; message body | thread send |
 | POST | `/chatbot/message` | patient text | `{reply, intent_key, is_fallback}` | `ChatbotApi.sendMessage` |
 
 ## Backend Response Types

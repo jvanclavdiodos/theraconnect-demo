@@ -2,6 +2,22 @@
 
 Laravel migrations in `database/migrations` are the schema history. Eloquent models in `app/Models` are the application-facing entities. The project does not contain repository or DAO classes; services/controllers query models directly.
 
+## Internal and Public Identifiers
+
+The application keeps integer `id` columns as database primary keys and uses them for all foreign keys, joins, transactions, and internal service calls. Externally addressable models additionally have a unique, non-null ULID `public_id`.
+
+`HasPublicId` assigns ULIDs on model creation and makes `public_id` the model's route key. Existing records are backfilled by `2026_07_31_000000_add_public_ids_to_exposed_resources.php`. Public routes use explicit `{model:public_id}` binding and reject numeric, malformed, or unknown values with 404.
+
+Models with public IDs are: `User`, `Patient`, `Clinician`, `Appointment`, `Assignment`, `Submission`, `Assessment`, `Conversation`, `Message`, `Notification`, `PatientNote`, `TherapyGoal`, and `ChatbotIntent`. Date-only mood logs and device-token records are not individually addressable and do not receive public IDs.
+
+Project rules:
+
+- Never expose an integer primary or foreign key in a URL, API resource, broadcast payload, push payload, email link, or mobile model.
+- Convert an inbound public ID to its model at the controller boundary, then pass internal integer IDs to existing services where required.
+- Generate URLs with model instances or `public_id`, never `id`.
+- Keep authorization and parent-child validation after route binding. Knowledge of a ULID never grants access.
+- Do not add permanent dual numeric/ULID route support. Numeric public routes intentionally return 404.
+
 ## Entity Relationships
 
 ```text

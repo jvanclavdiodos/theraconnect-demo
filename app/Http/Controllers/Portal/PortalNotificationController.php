@@ -22,17 +22,19 @@ class PortalNotificationController extends Controller
         return view('portal.notifications.index', compact('notifications'));
     }
 
-    public function markRead(Request $request, int $id): JsonResponse|RedirectResponse
+    public function markRead(Request $request, Notification $notification): JsonResponse|RedirectResponse
     {
-        Notification::where('user_id', $request->user()->id)
-            ->general()
-            ->findOrFail($id)
-            ->update(['read_at' => now()]);
+        abort_unless(
+            $notification->user_id === $request->user()->id
+                && $notification->type !== Notification::MESSAGE_RECEIVED,
+            404
+        );
+        $notification->update(['read_at' => now()]);
 
         // AJAX clients (the notifications list) get a JSON envelope so they
         // can update the row styling in-place instead of full reload.
         if ($request->expectsJson()) {
-            return response()->json(['status' => 'ok', 'id' => $id]);
+            return response()->json(['status' => 'ok', 'public_id' => $notification->public_id]);
         }
 
         return back();

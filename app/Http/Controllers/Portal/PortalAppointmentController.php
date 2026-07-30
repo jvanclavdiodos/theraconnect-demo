@@ -74,7 +74,7 @@ class PortalAppointmentController extends Controller
     public function book(Request $request): View
     {
         $validated = $request->validate([
-            'clinician_id' => ['nullable', 'integer', 'exists:clinicians,id'],
+            'clinician_id' => ['nullable', 'string', 'exists:clinicians,public_id'],
             'date' => ['nullable', 'date_format:Y-m-d'],
         ]);
 
@@ -88,7 +88,7 @@ class PortalAppointmentController extends Controller
         $slots = [];
 
         if (! empty($validated['clinician_id'])) {
-            $selectedClinician = $clinicians->firstWhere('id', (int) $validated['clinician_id']);
+            $selectedClinician = $clinicians->firstWhere('public_id', $validated['clinician_id']);
         }
 
         if ($selectedClinician && ! empty($validated['date'])) {
@@ -127,14 +127,15 @@ class PortalAppointmentController extends Controller
             ],
             'mode' => ['required', 'in:in_person,online'],
             'reason' => ['nullable', 'string', 'max:500'],
-            'clinician_id' => ['required', 'exists:clinicians,id'],
+            'clinician_id' => ['required', 'string', 'exists:clinicians,public_id'],
         ]);
+        $clinician = Clinician::where('public_id', $validated['clinician_id'])->firstOrFail();
 
         try {
-            $appointment = DB::transaction(function () use ($patient, $validated) {
+            $appointment = DB::transaction(function () use ($patient, $validated, $clinician) {
                 $appt = $this->appointments->bookAppointment([
                     'patient_id' => $patient->id,
-                    'clinician_id' => $validated['clinician_id'],
+                    'clinician_id' => $clinician->id,
                     'requested_at' => $validated['requested_at'],
                     'mode' => $validated['mode'],
                     'reason' => $validated['reason'] ?? null,

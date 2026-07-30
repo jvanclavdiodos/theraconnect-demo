@@ -35,7 +35,7 @@ class AppointmentReminderTest extends TestCase
             $nightJob->handle($service);
 
             $reminders = Notification::where('type', 'appointment_reminder')
-                ->whereJsonContains('data->appointment_id', $appointment->id)
+                ->whereJsonContains('data->appointment_public_id', $appointment->public_id)
                 ->orderBy('id')
                 ->get();
 
@@ -75,7 +75,7 @@ class AppointmentReminderTest extends TestCase
             $this->assertSame(
                 2,
                 Notification::where('type', 'appointment_reminder')
-                    ->whereJsonContains('data->appointment_id', $appointment->id)
+                    ->whereJsonContains('data->appointment_public_id', $appointment->public_id)
                     ->whereJsonContains('data->reminder_kind', GenerateAppointmentReminders::NIGHT_BEFORE)
                     ->count()
             );

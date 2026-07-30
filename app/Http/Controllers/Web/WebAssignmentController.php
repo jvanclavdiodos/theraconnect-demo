@@ -69,22 +69,22 @@ class WebAssignmentController extends Controller
         // by StoreAssignmentRequest when the authed user has no clinician
         // profile — i.e. an admin).
         $clinician = auth()->user()->clinician
-            ?? Clinician::with('user')->find($validated['clinician_id'] ?? null);
+            ?? Clinician::with('user')->where('public_id', $validated['clinician_id'] ?? null)->firstOrFail();
+        $patient = Patient::with('user')->where('public_id', $validated['patient_id'])->firstOrFail();
 
         // A clinician may only create assignments for patients assigned to them
         // (admins pass). Stops a crafted patient_id targeting another's patient.
-        Gate::authorize('view', Patient::findOrFail($validated['patient_id']));
+        Gate::authorize('view', $patient);
 
-        $notification = DB::transaction(function () use ($validated, $request, $clinician) {
+        $notification = DB::transaction(function () use ($validated, $request, $clinician, $patient) {
             $assignment = $this->assignmentService->create([
                 'clinician_id' => $clinician->id,
-                'patient_id' => $validated['patient_id'],
+                'patient_id' => $patient->id,
                 'title' => $validated['title'],
                 'description' => $validated['description'] ?? null,
                 'due_date' => $validated['due_date'] ?? null,
             ], $request->file('attachment'));
 
-            $patient = Patient::with('user')->find($validated['patient_id']);
             $clinician->loadMissing('user');
 
             return $this->notificationService->assignmentCreated(

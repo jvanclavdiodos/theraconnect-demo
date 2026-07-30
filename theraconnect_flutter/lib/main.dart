@@ -106,8 +106,8 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
           ref.read(appointmentsProvider.notifier).loadAppointments(),
           ref.read(appointmentListProvider.notifier).loadAppointments(),
         ]);
-        final appointmentId = event.data['appointment_id'];
-        if (appointmentId is int) {
+        final appointmentId = event.data['appointment_public_id'];
+        if (appointmentId is String) {
           ref.invalidate(appointmentDetailProvider(appointmentId));
         }
         break;

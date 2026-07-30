@@ -78,7 +78,7 @@ class MeetingLinkTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
-            ->getJson("/api/v1/appointments/{$appointment->id}")
+            ->getJson("/api/v1/appointments/{$appointment->public_id}")
             ->assertStatus(200)
             ->assertJsonPath('data.meeting_link', null)
             ->assertJsonPath('data.meeting_link_active', false);
@@ -101,7 +101,7 @@ class MeetingLinkTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
-            ->getJson("/api/v1/appointments/{$appointment->id}")
+            ->getJson("/api/v1/appointments/{$appointment->public_id}")
             ->assertStatus(200)
             ->assertJsonPath('data.meeting_link', 'https://meet.jit.si/TheraConnect-1-abc')
             ->assertJsonPath('data.meeting_link_active', true);

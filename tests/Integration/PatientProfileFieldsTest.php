@@ -88,7 +88,7 @@ class PatientProfileFieldsTest extends TestCase
         $patient = $this->createPatient();
 
         $this->actingAs($admin, 'web')
-            ->put("/patients/{$patient['patient']->id}", [
+            ->put("/patients/{$patient['patient']->public_id}", [
                 'name' => $patient['user']->name,
                 'email' => $patient['user']->email,
                 'gender' => 'Male',

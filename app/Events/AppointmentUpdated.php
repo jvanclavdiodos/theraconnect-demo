@@ -14,18 +14,18 @@ class AppointmentUpdated implements ShouldBroadcast, ShouldDispatchAfterCommit
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /** @var array<int, int> */
-    private array $recipientUserIds;
+    /** @var list<string> */
+    private array $recipientUserPublicIds;
 
     public function __construct(
         private readonly Appointment $appointment,
         private readonly string $change,
     ) {
-        $appointment->loadMissing(['patient', 'clinician']);
+        $appointment->loadMissing(['patient.user', 'clinician.user']);
 
-        $this->recipientUserIds = collect([
-            $appointment->patient?->user_id,
-            $appointment->clinician?->user_id,
+        $this->recipientUserPublicIds = collect([
+            $appointment->patient?->user?->public_id,
+            $appointment->clinician?->user?->public_id,
         ])->filter()->unique()->values()->all();
     }
 
@@ -34,8 +34,8 @@ class AppointmentUpdated implements ShouldBroadcast, ShouldDispatchAfterCommit
     {
         return [
             ...array_map(
-                fn (int $userId) => new PrivateChannel('users.'.$userId),
-                $this->recipientUserIds
+                fn (string $publicId) => new PrivateChannel('users.'.$publicId),
+                $this->recipientUserPublicIds
             ),
             new PrivateChannel('admin.appointments'),
         ];
@@ -49,7 +49,7 @@ class AppointmentUpdated implements ShouldBroadcast, ShouldDispatchAfterCommit
     public function broadcastWith(): array
     {
         return [
-            'appointment_id' => $this->appointment->id,
+            'appointment_public_id' => $this->appointment->public_id,
             'status' => $this->appointment->status,
             'change' => $this->change,
             'updated_at' => $this->appointment->updated_at?->toISOString(),

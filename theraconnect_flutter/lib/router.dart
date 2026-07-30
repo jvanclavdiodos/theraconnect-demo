@@ -122,7 +122,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/appointments/:id',
                 builder: (context, state) {
-                  final id = int.parse(state.pathParameters['id']!);
+                  final id = state.pathParameters['id']!;
                   return AppointmentDetailScreen(appointmentId: id);
                 },
               ),
@@ -137,14 +137,14 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/assignments/:id',
                 builder: (context, state) {
-                  final id = int.parse(state.pathParameters['id']!);
+                  final id = state.pathParameters['id']!;
                   return AssignmentDetailScreen(assignmentId: id);
                 },
               ),
               GoRoute(
                 path: '/assignments/:id/submit',
                 builder: (context, state) {
-                  final id = int.parse(state.pathParameters['id']!);
+                  final id = state.pathParameters['id']!;
                   return SubmitAssignmentScreen(assignmentId: id);
                 },
               ),
@@ -159,7 +159,7 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: '/messages/:id',
                 builder: (context, state) {
-                  final id = int.parse(state.pathParameters['id']!);
+                  final id = state.pathParameters['id']!;
                   final title =
                       state.extra is String ? state.extra as String : null;
                   return MessageThreadScreen(conversationId: id, title: title);
@@ -208,7 +208,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/assessments/:id',
         builder: (context, state) {
-          final id = int.parse(state.pathParameters['id']!);
+          final id = state.pathParameters['id']!;
           return AssessmentFillScreen(assessmentId: id);
         },
       ),

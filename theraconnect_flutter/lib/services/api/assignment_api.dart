@@ -36,7 +36,7 @@ class AssignmentApi {
     }
   }
 
-  Future<Assignment> getAssignment(int id) async {
+  Future<Assignment> getAssignment(String id) async {
     try {
       final response =
           await _client.get('${ApiConfig.assignmentsEndpoint}/$id');
@@ -52,7 +52,7 @@ class AssignmentApi {
   /// public Download/TheraConnect copy, recorded in the in-app Downloads index.
   /// Returns the resulting [DownloadedFile].
   Future<DownloadedFile> downloadWorksheet(
-    int assignmentId,
+    String assignmentId,
     String fileName,
     String title,
   ) async {
@@ -69,7 +69,7 @@ class AssignmentApi {
 
   /// Raw bytes of a submission file (for inline image/text preview), fetched
   /// through the authenticated Dio client.
-  Future<Uint8List> getSubmissionBytes(int submissionId) async {
+  Future<Uint8List> getSubmissionBytes(String submissionId) async {
     try {
       final response = await _client.dio.get(
         '/submissions/$submissionId/file',
@@ -84,7 +84,7 @@ class AssignmentApi {
   /// Download a submission file to device storage and record it in Downloads
   /// (used for file types we don't preview inline, e.g. PDF/doc).
   Future<DownloadedFile> downloadSubmission(
-    int submissionId,
+    String submissionId,
     String fileName,
     String title,
   ) async {
@@ -100,7 +100,7 @@ class AssignmentApi {
   }
 
   Future<Submission> submitAssignment(
-    int assignmentId, {
+    String assignmentId, {
     String? content,
     String? filePath,
   }) async {

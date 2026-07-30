@@ -14,7 +14,7 @@ class AssessmentTest extends TestCase
         $patient['patient']->update(['assigned_clinician_id' => $clinician['clinician']->id]);
 
         $this->actingAs($clinician['user'], 'web')
-            ->post("/patients/{$patient['patient']->id}/assessments", ['instrument' => 'phq9'])
+            ->post("/patients/{$patient['patient']->public_id}/assessments", ['instrument' => 'phq9'])
             ->assertRedirect(route('patients.progress', $patient['patient']));
 
         $this->assertDatabaseHas('assessments', [
@@ -36,7 +36,7 @@ class AssessmentTest extends TestCase
         $other = $this->createPatient('asmt-offcaseload@test.com'); // no assigned_clinician_id
 
         $this->actingAs($clinician['user'], 'web')
-            ->post("/patients/{$other['patient']->id}/assessments", ['instrument' => 'gad7'])
+            ->post("/patients/{$other['patient']->public_id}/assessments", ['instrument' => 'gad7'])
             ->assertForbidden();
 
         $this->assertDatabaseCount('assessments', 0);
@@ -59,7 +59,7 @@ class AssessmentTest extends TestCase
         $responses = array_fill(0, 9, 3);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assessments/{$assessment->id}/submit", ['responses' => $responses])
+            ->postJson("/api/v1/assessments/{$assessment->public_id}/submit", ['responses' => $responses])
             ->assertOk()
             ->assertJsonPath('data.score', 27)
             ->assertJsonPath('data.severity', 'Severe')
@@ -89,7 +89,7 @@ class AssessmentTest extends TestCase
         $responses = [3, 3, 3, 1, 0, 0, 0, 0, 0];
 
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assessments/{$assessment->id}/submit", ['responses' => $responses])
+            ->postJson("/api/v1/assessments/{$assessment->public_id}/submit", ['responses' => $responses])
             ->assertOk()
             ->assertJsonPath('data.score', 10)
             ->assertJsonPath('data.severity', 'Moderate');
@@ -110,12 +110,12 @@ class AssessmentTest extends TestCase
 
         // GAD-7 expects 7 answers — send 5.
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assessments/{$assessment->id}/submit", ['responses' => [0, 1, 2, 3, 0]])
+            ->postJson("/api/v1/assessments/{$assessment->public_id}/submit", ['responses' => [0, 1, 2, 3, 0]])
             ->assertStatus(422);
 
         // Correct length, out-of-range value.
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assessments/{$assessment->id}/submit", ['responses' => [0, 1, 2, 3, 0, 1, 9]])
+            ->postJson("/api/v1/assessments/{$assessment->public_id}/submit", ['responses' => [0, 1, 2, 3, 0, 1, 9]])
             ->assertStatus(422);
 
         $this->assertSame('pending', $assessment->fresh()->status);
@@ -138,7 +138,7 @@ class AssessmentTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assessments/{$assessment->id}/submit", ['responses' => array_fill(0, 7, 0)])
+            ->postJson("/api/v1/assessments/{$assessment->public_id}/submit", ['responses' => array_fill(0, 7, 0)])
             ->assertStatus(409);
     }
 
@@ -157,11 +157,11 @@ class AssessmentTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->getJson("/api/v1/assessments/{$assessment->id}")
+            ->getJson("/api/v1/assessments/{$assessment->public_id}")
             ->assertForbidden();
 
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assessments/{$assessment->id}/submit", ['responses' => array_fill(0, 9, 0)])
+            ->postJson("/api/v1/assessments/{$assessment->public_id}/submit", ['responses' => array_fill(0, 9, 0)])
             ->assertForbidden();
     }
 
@@ -208,7 +208,7 @@ class AssessmentTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->getJson("/api/v1/assessments/{$assessment->id}")
+            ->getJson("/api/v1/assessments/{$assessment->public_id}")
             ->assertOk()
             ->assertJsonCount(7, 'data.items')
             ->assertJsonCount(4, 'data.options')

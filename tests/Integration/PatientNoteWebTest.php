@@ -40,7 +40,7 @@ class PatientNoteWebTest extends TestCase
         $c = $this->caseload();
 
         $this->actingAs($c['clinician']['user'], 'web')
-            ->post("/patients/{$c['patient']['patient']->id}/notes", [
+            ->post("/patients/{$c['patient']['patient']->public_id}/notes", [
                 'title' => 'Prescription',
                 'body' => 'Sertraline 50mg daily',
                 'is_shared' => '1',
@@ -61,7 +61,7 @@ class PatientNoteWebTest extends TestCase
         $patient = $this->createPatient(); // not assigned
 
         $this->actingAs($clinician['user'], 'web')
-            ->post("/patients/{$patient['patient']->id}/notes", ['body' => 'x'])
+            ->post("/patients/{$patient['patient']->public_id}/notes", ['body' => 'x'])
             ->assertStatus(403);
     }
 
@@ -75,12 +75,12 @@ class PatientNoteWebTest extends TestCase
         ]);
 
         $this->actingAs($c['clinician']['user'], 'web')
-            ->put("/patient-notes/{$note->id}", ['body' => 'updated', 'is_shared' => '1'])
+            ->put("/patient-notes/{$note->public_id}", ['body' => 'updated', 'is_shared' => '1'])
             ->assertRedirect();
         $this->assertDatabaseHas('patient_notes', ['id' => $note->id, 'body' => 'updated', 'is_shared' => true]);
 
         $this->actingAs($c['clinician']['user'], 'web')
-            ->delete("/patient-notes/{$note->id}")
+            ->delete("/patient-notes/{$note->public_id}")
             ->assertRedirect();
         $this->assertSoftDeleted('patient_notes', ['id' => $note->id]);
     }
@@ -96,7 +96,7 @@ class PatientNoteWebTest extends TestCase
         ]);
 
         $this->actingAs($other['user'], 'web')
-            ->put("/patient-notes/{$note->id}", ['body' => 'hijack'])
+            ->put("/patient-notes/{$note->public_id}", ['body' => 'hijack'])
             ->assertStatus(403);
     }
 

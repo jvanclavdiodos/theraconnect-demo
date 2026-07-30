@@ -24,7 +24,7 @@ class AppointmentApi {
   }
 
   Future<List<ScheduleSlot>> getSchedules(String date,
-      {int? clinicianId}) async {
+      {String? clinicianId}) async {
     try {
       final response = await _client.get(
         ApiConfig.schedulesEndpoint,
@@ -44,7 +44,7 @@ class AppointmentApi {
 
   /// Y-m-d dates the clinician has at least one open slot in [from, to].
   Future<List<String>> getAvailability({
-    required int clinicianId,
+    required String clinicianId,
     required String from,
     required String to,
   }) async {
@@ -106,7 +106,7 @@ class AppointmentApi {
     required String requestedAt,
     String mode = 'in_person',
     String? reason,
-    int? clinicianId,
+    String? clinicianId,
   }) async {
     try {
       final response = await _client.post(
@@ -124,7 +124,7 @@ class AppointmentApi {
     }
   }
 
-  Future<Appointment> getAppointment(int id) async {
+  Future<Appointment> getAppointment(String id) async {
     try {
       final response =
           await _client.get('${ApiConfig.appointmentsEndpoint}/$id');
@@ -134,7 +134,7 @@ class AppointmentApi {
     }
   }
 
-  Future<Appointment> cancelAppointment(int id) async {
+  Future<Appointment> cancelAppointment(String id) async {
     try {
       final response =
           await _client.delete('${ApiConfig.appointmentsEndpoint}/$id');

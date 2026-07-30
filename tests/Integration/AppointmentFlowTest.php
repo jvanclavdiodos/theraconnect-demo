@@ -26,7 +26,7 @@ class AppointmentFlowTest extends TestCase
                 'requested_at' => '2030-12-31 09:00:00',
                 'mode' => 'in_person',
                 'reason' => 'Initial consultation',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ]);
 
         $response->assertStatus(201)
@@ -53,7 +53,7 @@ class AppointmentFlowTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => '2030-12-31 10:00:00',
                 'mode' => 'online',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ]);
 
         $response = $this->withHeaders($this->apiHeaders($token))
@@ -78,13 +78,13 @@ class AppointmentFlowTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => '2030-12-31 11:00:00',
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ]);
 
-        $appointmentId = $createResponse->json('data.id');
+        $appointmentId = $createResponse->json('data.public_id');
 
         $this->assertDatabaseHas('appointments', [
-            'id' => $appointmentId,
+            'public_id' => $appointmentId,
             'patient_id' => $patientA['patient']->id,
         ]);
         $this->assertNotEquals($patientA['patient']->id, $patientB['patient']->id);
@@ -110,10 +110,10 @@ class AppointmentFlowTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => '2030-12-31 14:00:00',
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ]);
 
-        $id = $create->json('data.id');
+        $id = $create->json('data.public_id');
 
         $response = $this->withHeaders($this->apiHeaders($token))
             ->deleteJson("/api/v1/appointments/{$id}");
@@ -122,7 +122,7 @@ class AppointmentFlowTest extends TestCase
             ->assertJsonPath('data.status', 'cancelled');
 
         $this->assertDatabaseHas('appointments', [
-            'id' => $id,
+            'public_id' => $id,
             'status' => 'cancelled',
         ]);
     }
@@ -137,10 +137,10 @@ class AppointmentFlowTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => '2030-12-31 15:00:00',
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ]);
 
-        $id = $create->json('data.id');
+        $id = $create->json('data.public_id');
 
         // First cancel
         $this->withHeaders($this->apiHeaders($token))
@@ -166,7 +166,7 @@ class AppointmentFlowTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => $slot,
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ])
             ->assertStatus(201);
 
@@ -175,7 +175,7 @@ class AppointmentFlowTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => $slot,
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ])
             ->assertStatus(422)
             ->assertJsonPath('errors.requested_at.0', 'That time slot is already booked.');
@@ -197,7 +197,7 @@ class AppointmentFlowTest extends TestCase
 
         $firstSlot = $response->json('data.0');
         $this->assertArrayHasKey('slot', $firstSlot);
-        $this->assertArrayHasKey('clinician_id', $firstSlot);
+        $this->assertArrayHasKey('clinician_public_id', $firstSlot);
         $this->assertArrayHasKey('clinician_name', $firstSlot);
         $this->assertArrayHasKey('available', $firstSlot);
         $this->assertTrue($firstSlot['available']);
@@ -214,7 +214,7 @@ class AppointmentFlowTest extends TestCase
             ->postJson('/api/v1/appointments', [
                 'requested_at' => '2030-12-31 09:00:00',
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ]);
 
         // After booking one slot, total slots should remain 9 (all slots still listed, some unavailable)
@@ -272,7 +272,7 @@ class AppointmentFlowTest extends TestCase
                 ->postJson('/api/v1/appointments', [
                     'requested_at' => '2030-12-31 09:00:00',
                     'mode' => 'in_person',
-                    'clinician_id' => $clinician['clinician']->id,
+                    'clinician_id' => $clinician['clinician']->public_id,
                 ]);
 
             // The post-create hook aborts the request — Laravel's exception
@@ -400,7 +400,7 @@ class AppointmentFlowTest extends TestCase
 
         try {
             $this->actingAs($admin, 'web')
-                ->patch("/appointments/{$appointment->id}/approve");
+                ->patch("/appointments/{$appointment->public_id}/approve");
         } catch (\RuntimeException $e) {
             // The transaction re-throws — Laravel may convert to 500 response.
         }
@@ -434,8 +434,8 @@ class AppointmentFlowTest extends TestCase
         try {
             $this->actingAs($admin, 'web')
                 ->post('/assignments', [
-                    'patient_id' => $patient['patient']->id,
-                    'clinician_id' => $clinician['clinician']->id,
+                    'patient_id' => $patient['patient']->public_id,
+                    'clinician_id' => $clinician['clinician']->public_id,
                     'title' => 'Atomic Test Assignment',
                     'description' => 'Should not persist on notif failure.',
                     'due_date' => '2030-12-31',
@@ -470,7 +470,7 @@ class AppointmentFlowTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->deleteJson("/api/v1/appointments/{$appointment->id}")
+            ->deleteJson("/api/v1/appointments/{$appointment->public_id}")
             ->assertStatus(403);
 
         $this->assertEquals('completed', $appointment->fresh()->status);
@@ -495,7 +495,7 @@ class AppointmentFlowTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->deleteJson("/api/v1/appointments/{$appointment->id}")
+            ->deleteJson("/api/v1/appointments/{$appointment->public_id}")
             ->assertStatus(403);
 
         $this->assertEquals('rejected', $appointment->fresh()->status);
@@ -580,7 +580,7 @@ class AppointmentFlowTest extends TestCase
         ]);
 
         $this->actingAs($admin, 'web')
-            ->patch("/appointments/{$appointment->id}/approve")
+            ->patch("/appointments/{$appointment->public_id}/approve")
             ->assertRedirect();
 
         $this->actingAs($clinician['user'], 'web')
@@ -610,16 +610,16 @@ class AppointmentFlowTest extends TestCase
 
         // Before approval the clinician has no caseload relationship — messaging is blocked.
         $this->actingAs($clinician['user'], 'web')
-            ->post('/messages/open', ['patient_id' => $patient['patient']->id])
+            ->post('/messages/open', ['patient_id' => $patient['patient']->public_id])
             ->assertStatus(403);
 
         $this->actingAs($admin, 'web')
-            ->patch("/appointments/{$appointment->id}/approve")
+            ->patch("/appointments/{$appointment->public_id}/approve")
             ->assertRedirect();
 
         // After approval the patient is on the caseload — messaging must succeed.
         $this->actingAs($clinician['user'], 'web')
-            ->post('/messages/open', ['patient_id' => $patient['patient']->id])
+            ->post('/messages/open', ['patient_id' => $patient['patient']->public_id])
             ->assertRedirect();
     }
 
@@ -644,7 +644,7 @@ class AppointmentFlowTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->deleteJson("/api/v1/appointments/{$appointment->id}")
+            ->deleteJson("/api/v1/appointments/{$appointment->public_id}")
             ->assertStatus(409);
     }
 }

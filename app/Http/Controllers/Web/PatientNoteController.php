@@ -43,7 +43,7 @@ class PatientNoteController extends Controller
             'is_shared' => $request->boolean('is_shared'),
         ]);
 
-        return redirect()->route('patients.show', $note->patient_id)
+        return redirect()->route('patients.show', $note->patient)
             ->with('status', 'Note updated.');
     }
 
@@ -51,10 +51,10 @@ class PatientNoteController extends Controller
     {
         Gate::authorize('manage', $note);
 
-        $patientId = $note->patient_id;
+        $patient = $note->patient;
         $note->delete();
 
-        return redirect()->route('patients.show', $patientId)
+        return redirect()->route('patients.show', $patient)
             ->with('status', 'Note deleted.');
     }
 

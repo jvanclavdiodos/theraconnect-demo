@@ -52,7 +52,7 @@ class ClinicianRequestTest extends TestCase
         $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
             ->getJson('/api/v1/clinicians')
             ->assertStatus(200)
-            ->assertJsonFragment(['id' => $clinician['clinician']->id]);
+            ->assertJsonFragment(['public_id' => $clinician['clinician']->public_id]);
     }
 
     public function test_api_registration_ignores_requested_clinician(): void
@@ -110,7 +110,7 @@ class ClinicianRequestTest extends TestCase
             ->assertSee('Jane Patient');
 
         $this->actingAs($clinician['user'], 'web')
-            ->post('/messages/open', ['patient_id' => $patient['patient']->id])
+            ->post('/messages/open', ['patient_id' => $patient['patient']->public_id])
             ->assertStatus(403);
     }
 
@@ -120,7 +120,7 @@ class ClinicianRequestTest extends TestCase
         $patient = $this->pendingPatient($clinician['clinician']);
 
         $this->actingAs($clinician['user'], 'web')
-            ->post("/patients/{$patient['patient']->id}/request/approve")
+            ->post("/patients/{$patient['patient']->public_id}/request/approve")
             ->assertRedirect(route('patients.index'));
 
         $patient['patient']->refresh();
@@ -132,7 +132,7 @@ class ClinicianRequestTest extends TestCase
             'type' => 'patient_request_approved',
         ]);
         $this->actingAs($clinician['user'], 'web')
-            ->post('/messages/open', ['patient_id' => $patient['patient']->id])
+            ->post('/messages/open', ['patient_id' => $patient['patient']->public_id])
             ->assertRedirect();
     }
 
@@ -142,7 +142,7 @@ class ClinicianRequestTest extends TestCase
         $patient = $this->pendingPatient($clinician['clinician']);
 
         $this->actingAs($clinician['user'], 'web')
-            ->post("/patients/{$patient['patient']->id}/request/deny")
+            ->post("/patients/{$patient['patient']->public_id}/request/deny")
             ->assertRedirect(route('patients.index'));
 
         $patient['patient']->refresh();
@@ -161,7 +161,7 @@ class ClinicianRequestTest extends TestCase
         $patient = $this->pendingPatient($owner['clinician']);
 
         $this->actingAs($other['user'], 'web')
-            ->post("/patients/{$patient['patient']->id}/request/approve")
+            ->post("/patients/{$patient['patient']->public_id}/request/approve")
             ->assertStatus(403);
 
         $patient['patient']->refresh();

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasPublicId;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Support\Carbon;
 
 class Appointment extends Model
 {
-    use SoftDeletes;
+    use HasPublicId, SoftDeletes;
 
     public const UPCOMING_STATUSES = ['pending', 'approved', 'rescheduled'];
 

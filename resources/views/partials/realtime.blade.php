@@ -9,7 +9,7 @@
         <script>
             window.theraRealtime = {{ Illuminate\Support\Js::from([
                 'enabled' => $realtimeEnabled,
-                'userId' => auth()->id(),
+                'userPublicId' => auth()->user()->public_id,
                 'role' => auth()->user()->role,
                 'appKey' => $realtimeEnabled ? $realtimeConnection['key'] : null,
                 'host' => $realtimeEnabled ? $realtimeConnection['options']['host'] : null,

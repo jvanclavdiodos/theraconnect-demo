@@ -19,10 +19,8 @@ class SubmissionController extends Controller
         private AssignmentService $assignmentService,
     ) {}
 
-    public function store(SubmissionRequest $request, int $id): JsonResponse
+    public function store(SubmissionRequest $request, Assignment $assignment): JsonResponse
     {
-        $assignment = Assignment::findOrFail($id);
-
         Gate::authorize('view', $assignment);
 
         $patient = auth()->user()->patient;
@@ -31,7 +29,7 @@ class SubmissionController extends Controller
             return response()->json(['message' => 'Patient profile not found.'], 404);
         }
 
-        $existing = Submission::where('assignment_id', $id)
+        $existing = Submission::where('assignment_id', $assignment->id)
             ->where('patient_id', $patient->id)
             ->first();
 
@@ -42,7 +40,7 @@ class SubmissionController extends Controller
         }
 
         $submission = $this->assignmentService->submit(
-            $id,
+            $assignment->id,
             $patient->id,
             $request->input('content'),
             $request->file('file'),
@@ -53,10 +51,8 @@ class SubmissionController extends Controller
         ], 201);
     }
 
-    public function downloadFile(int $id): StreamedResponse
+    public function downloadFile(Submission $submission): StreamedResponse
     {
-        $submission = Submission::findOrFail($id);
-
         // Ownership: a patient may only download their own submission file.
         // Replaces the prior inline `abort_unless($patient && ... === $patient->id)`
         // with the SubmissionPolicy::view Gate, consistent with how the

@@ -1,5 +1,5 @@
 class Clinician {
-  final int id;
+  final String id;
   final String name;
   final String? specialization;
 
@@ -11,7 +11,7 @@ class Clinician {
 
   factory Clinician.fromJson(Map<String, dynamic> json) {
     return Clinician(
-      id: json['id'] as int,
+      id: json['public_id'] as String,
       name: (json['name'] as String?) ?? 'Clinician',
       specialization: json['specialization'] as String?,
     );

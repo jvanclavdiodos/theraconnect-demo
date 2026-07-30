@@ -91,9 +91,9 @@ class RealtimeUpdatesTest extends TestCase
         ]);
 
         Event::assertDispatched(NotificationCreated::class);
-        Event::assertDispatched(MessageCreated::class, fn (MessageCreated $event) => $event->broadcastWith()['conversation_id'] === $conversation->id
+        Event::assertDispatched(MessageCreated::class, fn (MessageCreated $event) => $event->broadcastWith()['conversation_public_id'] === $conversation->public_id
         );
-        Event::assertDispatched(AppointmentUpdated::class, fn (AppointmentUpdated $event) => $event->broadcastWith()['appointment_id'] === $appointment->id
+        Event::assertDispatched(AppointmentUpdated::class, fn (AppointmentUpdated $event) => $event->broadcastWith()['appointment_public_id'] === $appointment->public_id
                 && $event->broadcastWith()['change'] === 'created'
         );
     }
@@ -174,12 +174,12 @@ class RealtimeUpdatesTest extends TestCase
 
         $this->withHeaders($this->apiHeaders($token))->postJson('/api/v1/broadcasting/auth', [
             'socket_id' => '1234.5678',
-            'channel_name' => 'private-users.'.$patient['user']->id,
+            'channel_name' => 'private-users.'.$patient['user']->public_id,
         ])->assertOk()->assertJsonStructure(['auth']);
 
         $this->withHeaders($this->apiHeaders($token))->postJson('/api/v1/broadcasting/auth', [
             'socket_id' => '1234.5678',
-            'channel_name' => 'private-conversations.'.$conversation->id,
+            'channel_name' => 'private-conversations.'.$conversation->public_id,
         ])->assertOk()->assertJsonStructure(['auth']);
 
         $this->withHeaders($this->apiHeaders($token))->postJson('/api/v1/broadcasting/auth', [

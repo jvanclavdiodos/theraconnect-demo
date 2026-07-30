@@ -10,20 +10,20 @@ class PatientResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'user_id' => $this->user_id,
+            'public_id' => $this->public_id,
+            'user_public_id' => $this->user?->public_id,
             // Clinician connection state — lets the app show a "pending approval"
             // banner instead of failing silently when messaging/booking.
-            'assigned_clinician_id' => $this->assigned_clinician_id,
-            'assigned_clinician_ids' => $this->assignedClinicians()
-                ->pluck('clinicians.id')
+            'assigned_clinician_public_id' => $this->clinician?->public_id,
+            'assigned_clinician_public_ids' => $this->assignedClinicians()
+                ->pluck('clinicians.public_id')
                 ->when(
-                    $this->assigned_clinician_id,
-                    fn ($ids) => $ids->push($this->assigned_clinician_id)
+                    $this->clinician,
+                    fn ($ids) => $ids->push($this->clinician->public_id)
                 )
                 ->unique()
                 ->values(),
-            'requested_clinician_id' => $this->requested_clinician_id,
+            'requested_clinician_public_id' => $this->requestedClinician?->public_id,
             'clinician_request_status' => $this->clinician_request_status,
             'has_avatar' => $this->relationLoaded('user') ? (bool) $this->user?->avatar_path : false,
             'avatar_url' => url('/api/v1/profile/avatar'),

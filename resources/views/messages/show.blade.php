@@ -1,6 +1,6 @@
 @extends('layouts.app')
 @section('realtime-resources', 'messages')
-@section('realtime-conversation', $conversation->id)
+@section('realtime-conversation', $conversation->public_id)
 @section('title', 'Conversation - ' . config('app.name'))
 @section('breadcrumbs')
     <li class="breadcrumb-item"><a href="{{ route('messages.index') }}">Messages</a></li>

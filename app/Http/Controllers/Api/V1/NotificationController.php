@@ -27,11 +27,13 @@ class NotificationController extends Controller
         ]);
     }
 
-    public function markRead(int $id): JsonResponse
+    public function markRead(Notification $notification): JsonResponse
     {
-        $notification = Notification::where('user_id', auth()->id())
-            ->general()
-            ->findOrFail($id);
+        abort_unless(
+            $notification->user_id === auth()->id()
+                && $notification->type !== Notification::MESSAGE_RECEIVED,
+            404
+        );
 
         $notification->update(['read_at' => now()]);
 

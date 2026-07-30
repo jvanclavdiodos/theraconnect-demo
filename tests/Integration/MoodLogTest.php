@@ -75,12 +75,12 @@ class MoodLogTest extends TestCase
         ]);
         $me['patient']->moodLogs()->create([
             'score' => 8,
-            'logged_on' => now()->toDateString(),
+            'logged_on' => MoodLogDates::today(),
             'created_at' => now(),
         ]);
         $other['patient']->moodLogs()->create([
             'score' => 1,
-            'logged_on' => now()->toDateString(),
+            'logged_on' => MoodLogDates::today(),
         ]);
 
         $this->withHeaders($this->apiHeaders($this->getApiToken($me['user'])))
@@ -107,16 +107,16 @@ class MoodLogTest extends TestCase
         $patient = $this->createPatient('mood-duplicate@test.com');
         $headers = $this->apiHeaders($this->getApiToken($patient['user']));
 
-        $first = $this->withHeaders($headers)
+        $firstDate = $this->withHeaders($headers)
             ->postJson('/api/v1/mood-logs', ['score' => 6])
             ->assertCreated()
-            ->json('data.id');
+            ->json('data.logged_on');
 
         $this->withHeaders($headers)
             ->postJson('/api/v1/mood-logs', ['score' => 9])
             ->assertStatus(409)
             ->assertJsonPath('message', 'Today\'s mood check-in has already been completed.')
-            ->assertJsonPath('data.id', $first)
+            ->assertJsonPath('data.logged_on', $firstDate)
             ->assertJsonPath('data.score', 6);
 
         $this->assertSame(1, $patient['patient']->moodLogs()->count());

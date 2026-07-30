@@ -1,13 +1,11 @@
 /// One daily self-reported mood check-in (1-10) on the server's Manila date.
 class MoodLog {
-  final int id;
   final int score;
   final String? note;
   final String loggedOn;
   final String? createdAt;
 
   const MoodLog({
-    required this.id,
     required this.score,
     required this.loggedOn,
     this.note,
@@ -16,7 +14,6 @@ class MoodLog {
 
   factory MoodLog.fromJson(Map<String, dynamic> json) {
     return MoodLog(
-      id: json['id'] as int,
       score: (json['score'] as num).toInt(),
       loggedOn: json['logged_on'] as String,
       note: json['note'] as String?,

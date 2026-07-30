@@ -40,7 +40,7 @@ class GenerateAppointmentReminders implements ShouldQueue
             // fresh pair for the new appointment time.
             $alreadyReminded = Notification::where('type', 'appointment_reminder')
                 ->where('user_id', $appointment->patient->user->id)
-                ->whereJsonContains('data->appointment_id', $appointment->id)
+                ->whereJsonContains('data->appointment_public_id', $appointment->public_id)
                 ->whereJsonContains('data->reminder_kind', $this->reminderKind)
                 ->whereJsonContains('data->reminder_for', $reminderFor)
                 ->exists();

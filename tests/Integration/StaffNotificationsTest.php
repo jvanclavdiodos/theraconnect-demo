@@ -37,7 +37,7 @@ class StaffNotificationsTest extends TestCase
         $note = $this->notifyUser($clinician['user']->id);
 
         $this->actingAs($clinician['user'], 'web')
-            ->post(route('notifications.read', $note->id))
+            ->post(route('notifications.read', $note))
             ->assertRedirect();
 
         $this->assertNotNull($note->fresh()->read_at);

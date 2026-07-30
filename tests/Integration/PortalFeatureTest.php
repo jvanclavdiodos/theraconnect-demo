@@ -21,7 +21,7 @@ class PortalFeatureTest extends TestCase
                 'requested_at' => '2030-12-31 09:00:00',
                 'mode' => 'in_person',
                 'reason' => 'First visit',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ])
             ->assertRedirect();
 
@@ -187,7 +187,7 @@ class PortalFeatureTest extends TestCase
         ]);
 
         $this->actingAs($patient['user'], 'web')
-            ->post(route('portal.notifications.read', $note->id))
+            ->post(route('portal.notifications.read', $note))
             ->assertRedirect();
 
         $this->assertNotNull($note->fresh()->read_at);

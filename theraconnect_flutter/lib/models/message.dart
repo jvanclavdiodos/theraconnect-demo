@@ -1,7 +1,7 @@
 class Message {
-  final int id;
-  final int conversationId;
-  final int senderId;
+  final String id;
+  final String conversationId;
+  final String senderId;
   final String? senderName;
   final bool isMine;
   final String body;
@@ -19,9 +19,9 @@ class Message {
 
   factory Message.fromJson(Map<String, dynamic> json) {
     return Message(
-      id: json['id'] as int,
-      conversationId: json['conversation_id'] as int,
-      senderId: json['sender_id'] as int,
+      id: json['public_id'] as String,
+      conversationId: json['conversation_public_id'] as String,
+      senderId: json['sender_public_id'] as String,
       senderName: json['sender_name'] as String?,
       isMine: (json['is_mine'] as bool?) ?? false,
       body: json['body'] as String,

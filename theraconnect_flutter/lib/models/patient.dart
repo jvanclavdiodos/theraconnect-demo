@@ -1,10 +1,10 @@
 class Patient {
-  final int id;
-  final int userId;
+  final String id;
+  final String userId;
   final bool hasAvatar;
-  final int? assignedClinicianId;
-  final List<int> assignedClinicianIds;
-  final int? requestedClinicianId;
+  final String? assignedClinicianId;
+  final List<String> assignedClinicianIds;
+  final String? requestedClinicianId;
   final String? clinicianRequestStatus;
   final String? dateOfBirth;
   final String? gender;
@@ -41,15 +41,17 @@ class Patient {
 
   factory Patient.fromJson(Map<String, dynamic> json) {
     return Patient(
-      id: json['id'] as int,
-      userId: json['user_id'] as int,
+      id: json['public_id'] as String,
+      userId: json['user_public_id'] as String,
       hasAvatar: json['has_avatar'] as bool? ?? false,
-      assignedClinicianId: json['assigned_clinician_id'] as int?,
-      assignedClinicianIds: (json['assigned_clinician_ids'] as List<dynamic>?)
-              ?.map((id) => id as int)
+      assignedClinicianId: json['assigned_clinician_public_id'] as String?,
+      assignedClinicianIds:
+          (json['assigned_clinician_public_ids'] as List<dynamic>?)
+              ?.map((id) => id as String)
               .toList() ??
           const [],
-      requestedClinicianId: json['requested_clinician_id'] as int?,
+      requestedClinicianId:
+          json['requested_clinician_public_id'] as String?,
       clinicianRequestStatus: json['clinician_request_status'] as String?,
       dateOfBirth: json['date_of_birth'] as String?,
       gender: json['gender'] as String?,
@@ -67,12 +69,12 @@ class Patient {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'user_id': userId,
+      'public_id': id,
+      'user_public_id': userId,
       'has_avatar': hasAvatar,
-      'assigned_clinician_id': assignedClinicianId,
-      'assigned_clinician_ids': assignedClinicianIds,
-      'requested_clinician_id': requestedClinicianId,
+      'assigned_clinician_public_id': assignedClinicianId,
+      'assigned_clinician_public_ids': assignedClinicianIds,
+      'requested_clinician_public_id': requestedClinicianId,
       'clinician_request_status': clinicianRequestStatus,
       'date_of_birth': dateOfBirth,
       'gender': gender,

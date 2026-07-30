@@ -39,7 +39,7 @@ class BookingApiTest extends TestCase
             ->getJson('/api/v1/clinicians')
             ->assertStatus(200)
             ->assertJsonFragment([
-                'id' => $clinician->id,
+                'public_id' => $clinician->public_id,
                 'name' => 'Dr. Chen',
                 'specialization' => 'CBT',
             ]);
@@ -51,12 +51,12 @@ class BookingApiTest extends TestCase
         $b = $this->makeClinician('b@test.com');
 
         $response = $this->withHeaders($this->patientHeaders())
-            ->getJson("/api/v1/schedules?date=2030-12-31&clinician_id={$a->id}")
+            ->getJson("/api/v1/schedules?date=2030-12-31&clinician_id={$a->public_id}")
             ->assertStatus(200);
 
-        $clinicianIds = collect($response->json('data'))->pluck('clinician_id')->unique()->all();
+        $clinicianIds = collect($response->json('data'))->pluck('clinician_public_id')->unique()->all();
 
-        $this->assertSame([$a->id], $clinicianIds);
+        $this->assertSame([$a->public_id], $clinicianIds);
         $this->assertNotContains($b->id, $clinicianIds);
     }
 
@@ -69,7 +69,7 @@ class BookingApiTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->patientHeaders())
-            ->getJson("/api/v1/schedules/availability?clinician_id={$clinician->id}&from=2030-12-01&to=2030-12-03")
+            ->getJson("/api/v1/schedules/availability?clinician_id={$clinician->public_id}&from=2030-12-01&to=2030-12-03")
             ->assertStatus(200);
 
         $dates = $response->json('data');

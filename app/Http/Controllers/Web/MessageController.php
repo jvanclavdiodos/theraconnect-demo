@@ -41,8 +41,10 @@ class MessageController extends Controller
     {
         $clinician = $this->currentClinician($request);
 
-        $validated = $request->validate(['patient_id' => ['required', 'integer']]);
-        $patient = Patient::findOrFail($validated['patient_id']);
+        $validated = $request->validate([
+            'patient_id' => ['required', 'string', 'exists:patients,public_id'],
+        ]);
+        $patient = Patient::where('public_id', $validated['patient_id'])->firstOrFail();
 
         abort_unless($patient->isAssignedTo($clinician), 403);
 
@@ -83,9 +85,9 @@ class MessageController extends Controller
         if ($request->expectsJson()) {
             return response()->json([
                 'data' => [
-                    'id' => $message->id,
-                    'conversation_id' => $message->conversation_id,
-                    'sender_id' => $message->sender_id,
+                    'public_id' => $message->public_id,
+                    'conversation_public_id' => $message->conversation->public_id,
+                    'sender_public_id' => $message->sender->public_id,
                     'body' => $message->body,
                     'created_at' => $message->created_at?->toIso8601String(),
                     'created_at_label' => $message->created_at?->format('M j, g:i A'),

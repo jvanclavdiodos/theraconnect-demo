@@ -51,7 +51,7 @@ class AssignmentFlowTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->apiHeaders($token))
-            ->getJson("/api/v1/assignments/{$assignment->id}");
+            ->getJson("/api/v1/assignments/{$assignment->public_id}");
 
         $response->assertStatus(200)
             ->assertJsonPath('data.title', 'Breathing Exercise')
@@ -73,7 +73,7 @@ class AssignmentFlowTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [
                 'content' => 'I completed the breathing exercises. Felt calmer afterward.',
             ]);
 
@@ -103,13 +103,13 @@ class AssignmentFlowTest extends TestCase
 
         // First submission
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [
                 'content' => 'First attempt.',
             ]);
 
         // Re-submission
         $response = $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [
                 'content' => 'Updated submission with more detail.',
             ]);
 
@@ -135,7 +135,7 @@ class AssignmentFlowTest extends TestCase
 
         // Patient submits, clinician reviews
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [
                 'content' => 'First attempt.',
             ])
             ->assertStatus(201);
@@ -145,7 +145,7 @@ class AssignmentFlowTest extends TestCase
 
         // Re-submission must be rejected and the review preserved
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [
                 'content' => 'Trying to change it after review.',
             ])
             ->assertStatus(409);
@@ -171,7 +171,7 @@ class AssignmentFlowTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [
                 'content' => '',
             ])
             ->assertStatus(422);
@@ -197,7 +197,7 @@ class AssignmentFlowTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [
                 'file' => UploadedFile::fake()->create('malicious.php', 1, 'application/x-php'),
             ])
             ->assertStatus(422)
@@ -232,14 +232,14 @@ class AssignmentFlowTest extends TestCase
 
         // Patient sees an authenticated download URL in the API payload.
         $this->withHeaders($this->apiHeaders($token))
-            ->getJson("/api/v1/assignments/{$assignment->id}")
+            ->getJson("/api/v1/assignments/{$assignment->public_id}")
             ->assertStatus(200)
             ->assertJsonPath('data.attachment_name', 'worksheet.pdf')
-            ->assertJsonPath('data.attachment_url', url("/api/v1/assignments/{$assignment->id}/worksheet"));
+            ->assertJsonPath('data.attachment_url', url("/api/v1/assignments/{$assignment->public_id}/worksheet"));
 
         // Owner can download it.
         $this->withHeaders($this->apiHeaders($token))
-            ->get("/api/v1/assignments/{$assignment->id}/worksheet")
+            ->get("/api/v1/assignments/{$assignment->public_id}/worksheet")
             ->assertStatus(200)
             ->assertDownload('worksheet.pdf');
     }
@@ -262,7 +262,7 @@ class AssignmentFlowTest extends TestCase
         );
 
         $this->withHeaders($this->apiHeaders($this->getApiToken($intruder['user'])))
-            ->get("/api/v1/assignments/{$assignment->id}/worksheet")
+            ->get("/api/v1/assignments/{$assignment->public_id}/worksheet")
             ->assertStatus(403);
     }
 
@@ -279,7 +279,7 @@ class AssignmentFlowTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->getJson("/api/v1/assignments/{$assignment->id}")
+            ->getJson("/api/v1/assignments/{$assignment->public_id}")
             ->assertStatus(200)
             ->assertJsonPath('data.attachment_url', null)
             ->assertJsonPath('data.attachment_name', null);
@@ -319,7 +319,7 @@ class AssignmentFlowTest extends TestCase
 
         // Intruder attempts to download the owner's submission file.
         $this->withHeaders($this->apiHeaders($this->getApiToken($intruder['user'])))
-            ->get("/api/v1/submissions/{$submission->id}/file")
+            ->get("/api/v1/submissions/{$submission->public_id}/file")
             ->assertStatus(403);
     }
 
@@ -350,7 +350,7 @@ class AssignmentFlowTest extends TestCase
         $submission = Submission::where('assignment_id', $assignment->id)->first();
 
         $this->withHeaders($this->apiHeaders($this->getApiToken($owner['user'])))
-            ->get("/api/v1/submissions/{$submission->id}/file")
+            ->get("/api/v1/submissions/{$submission->public_id}/file")
             ->assertStatus(200)
             ->assertDownload('mine.pdf');
     }

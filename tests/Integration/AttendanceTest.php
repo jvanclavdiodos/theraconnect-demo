@@ -30,7 +30,7 @@ class AttendanceTest extends TestCase
         $appt = $this->appointmentFor($clinician['clinician'], $patient['patient'], 'approved', now()->subHour());
 
         $this->actingAs($clinician['user'], 'web')
-            ->patch("/appointments/{$appt->id}/complete", ['outcome' => 'attended'])
+            ->patch("/appointments/{$appt->public_id}/complete", ['outcome' => 'attended'])
             ->assertRedirect(route('appointments.index'));
 
         $this->assertSame('completed', $appt->fresh()->status);
@@ -43,7 +43,7 @@ class AttendanceTest extends TestCase
         $appt = $this->appointmentFor($clinician['clinician'], $patient['patient'], 'approved', now()->subHour());
 
         $this->actingAs($clinician['user'], 'web')
-            ->patch("/appointments/{$appt->id}/complete", ['outcome' => 'no_show'])
+            ->patch("/appointments/{$appt->public_id}/complete", ['outcome' => 'no_show'])
             ->assertRedirect(route('appointments.index'));
 
         $this->assertSame('no_show', $appt->fresh()->status);

@@ -15,6 +15,6 @@ final assessmentsProvider =
 
 /// Full content of one questionnaire, for rendering the fillable form.
 final assessmentDetailProvider =
-    FutureProvider.autoDispose.family<AssessmentDetail, int>((ref, id) async {
+    FutureProvider.autoDispose.family<AssessmentDetail, String>((ref, id) async {
   return ref.watch(assessmentApiProvider).getAssessment(id);
 });

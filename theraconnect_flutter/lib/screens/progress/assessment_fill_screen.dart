@@ -9,7 +9,7 @@ import 'assessments_screen.dart' show severityColor;
 /// Renders a PHQ-9 / GAD-7 questionnaire as radio groups (0–3 per item),
 /// submits the responses, and shows the resulting score + severity.
 class AssessmentFillScreen extends ConsumerStatefulWidget {
-  final int assessmentId;
+  final String assessmentId;
 
   const AssessmentFillScreen({super.key, required this.assessmentId});
 

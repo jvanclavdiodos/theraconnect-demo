@@ -38,7 +38,7 @@ class AssignmentNotifier extends StateNotifier<AsyncValue<List<Assignment>>> {
     }
   }
 
-  Future<String?> submitAssignment(int assignmentId, {String? content, String? filePath}) async {
+  Future<String?> submitAssignment(String assignmentId, {String? content, String? filePath}) async {
     try {
       await _api.submitAssignment(assignmentId, content: content, filePath: filePath);
       await loadAssignments();
@@ -57,7 +57,7 @@ final assignmentsProvider =
   );
 });
 
-final assignmentDetailProvider = FutureProvider.family.autoDispose<Assignment, int>((ref, id) async {
+final assignmentDetailProvider = FutureProvider.family.autoDispose<Assignment, String>((ref, id) async {
   final api = ref.watch(assignmentApiProvider);
   return await api.getAssignment(id);
 });

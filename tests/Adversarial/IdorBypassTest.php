@@ -3,14 +3,15 @@
 namespace Tests\Adversarial;
 
 use App\Models\Appointment;
-use App\Models\Assignment;
 use App\Models\Assessment;
+use App\Models\Assignment;
 use App\Models\Conversation;
 use App\Models\Message;
 use App\Models\Notification;
 use App\Models\PatientNote;
 use App\Models\Submission;
 use App\Models\TherapyGoal;
+use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\CreatesActors;
 use Tests\TestCase;
 
@@ -55,7 +56,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($this->getApiToken($patientA['user'])))
-            ->deleteJson("/api/v1/appointments/{$appt->id}")
+            ->deleteJson("/api/v1/appointments/{$appt->public_id}")
             ->assertForbidden();
 
         $this->assertEquals('approved', $appt->fresh()->status);
@@ -77,7 +78,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($this->getApiToken($patientA['user'])))
-            ->getJson("/api/v1/assignments/{$assignment->id}")
+            ->getJson("/api/v1/assignments/{$assignment->public_id}")
             ->assertForbidden();
 
         // Information-leak finding (see InformationLeakageTest C7 for full
@@ -88,7 +89,7 @@ class IdorBypassTest extends TestCase
         $this->assertStringNotContainsString(
             'B-only worksheet',
             $this->withHeaders($this->apiHeaders($this->getApiToken($patientA['user'])))
-                ->getJson("/api/v1/assignments")->getContent()
+                ->getJson('/api/v1/assignments')->getContent()
         );
     }
 
@@ -108,7 +109,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($this->getApiToken($patientA['user'])))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [
                 'content' => 'A trying to inject into B',
             ])
             ->assertForbidden();
@@ -130,7 +131,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($patientA['user'], 'sanctum')
-            ->postJson("/api/v1/conversations/{$conv->id}/messages", [
+            ->postJson("/api/v1/conversations/{$conv->public_id}/messages", [
                 'body' => 'A injecting into B thread',
             ])
             ->assertForbidden();
@@ -158,7 +159,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($patientA['user'])
-            ->get("/portal/assignments/{$assignment->id}")
+            ->get("/portal/assignments/{$assignment->public_id}")
             ->assertForbidden();
     }
 
@@ -172,7 +173,7 @@ class IdorBypassTest extends TestCase
         // Create a real file on disk so the 404-existence check doesn't short-circuit
         // before the policy Gate runs.
         $path = 'assignments/'.uniqid('b_worksheet_', true).'.txt';
-        \Illuminate\Support\Facades\Storage::disk()->put($path, 'B only content');
+        Storage::disk()->put($path, 'B only content');
 
         $assignment = Assignment::create([
             'clinician_id' => $clinician['clinician']->id,
@@ -185,7 +186,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($patientA['user'])
-            ->get("/portal/assignments/{$assignment->id}/worksheet")
+            ->get("/portal/assignments/{$assignment->public_id}/worksheet")
             ->assertForbidden();
     }
 
@@ -205,7 +206,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($patientA['user'])
-            ->post("/portal/assignments/{$assignment->id}/submit", [
+            ->post("/portal/assignments/{$assignment->public_id}/submit", [
                 'content' => 'A injecting via portal',
             ])
             ->assertForbidden();
@@ -229,7 +230,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $path = 'submissions/'.uniqid('b_sub_', true).'.pdf';
-        \Illuminate\Support\Facades\Storage::disk()->put($path, 'B only submission');
+        Storage::disk()->put($path, 'B only submission');
 
         $submission = Submission::create([
             'assignment_id' => $assignment->id,
@@ -241,7 +242,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($patientA['user'])
-            ->get("/portal/submissions/{$submission->id}/file")
+            ->get("/portal/submissions/{$submission->public_id}/file")
             ->assertForbidden();
     }
 
@@ -260,7 +261,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($patientA['user'])
-            ->get("/portal/assessments/{$assessment->id}")
+            ->get("/portal/assessments/{$assessment->public_id}")
             ->assertForbidden();
     }
 
@@ -279,7 +280,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($patientA['user'])
-            ->post("/portal/assessments/{$assessment->id}/submit", [
+            ->post("/portal/assessments/{$assessment->public_id}/submit", [
                 'responses' => array_fill(0, 9, 0),
             ])
             ->assertForbidden();
@@ -300,7 +301,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($patientA['user'])
-            ->post("/portal/messages/{$conv->id}", [
+            ->post("/portal/messages/{$conv->public_id}", [
                 'body' => 'A injecting via portal',
             ])
             ->assertForbidden();
@@ -326,7 +327,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($patientA['user'])
-            ->post("/portal/notifications/{$notif->id}/read")
+            ->post("/portal/notifications/{$notif->public_id}/read")
             ->assertNotFound();
 
         $this->assertNull($notif->fresh()->read_at);
@@ -353,7 +354,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($clinicianA['user'])
-            ->delete("/patient-notes/{$note->id}")
+            ->delete("/patient-notes/{$note->public_id}")
             ->assertForbidden();
 
         $this->assertDatabaseHas('patient_notes', ['id' => $note->id]);
@@ -376,7 +377,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($clinicianA['user'])
-            ->patch("/goals/{$goal->id}/status", ['status' => 'met'])
+            ->patch("/goals/{$goal->public_id}/status", ['status' => 'met'])
             ->assertForbidden();
 
         $this->assertEquals('active', $goal->fresh()->status);
@@ -400,7 +401,7 @@ class IdorBypassTest extends TestCase
 
         // Clinician A tries to deny it.
         $this->actingAs($clinicianA['user'])
-            ->post("/patients/{$patient['patient']->id}/request/deny")
+            ->post("/patients/{$patient['patient']->public_id}/request/deny")
             ->assertForbidden();
 
         $this->assertEquals('pending', $patient['patient']->fresh()->clinician_request_status);
@@ -416,7 +417,7 @@ class IdorBypassTest extends TestCase
         $patient = $this->createPatient('web-ws-p@test.com');
 
         $path = 'assignments/'.uniqid('web_b_ws_', true).'.txt';
-        \Illuminate\Support\Facades\Storage::disk()->put($path, 'B only');
+        Storage::disk()->put($path, 'B only');
 
         $assignment = Assignment::create([
             'clinician_id' => $clinicianB['clinician']->id,
@@ -429,7 +430,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($clinicianA['user'])
-            ->get("/assignments/{$assignment->id}/worksheet")
+            ->get("/assignments/{$assignment->public_id}/worksheet")
             ->assertForbidden();
     }
 
@@ -459,7 +460,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($clinicianA['user'])
-            ->patch("/submissions/{$submission->id}/review")
+            ->patch("/submissions/{$submission->public_id}/review")
             ->assertForbidden();
 
         $this->assertEquals('submitted', $submission->fresh()->status);
@@ -480,7 +481,7 @@ class IdorBypassTest extends TestCase
         ]);
 
         $this->actingAs($clinicianA['user'])
-            ->post("/messages/{$conv->id}", ['body' => 'A injecting'])
+            ->post("/messages/{$conv->public_id}", ['body' => 'A injecting'])
             ->assertForbidden();
 
         $this->assertEquals(0, Message::where('conversation_id', $conv->id)->count());
@@ -497,7 +498,7 @@ class IdorBypassTest extends TestCase
         $appt = $this->seedApprovedAppointment($patient['patient']->id, $clinicianB['clinician']->id);
 
         $this->actingAs($clinicianA['user'])
-            ->patch("/appointments/{$appt->id}/reschedule", [
+            ->patch("/appointments/{$appt->public_id}/reschedule", [
                 'scheduled_at' => '2030-12-31 14:00:00',
             ])
             ->assertForbidden();
@@ -518,11 +519,11 @@ class IdorBypassTest extends TestCase
         $patient['patient']->update(['assigned_clinician_id' => $clinicianB['clinician']->id]);
         // Give the patient an avatar.
         $path = 'avatars/'.uniqid('av_', true).'.png';
-        \Illuminate\Support\Facades\Storage::disk()->put($path, 'binary');
+        Storage::disk()->put($path, 'binary');
         $patient['user']->update(['avatar_path' => $path]);
 
         $this->actingAs($clinicianA['user'])
-            ->get("/avatars/{$patient['user']->id}")
+            ->get("/avatars/{$patient['user']->public_id}")
             ->assertForbidden();
     }
 

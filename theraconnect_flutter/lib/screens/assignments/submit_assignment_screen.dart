@@ -8,7 +8,7 @@ import '../../providers/assignment_provider.dart';
 import '../../theme/app_theme.dart';
 
 class SubmitAssignmentScreen extends ConsumerStatefulWidget {
-  final int assignmentId;
+  final String assignmentId;
 
   const SubmitAssignmentScreen({super.key, required this.assignmentId});
 

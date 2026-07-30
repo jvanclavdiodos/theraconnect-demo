@@ -47,7 +47,7 @@ class NotificationNotifier extends StateNotifier<AsyncValue<List<NotificationIte
   /// state would replace the list with an error screen, which is too
   /// disruptive for a single background tap. Callers can opt-in to surfacing
   /// the error via the returned string.
-  Future<String?> markRead(int id) async {
+  Future<String?> markRead(String id) async {
     try {
       await _api.markRead(id);
       await loadNotifications();

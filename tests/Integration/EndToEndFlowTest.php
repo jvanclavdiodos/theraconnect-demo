@@ -19,14 +19,14 @@ class EndToEndFlowTest extends TestCase
         // 2. Patient books an appointment via API (mobile app)
         $bookResponse = $this->withHeaders($this->apiHeaders($patientToken))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-07-01 09:00:00',
+                'requested_at' => '2030-07-01 09:00:00',
                 'mode' => 'in_person',
                 'reason' => 'Follow-up session',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ]);
 
         $bookResponse->assertStatus(201);
-        $appointmentId = $bookResponse->json('data.id');
+        $appointmentId = $bookResponse->json('data.public_id');
         $this->assertEquals('pending', $bookResponse->json('data.status'));
 
         // 3. Patient can see their appointment
@@ -49,17 +49,17 @@ class EndToEndFlowTest extends TestCase
 
         // 6. Database reflects cancelled state
         $this->assertDatabaseHas('appointments', [
-            'id' => $appointmentId,
+            'public_id' => $appointmentId,
             'status' => 'cancelled',
         ]);
 
         // 7. Patient books another appointment
         $this->withHeaders($this->apiHeaders($patientToken))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-07-02 10:00:00',
+                'requested_at' => '2030-07-02 10:00:00',
                 'mode' => 'online',
                 'reason' => 'Video check-in',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ])
             ->assertStatus(201);
 
@@ -94,13 +94,13 @@ class EndToEndFlowTest extends TestCase
 
         // 4. Patient views assignment detail
         $this->withHeaders($this->apiHeaders($patientToken))
-            ->getJson("/api/v1/assignments/{$assignment->id}")
+            ->getJson("/api/v1/assignments/{$assignment->public_id}")
             ->assertStatus(200)
             ->assertJsonPath('data.title', 'Weekly Reflection');
 
         // 5. Patient submits assignment
         $submitResponse = $this->withHeaders($this->apiHeaders($patientToken))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [
                 'content' => 'This week I practiced mindfulness daily and noticed reduced anxiety.',
             ]);
 
@@ -158,7 +158,7 @@ class EndToEndFlowTest extends TestCase
         $this->assertContains('assignment_created', $types);
 
         // 4. Patient marks first as read
-        $firstId = $response->json('data.0.id');
+        $firstId = $response->json('data.0.public_id');
         $this->withHeaders($this->apiHeaders($patientToken))
             ->postJson("/api/v1/notifications/{$firstId}/read")
             ->assertStatus(200);
@@ -169,7 +169,7 @@ class EndToEndFlowTest extends TestCase
 
         $readIds = collect($recheck->json('data'))
             ->whereNotNull('read_at')
-            ->pluck('id')
+            ->pluck('public_id')
             ->toArray();
 
         $this->assertContains($firstId, $readIds);
@@ -186,15 +186,15 @@ class EndToEndFlowTest extends TestCase
         // Patient A books 09:00 slot
         $this->withHeaders($this->apiHeaders($tokenA))
             ->postJson('/api/v1/appointments', [
-                'requested_at' => '2026-07-15 09:00:00',
+                'requested_at' => '2030-07-15 09:00:00',
                 'mode' => 'in_person',
-                'clinician_id' => $clinician['clinician']->id,
+                'clinician_id' => $clinician['clinician']->public_id,
             ])
             ->assertStatus(201);
 
         // Patient B still sees 9 slots (all listed, some unavailable)
         $slots = $this->withHeaders($this->apiHeaders($tokenB))
-            ->getJson('/api/v1/schedules?date=2026-07-15');
+            ->getJson('/api/v1/schedules?date=2030-07-15');
 
         $slots->assertStatus(200)
             ->assertJsonCount(9, 'data');

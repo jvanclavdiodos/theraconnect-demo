@@ -8,6 +8,7 @@ use App\Http\Requests\Api\StoreAppointmentRequest;
 use App\Http\Resources\AppointmentResource;
 use App\Http\Resources\ScheduleSlotResource;
 use App\Models\Appointment;
+use App\Models\Clinician;
 use App\Services\AppointmentService;
 use App\Services\AvailabilityService;
 use App\Services\NotificationService;
@@ -38,7 +39,7 @@ class AppointmentController extends Controller
             'clinician_id' => $request->query('clinician_id'),
         ], [
             'date' => ['required', 'date_format:Y-m-d'],
-            'clinician_id' => ['nullable', 'integer', 'exists:clinicians,id'],
+            'clinician_id' => ['nullable', 'string', 'exists:clinicians,public_id'],
         ]);
 
         if ($validator->fails()) {
@@ -51,9 +52,18 @@ class AppointmentController extends Controller
         $slots = collect($this->appointmentService->getScheduleSlots($date));
 
         // Clinician-first booking: optionally narrow to one clinician.
-        if ($clinicianId = $request->query('clinician_id')) {
-            $slots = $slots->where('clinician_id', (int) $clinicianId)->values();
+        if ($clinicianPublicId = $request->query('clinician_id')) {
+            $clinicianId = Clinician::where('public_id', $clinicianPublicId)->value('id');
+            $slots = $slots->where('clinician_id', $clinicianId)->values();
         }
+
+        $clinicianIds = $slots->pluck('clinician_id')->unique();
+        $publicIds = Clinician::whereKey($clinicianIds)->pluck('public_id', 'id');
+        $slots = $slots->map(function (array $slot) use ($publicIds): array {
+            $slot['clinician_id'] = $publicIds[$slot['clinician_id']] ?? null;
+
+            return $slot;
+        });
 
         return response()->json([
             'data' => ScheduleSlotResource::collection($slots),
@@ -68,7 +78,7 @@ class AppointmentController extends Controller
     public function availability(Request $request): JsonResponse
     {
         $validator = validator($request->all(), [
-            'clinician_id' => ['required', 'integer', 'exists:clinicians,id'],
+            'clinician_id' => ['required', 'string', 'exists:clinicians,public_id'],
             'from' => ['required', 'date_format:Y-m-d'],
             'to' => ['required', 'date_format:Y-m-d', 'after_or_equal:from'],
         ]);
@@ -88,11 +98,8 @@ class AppointmentController extends Controller
             $to = $from->copy()->addDays(62);
         }
 
-        $dates = $this->availabilityService->openDates(
-            (int) $request->query('clinician_id'),
-            $from,
-            $to
-        );
+        $clinician = Clinician::where('public_id', $request->query('clinician_id'))->firstOrFail();
+        $dates = $this->availabilityService->openDates($clinician->id, $from, $to);
 
         return response()->json(['data' => $dates]);
     }
@@ -139,12 +146,15 @@ class AppointmentController extends Controller
     public function store(StoreAppointmentRequest $request): JsonResponse
     {
         $patient = $this->getPatient();
+        $clinician = $request->clinician_id
+            ? Clinician::where('public_id', $request->clinician_id)->firstOrFail()
+            : null;
 
         try {
-            $appointment = DB::transaction(function () use ($request, $patient) {
+            $appointment = DB::transaction(function () use ($request, $patient, $clinician) {
                 $appt = $this->appointmentService->bookAppointment([
                     'patient_id' => $patient->id,
-                    'clinician_id' => $request->clinician_id,
+                    'clinician_id' => $clinician?->id,
                     'requested_at' => $request->requested_at,
                     'mode' => $request->mode,
                     'reason' => $request->reason,
@@ -186,9 +196,9 @@ class AppointmentController extends Controller
         ], 201);
     }
 
-    public function show(int $id): JsonResponse
+    public function show(Appointment $appointment): JsonResponse
     {
-        $appointment = Appointment::with('clinician.user')->findOrFail($id);
+        $appointment->load('clinician.user');
 
         Gate::authorize('view', $appointment);
 
@@ -197,10 +207,8 @@ class AppointmentController extends Controller
         ]);
     }
 
-    public function destroy(int $id): JsonResponse
+    public function destroy(Appointment $appointment): JsonResponse
     {
-        $appointment = Appointment::findOrFail($id);
-
         Gate::authorize('delete', $appointment);
 
         if ($appointment->status === 'cancelled') {

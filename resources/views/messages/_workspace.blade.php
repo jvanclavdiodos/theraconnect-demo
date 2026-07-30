@@ -12,7 +12,7 @@
             <div class="d-flex gap-2">
                 <select id="patient_id" name="patient_id" class="form-select form-select-sm" required>
                     <option value="" disabled selected>Choose a patient...</option>
-                    @foreach($caseload as $patient)<option value="{{ $patient->id }}">{{ $patient->user->name }}</option>@endforeach
+                    @foreach($caseload as $patient)<option value="{{ $patient->public_id }}">{{ $patient->user->name }}</option>@endforeach
                 </select>
                 <button type="submit" class="btn btn-primary btn-sm" aria-label="Open conversation"><i class="bi bi-plus-lg" aria-hidden="true"></i></button>
             </div>
@@ -58,7 +58,7 @@
             <div class="tc-message-thread" id="thread">
                 @forelse($activeConversation->messages->sortBy('created_at') as $message)
                     @php $mine = $message->sender_id === $me; @endphp
-                    <div class="tc-message-row {{ $mine ? 'outgoing' : 'incoming' }}" data-message-id="{{ $message->id }}"><div class="tc-message-bubble"><div class="tc-message-body">{{ $message->body }}</div><time class="tc-message-time" datetime="{{ $message->created_at->toIso8601String() }}">{{ $message->created_at->format('M j, g:i A') }}</time></div></div>
+                    <div class="tc-message-row {{ $mine ? 'outgoing' : 'incoming' }}" data-message-id="{{ $message->public_id }}"><div class="tc-message-bubble"><div class="tc-message-body">{{ $message->body }}</div><time class="tc-message-time" datetime="{{ $message->created_at->toIso8601String() }}">{{ $message->created_at->format('M j, g:i A') }}</time></div></div>
                 @empty
                     <div class="tc-chat-empty"><i class="bi bi-chat-square-text" aria-hidden="true"></i><span>No messages yet. Say hello below.</span></div>
                 @endforelse

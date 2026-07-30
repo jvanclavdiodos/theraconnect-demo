@@ -61,7 +61,7 @@
                             {{-- Simple preview: image thumbnail or content snippet; click to maximize. --}}
                             <div class="d-flex align-items-center gap-2">
                                 @if ($submission->file_path && $submission->previewKind() === 'image')
-                                    <a href="#" data-bs-toggle="modal" data-bs-target="#subModal{{ $submission->id }}">
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#subModal{{ $submission->public_id }}">
                                         <img src="{{ route('submissions.preview', $submission) }}" alt="preview"
                                              style="height:44px;width:44px;object-fit:cover;border-radius:6px;border:1px solid #dee2e6;">
                                     </a>
@@ -89,7 +89,7 @@
                         <td>{{ $submission->submitted_at->format('M d, Y h:i A') }}</td>
                         <td class="text-end">
                             @if ($submission->content || $submission->file_path)
-                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#subModal{{ $submission->id }}">
+                                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#subModal{{ $submission->public_id }}">
                                     <i class="bi bi-arrows-fullscreen"></i> View
                                 </button>
                             @endif
@@ -116,7 +116,7 @@
 {{-- Maximized submission viewers --}}
 @foreach ($submissions as $submission)
     @if ($submission->content || $submission->file_path)
-        <div class="modal fade" id="subModal{{ $submission->id }}" tabindex="-1" aria-hidden="true">
+        <div class="modal fade" id="subModal{{ $submission->public_id }}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content">
                     <div class="modal-header">

@@ -53,7 +53,7 @@ class SendPushNotification implements ShouldQueue
         $data = array_merge(
             [
                 'type' => $notification->type,
-                'notification_id' => $notification->id,
+                'notification_public_id' => $notification->public_id,
             ],
             $notification->data ?? []
         );

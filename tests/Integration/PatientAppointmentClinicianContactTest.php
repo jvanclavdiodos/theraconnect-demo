@@ -27,7 +27,7 @@ class PatientAppointmentClinicianContactTest extends TestCase
             ->assertSee('555-0100');
 
         $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
-            ->getJson('/api/v1/appointments/'.$appointment->id)
+            ->getJson('/api/v1/appointments/'.$appointment->public_id)
             ->assertOk()
             ->assertJsonPath('data.clinician_contact.email', 'clinician@test.com')
             ->assertJsonPath('data.clinician_contact.phone', '555-0100')
@@ -49,7 +49,7 @@ class PatientAppointmentClinicianContactTest extends TestCase
 
         $this->actingAs($other['user'])->get(route('portal.appointments.show', $appointment))->assertForbidden();
         $this->withHeaders($this->apiHeaders($this->getApiToken($other['user'])))
-            ->getJson('/api/v1/appointments/'.$appointment->id)
+            ->getJson('/api/v1/appointments/'.$appointment->public_id)
             ->assertForbidden()
             ->assertDontSee('clinician@test.com');
     }

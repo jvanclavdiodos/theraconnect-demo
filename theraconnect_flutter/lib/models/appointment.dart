@@ -1,7 +1,7 @@
 class Appointment {
-  final int id;
-  final int patientId;
-  final int? clinicianId;
+  final String id;
+  final String patientId;
+  final String? clinicianId;
   final String? clinicianName;
   final String? clinicianEmail;
   final String? clinicianPhone;
@@ -42,9 +42,9 @@ class Appointment {
   factory Appointment.fromJson(Map<String, dynamic> json) {
     final clinicianContact = json['clinician_contact'] as Map<String, dynamic>?;
     return Appointment(
-      id: json['id'] as int,
-      patientId: json['patient_id'] as int,
-      clinicianId: json['clinician_id'] as int?,
+      id: json['public_id'] as String,
+      patientId: json['patient_public_id'] as String,
+      clinicianId: json['clinician_public_id'] as String?,
       clinicianName: json['clinician_name'] as String?,
       clinicianEmail: clinicianContact?['email'] as String?,
       clinicianPhone: clinicianContact?['phone'] as String?,
@@ -65,9 +65,9 @@ class Appointment {
 
   Map<String, dynamic> toJson() {
     return {
-      'id': id,
-      'patient_id': patientId,
-      'clinician_id': clinicianId,
+      'public_id': id,
+      'patient_public_id': patientId,
+      'clinician_public_id': clinicianId,
       'clinician_name': clinicianName,
       'clinician_contact': {
         'email': clinicianEmail,

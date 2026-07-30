@@ -26,12 +26,14 @@ class NotificationController extends Controller
         return view('notifications.index', compact('notifications'));
     }
 
-    public function markRead(Request $request, int $id): RedirectResponse
+    public function markRead(Request $request, Notification $notification): RedirectResponse
     {
-        Notification::where('user_id', $request->user()->id)
-            ->general()
-            ->findOrFail($id)
-            ->update(['read_at' => now()]);
+        abort_unless(
+            $notification->user_id === $request->user()->id
+                && $notification->type !== Notification::MESSAGE_RECEIVED,
+            404
+        );
+        $notification->update(['read_at' => now()]);
 
         return back();
     }

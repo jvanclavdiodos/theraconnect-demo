@@ -59,14 +59,14 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     // Staff member's own notifications inbox (bookings, messages, reschedules).
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.readAll');
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/{notification:public_id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
     // Account / profile picture (any staff user manages their own).
     Route::get('/account', [AccountController::class, 'edit'])->name('account.edit');
     Route::put('/account/password', [AccountController::class, 'updatePassword'])->middleware('throttle:password-change')->name('account.password.update');
     Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->middleware('throttle:10,1')->name('account.avatar.update');
     Route::delete('/account/avatar', [AccountController::class, 'destroyAvatar'])->name('account.avatar.destroy');
-    Route::get('/avatars/{user}', [AccountController::class, 'showAvatar'])->name('avatars.show');
+    Route::get('/avatars/{user:public_id}', [AccountController::class, 'showAvatar'])->name('avatars.show');
 
     // ── Patients ─────────────────────────────────────────────────────────
     // index/show/create/store are admin + clinician (clinician queries are
@@ -80,27 +80,30 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     // Approve/deny a self-registered patient's clinician request (admin, or the
     // requested clinician — enforced by PatientPolicy::respondToRequest).
     // Registered before the `{patient}` show route so they aren't swallowed.
-    Route::post('/patients/{patient}/request/approve', [PatientRequestController::class, 'approve'])->name('patients.request.approve');
-    Route::post('/patients/{patient}/request/deny', [PatientRequestController::class, 'deny'])->name('patients.request.deny');
+    Route::post('/patients/{patient:public_id}/request/approve', [PatientRequestController::class, 'approve'])->name('patients.request.approve');
+    Route::post('/patients/{patient:public_id}/request/deny', [PatientRequestController::class, 'deny'])->name('patients.request.deny');
 
-    Route::get('/patients/{patient}', [PatientController::class, 'show'])->name('patients.show');
+    Route::get('/patients/{patient:public_id}', [PatientController::class, 'show'])->name('patients.show');
 
     // Patient therapy-progress view (attendance + assessments + mood + goals).
-    Route::get('/patients/{patient}/progress', [ProgressController::class, 'show'])->name('patients.progress');
+    Route::get('/patients/{patient:public_id}/progress', [ProgressController::class, 'show'])->name('patients.progress');
 
     // ── Admin-only management ────────────────────────────────────────────
     Route::middleware('role:admin')->group(function () {
-        Route::get('/patients/{patient}/edit', [PatientController::class, 'edit'])->name('patients.edit');
-        Route::match(['put', 'patch'], '/patients/{patient}', [PatientController::class, 'update'])->name('patients.update');
-        Route::delete('/patients/{patient}', [PatientController::class, 'destroy'])->name('patients.destroy');
+        Route::get('/patients/{patient:public_id}/edit', [PatientController::class, 'edit'])->name('patients.edit');
+        Route::match(['put', 'patch'], '/patients/{patient:public_id}', [PatientController::class, 'update'])->name('patients.update');
+        Route::delete('/patients/{patient:public_id}', [PatientController::class, 'destroy'])->name('patients.destroy');
 
         // Clinicians CRUD
-        Route::resource('clinicians', ClinicianController::class)->except(['show']);
+        Route::resource('clinicians', ClinicianController::class)
+            ->except(['show'])
+            ->scoped(['clinician' => 'public_id']);
 
         // Chatbot knowledge base + notification audit log (clinic-admin tools)
         Route::resource('chatbot-content', ChatbotContentController::class)
             ->except(['show'])
-            ->parameters(['chatbot-content' => 'intent']);
+            ->parameters(['chatbot-content' => 'intent'])
+            ->scoped(['intent' => 'public_id']);
         Route::get('/notifications/logs', [NotificationLogController::class, 'index'])->name('notifications.logs');
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     });
@@ -110,47 +113,47 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
     // clinician, so there is no cross-clinician access.
     Route::middleware('role:clinician')->group(function () {
         Route::get('/guide', UserGuideController::class)->name('guide.show');
-        Route::get('/patients/{patient}/record.pdf', PatientRecordExportController::class)->name('patients.record.pdf');
+        Route::get('/patients/{patient:public_id}/record.pdf', PatientRecordExportController::class)->name('patients.record.pdf');
         Route::get('/availability/month', [ClinicianAvailabilityController::class, 'month'])->name('availability.month');
         Route::get('/availability/day', [ClinicianAvailabilityController::class, 'day'])->name('availability.day');
         Route::post('/availability/toggle-day', [ClinicianAvailabilityController::class, 'toggleDay'])->name('availability.toggleDay');
         Route::post('/availability/toggle-hour', [ClinicianAvailabilityController::class, 'toggleHour'])->name('availability.toggleHour');
 
         // Patient notes (clinician writes about a patient; manage own per Policy).
-        Route::post('/patients/{patient}/notes', [PatientNoteController::class, 'store'])->name('patient-notes.store');
-        Route::put('/patient-notes/{note}', [PatientNoteController::class, 'update'])->name('patient-notes.update');
-        Route::delete('/patient-notes/{note}', [PatientNoteController::class, 'destroy'])->name('patient-notes.destroy');
+        Route::post('/patients/{patient:public_id}/notes', [PatientNoteController::class, 'store'])->name('patient-notes.store');
+        Route::put('/patient-notes/{note:public_id}', [PatientNoteController::class, 'update'])->name('patient-notes.update');
+        Route::delete('/patient-notes/{note:public_id}', [PatientNoteController::class, 'destroy'])->name('patient-notes.destroy');
 
         // Therapy progress: assign questionnaires + manage goals (caseload-gated).
-        Route::post('/patients/{patient}/assessments', [ProgressController::class, 'assignAssessment'])->name('progress.assessments.assign');
-        Route::post('/patients/{patient}/goals', [ProgressController::class, 'storeGoal'])->name('progress.goals.store');
-        Route::post('/goals/{goal}/ratings', [ProgressController::class, 'rateGoal'])->name('progress.goals.rate');
-        Route::patch('/goals/{goal}/status', [ProgressController::class, 'updateGoalStatus'])->name('progress.goals.status');
+        Route::post('/patients/{patient:public_id}/assessments', [ProgressController::class, 'assignAssessment'])->name('progress.assessments.assign');
+        Route::post('/patients/{patient:public_id}/goals', [ProgressController::class, 'storeGoal'])->name('progress.goals.store');
+        Route::post('/goals/{goal:public_id}/ratings', [ProgressController::class, 'rateGoal'])->name('progress.goals.rate');
+        Route::patch('/goals/{goal:public_id}/status', [ProgressController::class, 'updateGoalStatus'])->name('progress.goals.status');
 
         // Messaging (patient <-> assigned clinician). Participant-only per Policy.
         Route::get('/messages', [MessageController::class, 'index'])->name('messages.index');
         Route::post('/messages/open', [MessageController::class, 'open'])->name('messages.open');
-        Route::get('/messages/{conversation}', [MessageController::class, 'show'])->name('messages.show');
-        Route::post('/messages/{conversation}', [MessageController::class, 'store'])->name('messages.store');
+        Route::get('/messages/{conversation:public_id}', [MessageController::class, 'show'])->name('messages.show');
+        Route::post('/messages/{conversation:public_id}', [MessageController::class, 'store'])->name('messages.store');
     });
 
     // Appointments — list + status changes (Gate::authorize('manage') per row)
     Route::get('/appointments', [WebAppointmentController::class, 'index'])->name('appointments.index');
-    Route::patch('/appointments/{appointment}/approve', [WebAppointmentController::class, 'approve'])->name('appointments.approve');
-    Route::patch('/appointments/{appointment}/reject', [WebAppointmentController::class, 'reject'])->name('appointments.reject');
-    Route::get('/appointments/{appointment}/reschedule-slots', [WebAppointmentController::class, 'rescheduleSlots'])->name('appointments.reschedule-slots');
-    Route::patch('/appointments/{appointment}/reschedule', [WebAppointmentController::class, 'reschedule'])->name('appointments.reschedule');
-    Route::patch('/appointments/{appointment}/complete', [WebAppointmentController::class, 'complete'])->name('appointments.complete');
+    Route::patch('/appointments/{appointment:public_id}/approve', [WebAppointmentController::class, 'approve'])->name('appointments.approve');
+    Route::patch('/appointments/{appointment:public_id}/reject', [WebAppointmentController::class, 'reject'])->name('appointments.reject');
+    Route::get('/appointments/{appointment:public_id}/reschedule-slots', [WebAppointmentController::class, 'rescheduleSlots'])->name('appointments.reschedule-slots');
+    Route::patch('/appointments/{appointment:public_id}/reschedule', [WebAppointmentController::class, 'reschedule'])->name('appointments.reschedule');
+    Route::patch('/appointments/{appointment:public_id}/complete', [WebAppointmentController::class, 'complete'])->name('appointments.complete');
 
     // Assignments (Gate::authorize per assignment/submission)
     Route::get('/assignments', [WebAssignmentController::class, 'index'])->name('assignments.index');
     Route::get('/assignments/create', [WebAssignmentController::class, 'create'])->name('assignments.create');
     Route::post('/assignments', [WebAssignmentController::class, 'store'])->name('assignments.store');
-    Route::get('/assignments/{assignment}/submissions', [WebAssignmentController::class, 'submissions'])->name('assignments.submissions');
-    Route::get('/assignments/{assignment}/worksheet', [WebAssignmentController::class, 'downloadWorksheet'])->name('assignments.worksheet');
-    Route::get('/submissions/{submission}/file', [WebAssignmentController::class, 'downloadSubmission'])->name('submissions.file');
-    Route::get('/submissions/{submission}/preview', [WebAssignmentController::class, 'previewSubmission'])->name('submissions.preview');
-    Route::patch('/submissions/{submission}/review', [WebAssignmentController::class, 'review'])->name('submissions.review');
+    Route::get('/assignments/{assignment:public_id}/submissions', [WebAssignmentController::class, 'submissions'])->name('assignments.submissions');
+    Route::get('/assignments/{assignment:public_id}/worksheet', [WebAssignmentController::class, 'downloadWorksheet'])->name('assignments.worksheet');
+    Route::get('/submissions/{submission:public_id}/file', [WebAssignmentController::class, 'downloadSubmission'])->name('submissions.file');
+    Route::get('/submissions/{submission:public_id}/preview', [WebAssignmentController::class, 'previewSubmission'])->name('submissions.preview');
+    Route::patch('/submissions/{submission:public_id}/review', [WebAssignmentController::class, 'review'])->name('submissions.review');
 });
 
 /*
@@ -161,7 +164,7 @@ Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
 | Services + Policies as the API. Patients land here after login.
 */
 Route::middleware(['auth', 'role:patient'])->prefix('portal')->name('portal.')->group(function () {
-    Route::get('/clinicians/{clinician}/avatar', PortalClinicianAvatarController::class)->name('clinicians.avatar');
+    Route::get('/clinicians/{clinician:public_id}/avatar', PortalClinicianAvatarController::class)->name('clinicians.avatar');
     Route::get('/guide', PortalUserGuideController::class)->name('guide.show');
     Route::get('/', [PortalDashboardController::class, 'index'])->name('dashboard');
 
@@ -169,24 +172,24 @@ Route::middleware(['auth', 'role:patient'])->prefix('portal')->name('portal.')->
     Route::get('/appointments', [PortalAppointmentController::class, 'index'])->name('appointments.index');
     Route::get('/appointments/book', [PortalAppointmentController::class, 'book'])->name('appointments.book');
     Route::post('/appointments', [PortalAppointmentController::class, 'store'])->name('appointments.store');
-    Route::get('/appointments/{appointment}', [PortalAppointmentController::class, 'show'])->name('appointments.show');
-    Route::delete('/appointments/{appointment}', [PortalAppointmentController::class, 'destroy'])->name('appointments.destroy');
+    Route::get('/appointments/{appointment:public_id}', [PortalAppointmentController::class, 'show'])->name('appointments.show');
+    Route::delete('/appointments/{appointment:public_id}', [PortalAppointmentController::class, 'destroy'])->name('appointments.destroy');
 
     // Assignments + submissions
     Route::get('/assignments', [PortalAssignmentController::class, 'index'])->name('assignments.index');
-    Route::get('/assignments/{assignment}', [PortalAssignmentController::class, 'show'])->name('assignments.show');
-    Route::get('/assignments/{assignment}/worksheet', [PortalAssignmentController::class, 'downloadWorksheet'])->name('assignments.worksheet');
-    Route::post('/assignments/{assignment}/submit', [PortalAssignmentController::class, 'submit'])->name('assignments.submit');
-    Route::get('/submissions/{submission}/file', [PortalAssignmentController::class, 'downloadSubmission'])->name('submissions.file');
+    Route::get('/assignments/{assignment:public_id}', [PortalAssignmentController::class, 'show'])->name('assignments.show');
+    Route::get('/assignments/{assignment:public_id}/worksheet', [PortalAssignmentController::class, 'downloadWorksheet'])->name('assignments.worksheet');
+    Route::post('/assignments/{assignment:public_id}/submit', [PortalAssignmentController::class, 'submit'])->name('assignments.submit');
+    Route::get('/submissions/{submission:public_id}/file', [PortalAssignmentController::class, 'downloadSubmission'])->name('submissions.file');
 
     // Messaging (single thread with the assigned clinician)
     Route::get('/messages', [PortalMessageController::class, 'index'])->name('messages.index');
-    Route::post('/messages/{conversation}', [PortalMessageController::class, 'send'])->name('messages.send');
+    Route::post('/messages/{conversation:public_id}', [PortalMessageController::class, 'send'])->name('messages.send');
 
     // Questionnaires (PHQ-9 / GAD-7)
     Route::get('/assessments', [PortalAssessmentController::class, 'index'])->name('assessments.index');
-    Route::get('/assessments/{assessment}', [PortalAssessmentController::class, 'show'])->name('assessments.show');
-    Route::post('/assessments/{assessment}/submit', [PortalAssessmentController::class, 'submit'])->name('assessments.submit');
+    Route::get('/assessments/{assessment:public_id}', [PortalAssessmentController::class, 'show'])->name('assessments.show');
+    Route::post('/assessments/{assessment:public_id}/submit', [PortalAssessmentController::class, 'submit'])->name('assessments.submit');
 
     // Mood check-ins
     Route::get('/mood', [PortalMoodLogController::class, 'index'])->name('mood.index');
@@ -198,7 +201,7 @@ Route::middleware(['auth', 'role:patient'])->prefix('portal')->name('portal.')->
 
     // Notifications
     Route::get('/notifications', [PortalNotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/{id}/read', [PortalNotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/{notification:public_id}/read', [PortalNotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [PortalNotificationController::class, 'markAllRead'])->name('notifications.readAll');
 
     // Profile + avatar

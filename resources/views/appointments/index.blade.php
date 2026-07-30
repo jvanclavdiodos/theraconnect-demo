@@ -137,7 +137,7 @@
                                 <a href="{{ $appt->meeting_link }}" target="_blank" rel="noopener"
                                    class="btn btn-sm btn-primary" aria-label="Join video call"
                                    data-bs-toggle="tooltip" data-bs-title="Join video call"
-                                   x-data @click="$dispatch('open-conclude', { id: {{ $appt->id }} })">
+                                   x-data @click="$dispatch('open-conclude', { id: @js($appt->public_id) })">
                                     <i class="bi bi-camera-video" aria-hidden="true"></i>
                                 </a>
                             @elseif ($appt->mode === 'online' && $appt->meeting_link && optional($appt->meetingLinkExpiresAt())->isPast())
@@ -168,13 +168,13 @@
                                 <button class="btn btn-sm btn-outline-secondary" type="button" aria-label="Reschedule appointment"
                                         data-bs-toggle="tooltip" data-bs-title="Reschedule appointment"
                                         x-data
-                                        @click="$dispatch('open-reschedule', { id: {{ $appt->id }} })">
+                                        @click="$dispatch('open-reschedule', { id: @js($appt->public_id) })">
                                     <i class="bi bi-calendar2-week" aria-hidden="true"></i>
                                 </button>
                                 <button class="btn btn-sm btn-outline-success" type="button" aria-label="Conclude or close case"
                                         data-bs-toggle="tooltip" data-bs-title="Conclude appointment"
                                         x-data
-                                        @click="$dispatch('open-conclude', { id: {{ $appt->id }} })">
+                                        @click="$dispatch('open-conclude', { id: @js($appt->public_id) })">
                                     <i class="bi bi-clipboard-check" aria-hidden="true"></i>
                                 </button>
                             @endif

@@ -26,7 +26,7 @@ class GoalTest extends TestCase
         $patient['patient']->update(['assigned_clinician_id' => $clinician['clinician']->id]);
 
         $this->actingAs($clinician['user'], 'web')
-            ->post("/patients/{$patient['patient']->id}/goals", [
+            ->post("/patients/{$patient['patient']->public_id}/goals", [
                 'description' => 'Practice grounding daily',
                 'target_date' => now()->addMonth()->toDateString(),
             ])
@@ -46,7 +46,7 @@ class GoalTest extends TestCase
         $other = $this->createPatient('goal-offcase@test.com'); // unassigned
 
         $this->actingAs($clinician['user'], 'web')
-            ->post("/patients/{$other['patient']->id}/goals", ['description' => 'X'])
+            ->post("/patients/{$other['patient']->public_id}/goals", ['description' => 'X'])
             ->assertForbidden();
 
         $this->assertDatabaseCount('therapy_goals', 0);
@@ -60,7 +60,7 @@ class GoalTest extends TestCase
         $goal = $this->goalFor($clinician['clinician'], $patient['patient']);
 
         $this->actingAs($clinician['user'], 'web')
-            ->post("/goals/{$goal->id}/ratings", ['rating' => 2, 'note' => 'Did great'])
+            ->post("/goals/{$goal->public_id}/ratings", ['rating' => 2, 'note' => 'Did great'])
             ->assertRedirect(route('patients.progress', $patient['patient']));
 
         $this->assertDatabaseHas('goal_ratings', [
@@ -70,7 +70,7 @@ class GoalTest extends TestCase
         ]);
 
         $this->actingAs($clinician['user'], 'web')
-            ->patch("/goals/{$goal->id}/status", ['status' => 'met'])
+            ->patch("/goals/{$goal->public_id}/status", ['status' => 'met'])
             ->assertRedirect(route('patients.progress', $patient['patient']));
 
         $this->assertSame('met', $goal->fresh()->status);
@@ -84,7 +84,7 @@ class GoalTest extends TestCase
         $goal = $this->goalFor($clinician['clinician'], $patient['patient']);
 
         $this->actingAs($clinician['user'], 'web')
-            ->post("/goals/{$goal->id}/ratings", ['rating' => 3]) // valid GAS is -2..2
+            ->post("/goals/{$goal->public_id}/ratings", ['rating' => 3]) // valid GAS is -2..2
             ->assertSessionHasErrors('rating');
 
         $this->assertDatabaseCount('goal_ratings', 0);
@@ -101,7 +101,7 @@ class GoalTest extends TestCase
         $intruder = User_makeClinician();
 
         $this->actingAs($intruder, 'web')
-            ->post("/goals/{$goal->id}/ratings", ['rating' => 1])
+            ->post("/goals/{$goal->public_id}/ratings", ['rating' => 1])
             ->assertForbidden();
     }
 

@@ -25,7 +25,7 @@
                     <select id="patient_id" name="patient_id" class="form-select" required>
                         <option value="">Select a patient...</option>
                         @foreach ($patients as $patient)
-                            <option value="{{ $patient->id }}" {{ old('patient_id') == $patient->id ? 'selected' : '' }}>
+                            <option value="{{ $patient->public_id }}" {{ old('patient_id') === $patient->public_id ? 'selected' : '' }}>
                                 {{ $patient->user->name }} ({{ $patient->user->email }})
                             </option>
                         @endforeach
@@ -41,7 +41,7 @@
                     <select id="clinician_id" name="clinician_id" class="form-select @error('clinician_id') is-invalid @enderror" required>
                         <option value="">Select a clinician...</option>
                         @foreach ($clinicians as $clinician)
-                            <option value="{{ $clinician->id }}" {{ old('clinician_id') == $clinician->id ? 'selected' : '' }}>
+                            <option value="{{ $clinician->public_id }}" {{ old('clinician_id') === $clinician->public_id ? 'selected' : '' }}>
                                 {{ $clinician->user->name }}@if ($clinician->specialization) ({{ $clinician->specialization }})@endif
                             </option>
                         @endforeach

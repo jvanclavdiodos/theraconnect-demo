@@ -39,11 +39,11 @@ class WebChatbotContentTest extends TestCase
         $intent = $this->makeIntent();
 
         $this->actingAs($admin, 'web')
-            ->get("/chatbot-content/{$intent->id}/edit")
+            ->get("/chatbot-content/{$intent->public_id}/edit")
             ->assertStatus(200)
             ->assertSee('Clinic Hours')
             // Form action must carry the real id — proves binding resolved it.
-            ->assertSee("chatbot-content/{$intent->id}", false);
+            ->assertSee("chatbot-content/{$intent->public_id}", false);
     }
 
     /**
@@ -58,7 +58,7 @@ class WebChatbotContentTest extends TestCase
         $intent = $this->makeIntent();
 
         $response = $this->actingAs($admin, 'web')
-            ->get("/chatbot-content/{$intent->id}/edit")
+            ->get("/chatbot-content/{$intent->public_id}/edit")
             ->assertStatus(200)
             // @js output: JSON.parse('..."..."...'), never a raw quote.
             ->assertSee('JSON.parse(', false);
@@ -107,7 +107,7 @@ class WebChatbotContentTest extends TestCase
         $intent = $this->makeIntent();
 
         $this->actingAs($admin, 'web')
-            ->put("/chatbot-content/{$intent->id}", [
+            ->put("/chatbot-content/{$intent->public_id}", [
                 'intent_key' => 'clinic_hours',
                 'display_name' => 'Updated Hours',
                 'category' => 'faq',

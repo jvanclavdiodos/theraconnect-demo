@@ -1,6 +1,6 @@
 const config = window.theraRealtime;
 
-if (config?.enabled && config.userId && window.Echo) {
+if (config?.enabled && config.userPublicId && window.Echo) {
     const resources = new Set(
         (document.body.dataset.realtimeResources ?? '').split(' ').filter(Boolean),
     );
@@ -145,7 +145,7 @@ if (config?.enabled && config.userId && window.Echo) {
         });
     };
 
-    window.Echo.private(`users.${config.userId}`)
+    window.Echo.private(`users.${config.userPublicId}`)
         .listen('.notification.created', (event) => {
             if (event.type === 'message_received') {
                 incrementCounters('[data-realtime-message-count]');
@@ -163,11 +163,11 @@ if (config?.enabled && config.userId && window.Echo) {
             .listen('.appointment.updated', () => refreshResource('appointments'));
     }
 
-    const conversationId = Number.parseInt(document.body.dataset.realtimeConversation ?? '', 10);
-    if (conversationId) {
-        window.Echo.private(`conversations.${conversationId}`)
+    const conversationPublicId = document.body.dataset.realtimeConversation ?? '';
+    if (conversationPublicId) {
+        window.Echo.private(`conversations.${conversationPublicId}`)
             .listen('.message.created', (event) => {
-                if (document.querySelector(`[data-message-id="${event.message_id}"]`)) return;
+                if (document.querySelector(`[data-message-id="${event.message_public_id}"]`)) return;
                 syncPage({ messages: true });
             });
     }

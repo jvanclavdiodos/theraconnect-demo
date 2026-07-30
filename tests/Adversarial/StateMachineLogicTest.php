@@ -210,7 +210,7 @@ class StateMachineLogicTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin, 'web')
-            ->patch("/appointments/{$appt->id}/complete", ['outcome' => 'attended']);
+            ->patch("/appointments/{$appt->public_id}/complete", ['outcome' => 'attended']);
 
         // The controller returns back with errors → 302 redirect with session errors.
         $response->assertSessionHasErrors(['status']);
@@ -243,7 +243,7 @@ class StateMachineLogicTest extends TestCase
         ]);
 
         $response = $this->actingAs($clinician['user'])
-            ->patch("/submissions/{$submission->id}/review");
+            ->patch("/submissions/{$submission->public_id}/review");
 
         // Controller doesn't have an explicit guard. Expected outcomes:
         //   - 302 redirect (web, possibly with "reviewed again" no-op)
@@ -274,7 +274,7 @@ class StateMachineLogicTest extends TestCase
         ]);
 
         $response = $this->actingAs($admin, 'web')
-            ->patch("/appointments/{$appt->id}/complete", ['outcome' => 'attended']);
+            ->patch("/appointments/{$appt->public_id}/complete", ['outcome' => 'attended']);
 
         $response->assertSessionHasErrors(['status']);
         $this->assertEquals('pending', $appt->fresh()->status);
@@ -393,7 +393,7 @@ class StateMachineLogicTest extends TestCase
      *
      * Verified via DB assertion (see E9 note).
      */
-    public function test_api_password_change_DOES_invalidate_other_tokens_control(): void
+    public function test_api_password_change_doe_s_invalidate_other_tokens_control(): void
     {
         $patient = $this->createPatient('e10-control@test.com');
 

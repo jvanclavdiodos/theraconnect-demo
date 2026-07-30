@@ -88,7 +88,7 @@ class SubmissionPreviewTest extends TestCase
         $this->actingAs($clinician['user'], 'web')
             ->get(route('assignments.submissions', $s['assignment']))
             ->assertStatus(200)
-            ->assertSee('subModal'.$s['submission']->id)
+            ->assertSee('subModal'.$s['submission']->public_id)
             ->assertSee('View');
     }
 
@@ -99,7 +99,7 @@ class SubmissionPreviewTest extends TestCase
         $s = $this->scenario($clinician, $patient);
 
         $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
-            ->getJson("/api/v1/assignments/{$s['assignment']->id}")
+            ->getJson("/api/v1/assignments/{$s['assignment']->public_id}")
             ->assertStatus(200)
             ->assertJsonPath('data.submission.content', 'My written answer')
             ->assertJsonPath('data.submission.kind', 'text')

@@ -17,26 +17,27 @@ class RealtimeService {
   final AuthService _authService;
   final StreamController<RealtimeEvent> _events =
       StreamController<RealtimeEvent>.broadcast();
-  final Set<int> _desiredConversationIds = {};
-  final Map<int, PrivateChannel> _conversationChannels = {};
-  final Map<int, StreamSubscription<ChannelReadEvent>> _conversationEvents = {};
+  final Set<String> _desiredConversationIds = {};
+  final Map<String, PrivateChannel> _conversationChannels = {};
+  final Map<String, StreamSubscription<ChannelReadEvent>>
+      _conversationEvents = {};
 
   PusherChannelsClient? _client;
   StreamSubscription<void>? _connectionSubscription;
   StreamSubscription<ChannelReadEvent>? _notificationSubscription;
   StreamSubscription<ChannelReadEvent>? _appointmentSubscription;
-  int? _userId;
+  String? _userId;
   Map<String, dynamic>? _config;
 
   RealtimeService(this._apiClient, this._authService);
 
   Stream<RealtimeEvent> get events => _events.stream;
 
-  Future<void> connect(int userId) async {
+  Future<void> connect(String userId) async {
     if (_client != null && _userId == userId) return;
 
     try {
-      final desiredConversations = Set<int>.of(_desiredConversationIds);
+      final desiredConversations = Set<String>.of(_desiredConversationIds);
       await disconnect();
       _desiredConversationIds.addAll(desiredConversations);
 
@@ -87,7 +88,7 @@ class RealtimeService {
     }
   }
 
-  Future<void> subscribeConversation(int conversationId) async {
+  Future<void> subscribeConversation(String conversationId) async {
     _desiredConversationIds.add(conversationId);
     await _subscribeConversationNow(conversationId);
   }
@@ -98,7 +99,7 @@ class RealtimeService {
     }
   }
 
-  Future<void> _subscribeConversationNow(int conversationId) async {
+  Future<void> _subscribeConversationNow(String conversationId) async {
     if (_conversationChannels.containsKey(conversationId)) return;
 
     try {
@@ -123,7 +124,7 @@ class RealtimeService {
     }
   }
 
-  Future<void> unsubscribeConversation(int conversationId) async {
+  Future<void> unsubscribeConversation(String conversationId) async {
     _desiredConversationIds.remove(conversationId);
     _conversationChannels.remove(conversationId)?.unsubscribe();
     await _conversationEvents.remove(conversationId)?.cancel();

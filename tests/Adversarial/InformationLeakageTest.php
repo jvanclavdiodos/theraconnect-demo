@@ -114,7 +114,7 @@ class InformationLeakageTest extends TestCase
         $json = $response->json('data.0');
         $this->assertNotNull($json);
 
-        $allowed = ['id', 'name', 'specialization'];
+        $allowed = ['public_id', 'name', 'specialization'];
         foreach (array_keys($json) as $key) {
             $this->assertContains($key, $allowed, "Unexpected key '$key' in clinician directory response");
         }
@@ -185,7 +185,7 @@ class InformationLeakageTest extends TestCase
         ]);
 
         $response = $this->withHeaders($this->apiHeaders($this->getApiToken($patientA['user'])))
-            ->getJson("/api/v1/appointments/{$appt->id}");
+            ->getJson("/api/v1/appointments/{$appt->public_id}");
 
         $response->assertStatus(403);
 
@@ -214,7 +214,8 @@ class InformationLeakageTest extends TestCase
     {
         $response = $this->getJson('/api/v1/appointments/999999');
 
-        $response->assertStatus(401); // unauthenticated first
+        // The ULID route constraint rejects malformed identifiers before auth.
+        $response->assertStatus(404);
 
         $patient = $this->createPatient('leak-404@test.com');
         $token = $this->getApiToken($patient['user']);

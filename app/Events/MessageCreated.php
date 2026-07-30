@@ -18,7 +18,7 @@ class MessageCreated implements ShouldBroadcast, ShouldDispatchAfterCommit
 
     public function broadcastOn(): PrivateChannel
     {
-        return new PrivateChannel('conversations.'.$this->message->conversation_id);
+        return new PrivateChannel('conversations.'.$this->message->conversation->public_id);
     }
 
     public function broadcastAs(): string
@@ -29,9 +29,9 @@ class MessageCreated implements ShouldBroadcast, ShouldDispatchAfterCommit
     public function broadcastWith(): array
     {
         return [
-            'message_id' => $this->message->id,
-            'conversation_id' => $this->message->conversation_id,
-            'sender_id' => $this->message->sender_id,
+            'message_public_id' => $this->message->public_id,
+            'conversation_public_id' => $this->message->conversation->public_id,
+            'sender_public_id' => $this->message->sender->public_id,
             'created_at' => $this->message->created_at?->toISOString(),
         ];
     }

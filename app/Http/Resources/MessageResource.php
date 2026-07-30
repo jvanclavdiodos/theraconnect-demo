@@ -10,9 +10,9 @@ class MessageResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'conversation_id' => $this->conversation_id,
-            'sender_id' => $this->sender_id,
+            'public_id' => $this->public_id,
+            'conversation_public_id' => $this->conversation?->public_id,
+            'sender_public_id' => $this->sender?->public_id,
             'sender_name' => $this->relationLoaded('sender') ? $this->sender?->name : null,
             'is_mine' => $request->user() && $this->sender_id === $request->user()->id,
             'body' => $this->body,

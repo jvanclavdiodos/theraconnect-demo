@@ -53,7 +53,7 @@ class MessagingWebTest extends TestCase
 
         // Open the thread.
         $this->actingAs($clinician['user'], 'web')
-            ->post('/messages/open', ['patient_id' => $patient['patient']->id])
+            ->post('/messages/open', ['patient_id' => $patient['patient']->public_id])
             ->assertRedirect();
 
         $conversation = Conversation::firstOrFail();
@@ -67,7 +67,7 @@ class MessagingWebTest extends TestCase
 
         // Send a message.
         $this->actingAs($clinician['user'], 'web')
-            ->post("/messages/{$conversation->id}", ['body' => 'Hello from your clinician'])
+            ->post("/messages/{$conversation->public_id}", ['body' => 'Hello from your clinician'])
             ->assertRedirect(route('messages.show', $conversation));
 
         $this->assertDatabaseHas('messages', [
@@ -82,7 +82,7 @@ class MessagingWebTest extends TestCase
         $this->actingAs($clinician['user'], 'web')
             ->get(route('messages.show', $conversation))
             ->assertOk()
-            ->assertSee('data-message-id="'.$message->id.'"', false);
+            ->assertSee('data-message-id="'.$message->public_id.'"', false);
         // Patient was notified.
         $this->assertDatabaseHas('notifications', [
             'user_id' => $patient['user']->id,
@@ -96,7 +96,7 @@ class MessagingWebTest extends TestCase
         $patient = $this->createPatient(); // not assigned to this clinician
 
         $this->actingAs($clinician['user'], 'web')
-            ->post('/messages/open', ['patient_id' => $patient['patient']->id])
+            ->post('/messages/open', ['patient_id' => $patient['patient']->public_id])
             ->assertStatus(403);
     }
 
@@ -113,10 +113,10 @@ class MessagingWebTest extends TestCase
         $this->actingAs($clinician['user'], 'web')
             ->postJson(route('messages.store', $conversation), ['body' => 'Sent asynchronously'])
             ->assertCreated()
-            ->assertJsonPath('data.conversation_id', $conversation->id)
-            ->assertJsonPath('data.sender_id', $clinician['user']->id)
+            ->assertJsonPath('data.conversation_public_id', $conversation->public_id)
+            ->assertJsonPath('data.sender_public_id', $clinician['user']->public_id)
             ->assertJsonPath('data.body', 'Sent asynchronously')
-            ->assertJsonStructure(['data' => ['id', 'created_at', 'created_at_label']]);
+            ->assertJsonStructure(['data' => ['public_id', 'created_at', 'created_at_label']]);
 
         $this->assertDatabaseHas('messages', [
             'conversation_id' => $conversation->id,
@@ -137,8 +137,8 @@ class MessagingWebTest extends TestCase
         $this->actingAs($patient['user'], 'web')
             ->postJson(route('portal.messages.send', $conversation), ['body' => 'Hello asynchronously'])
             ->assertCreated()
-            ->assertJsonPath('data.conversation_id', $conversation->id)
-            ->assertJsonPath('data.sender_id', $patient['user']->id)
+            ->assertJsonPath('data.conversation_public_id', $conversation->public_id)
+            ->assertJsonPath('data.sender_public_id', $patient['user']->public_id)
             ->assertJsonPath('data.body', 'Hello asynchronously');
 
         $this->actingAs($patient['user'], 'web')
@@ -156,7 +156,7 @@ class MessagingWebTest extends TestCase
         $this->actingAs($clinician['user'], 'web')
             ->get(route('messages.index'))
             ->assertOk()
-            ->assertSee('<option value="'.$patient['patient']->id.'">'.$patient['user']->name.'</option>', false);
+            ->assertSee('<option value="'.$patient['patient']->public_id.'">'.$patient['user']->name.'</option>', false);
     }
 
     public function test_clinician_cannot_view_another_clinicians_conversation(): void
@@ -172,7 +172,7 @@ class MessagingWebTest extends TestCase
         ]);
 
         $this->actingAs($other['user'], 'web')
-            ->get("/messages/{$conversation->id}")
+            ->get("/messages/{$conversation->public_id}")
             ->assertStatus(403);
     }
 

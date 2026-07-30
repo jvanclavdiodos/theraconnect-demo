@@ -46,7 +46,7 @@
                     <label for="assigned_clinician_ids" class="form-label">Assigned Clinicians</label>
                     <select id="assigned_clinician_ids" name="assigned_clinician_ids[]" class="form-select" multiple size="5">
                         @foreach ($clinicians as $clinician)
-                            <option value="{{ $clinician->id }}" @selected(in_array($clinician->id, old('assigned_clinician_ids', [])))>
+                            <option value="{{ $clinician->public_id }}" @selected(in_array($clinician->public_id, old('assigned_clinician_ids', []), true))>
                                 {{ $clinician->user->name }}@if ($clinician->specialization) ({{ $clinician->specialization }})@endif
                             </option>
                         @endforeach

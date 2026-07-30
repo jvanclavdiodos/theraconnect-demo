@@ -27,7 +27,7 @@ class GenerateAssignmentReminders implements ShouldQueue
             $alreadyReminded = Notification::where('type', 'assignment_deadline')
                 ->where('user_id', $assignment->patient->user->id)
                 ->where('created_at', '>=', now()->subHours(6))
-                ->whereJsonContains('data->assignment_id', $assignment->id)
+                ->whereJsonContains('data->assignment_public_id', $assignment->public_id)
                 ->exists();
 
             if ($alreadyReminded) {

@@ -103,7 +103,7 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<List<Appointment>>> {
       );
       _currentPage = result.currentPage;
       _lastPage = result.lastPage;
-      final byId = <int, Appointment>{
+      final byId = <String, Appointment>{
         for (final appointment in state.valueOrNull ?? <Appointment>[])
           appointment.id: appointment,
         for (final appointment in result.appointments)
@@ -122,7 +122,7 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<List<Appointment>>> {
     required String requestedAt,
     String mode = 'in_person',
     String? reason,
-    int? clinicianId,
+    String? clinicianId,
   }) async {
     try {
       await _api.createAppointment(
@@ -138,7 +138,7 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<List<Appointment>>> {
     }
   }
 
-  Future<String?> cancelAppointment(int id) async {
+  Future<String?> cancelAppointment(String id) async {
     try {
       await _api.cancelAppointment(id);
       await loadAppointments();
@@ -193,7 +193,7 @@ final scheduleSlotsProvider = StateNotifierProvider.family
 });
 
 final appointmentDetailProvider =
-    FutureProvider.family.autoDispose<Appointment, int>((ref, id) async {
+    FutureProvider.family.autoDispose<Appointment, String>((ref, id) async {
   final api = ref.watch(appointmentApiProvider);
   return await api.getAppointment(id);
 });

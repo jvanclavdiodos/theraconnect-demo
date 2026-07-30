@@ -4,6 +4,9 @@ namespace Tests\Adversarial;
 
 use App\Models\Appointment;
 use App\Models\Assignment;
+use Illuminate\Foundation\Exceptions\Handler;
+use Illuminate\Http\Exceptions\PostTooLargeException;
+use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\CreatesActors;
@@ -244,7 +247,7 @@ class InputResilienceTest extends TestCase
         $file = UploadedFile::fake()->create('big.pdf', 11264, 'application/pdf');
 
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", ['file' => $file])
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", ['file' => $file])
             ->assertStatus(422)
             ->assertJsonValidationErrors('file');
     }
@@ -264,7 +267,7 @@ class InputResilienceTest extends TestCase
         ]);
 
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", [])
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [])
             ->assertStatus(422);
     }
 
@@ -289,7 +292,7 @@ class InputResilienceTest extends TestCase
         $file = UploadedFile::fake()->create('innocent.pdf', 10, 'application/pdf');
 
         $this->withHeaders($this->apiHeaders($token))
-            ->postJson("/api/v1/assignments/{$assignment->id}/submit", ['file' => $file])
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", ['file' => $file])
             ->assertStatus(201);
 
         $submission = $patient['patient']->submissions()->first();
@@ -358,9 +361,9 @@ class InputResilienceTest extends TestCase
         return [
             'above range' => [11],
             'below range' => [0],
-            'negative'    => [-1],
-            'string'      => ['happy'],
-            'null'        => [null],
+            'negative' => [-1],
+            'string' => ['happy'],
+            'null' => [null],
         ];
     }
 
@@ -416,15 +419,15 @@ class InputResilienceTest extends TestCase
      */
     public function test_post_too_large_handler_returns_422_json(): void
     {
-        $e = new \Illuminate\Http\Exceptions\PostTooLargeException('Uploaded file is too large.');
+        $e = new PostTooLargeException('Uploaded file is too large.');
 
-        $request = \Illuminate\Http\Request::create('/api/v1/profile/avatar', 'POST');
+        $request = Request::create('/api/v1/profile/avatar', 'POST');
         $request->headers->set('Accept', 'application/json');
 
         $response = app()->handle($request);
 
         // Trigger the renderable directly through the exception handler.
-        $handler = app(\Illuminate\Foundation\Exceptions\Handler::class);
+        $handler = app(Handler::class);
         $rendered = $handler->render($request, $e);
 
         $this->assertEquals(422, $rendered->status());

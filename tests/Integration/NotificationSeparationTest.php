@@ -69,11 +69,11 @@ class NotificationSeparationTest extends TestCase
             ->getJson('/api/v1/notifications')
             ->assertOk()
             ->assertJsonPath('meta.total', 1)
-            ->assertJsonPath('data.0.id', $general->id)
-            ->assertJsonMissing(['id' => $messageNotification->id]);
+            ->assertJsonPath('data.0.public_id', $general->public_id)
+            ->assertJsonMissing(['public_id' => $messageNotification->public_id]);
 
         $this->withHeaders($headers)
-            ->postJson("/api/v1/notifications/{$messageNotification->id}/read")
+            ->postJson("/api/v1/notifications/{$messageNotification->public_id}/read")
             ->assertNotFound();
     }
 
