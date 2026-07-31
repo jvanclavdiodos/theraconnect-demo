@@ -53,7 +53,11 @@ Route::middleware(['guest', 'auth.no-store'])->group(function () {
 // Logout is shared by all authenticated roles (staff dashboard + patient portal).
 Route::middleware(['auth', 'throttle:10,1'])->post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
 
-Route::middleware(['auth', 'role:admin,clinician'])->group(function () {
+Route::middleware(['auth', 'role:admin,clinician', 'staff.inactivity'])->group(function () {
+    Route::post('/session/activity', fn () => response()->noContent())
+        ->middleware('throttle:30,1')
+        ->name('session.activity');
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // Staff member's own notifications inbox (bookings, messages, reschedules).

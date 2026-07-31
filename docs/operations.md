@@ -9,7 +9,7 @@ Use `.env.example` and `.env.railway.example` as key inventories only. Do not co
 | Application | `APP_NAME`, `APP_ENV`, `APP_KEY`, `APP_DEBUG`, `APP_URL`, `APP_TIMEZONE` | `config/app.php` |
 | Privacy notice | `PRIVACY_CONTROLLER_NAME`, `PRIVACY_CONTACT_EMAIL` | `config/app.php`, registration agreement/privacy notice |
 | Database | `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | `config/database.php`, migrations |
-| Browser session | `SESSION_DRIVER`, `SESSION_CONNECTION`, `SESSION_TABLE`, `SESSION_SECURE_COOKIE`, `SESSION_ENCRYPT`, `SESSION_LIFETIME` | `config/session.php` |
+| Browser session | `SESSION_DRIVER`, `SESSION_CONNECTION`, `SESSION_TABLE`, `SESSION_SECURE_COOKIE`, `SESSION_ENCRYPT`, `SESSION_LIFETIME`, `STAFF_INACTIVITY_TIMEOUT` | `config/session.php`, `config/auth.php`, `EnforceStaffInactivityTimeout`, `staff-inactivity.js` |
 | Queue/cache/logging | `QUEUE_CONNECTION`, `DB_QUEUE_*`, `CACHE_STORE`, `LOG_CHANNEL`, `LOG_STACK`, `LOG_LEVEL` | `config/queue.php`, `config/cache.php`, `config/logging.php` |
 | Storage | `FILESYSTEM_DISK`, `FILESYSTEM_THROW`, `VERIFY_PRIVATE_STORAGE`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_ENDPOINT` | `config/filesystems.php`, `storage:check`, entrypoint |
 | Mail | `MAIL_*` values | `config/mail.php`, `SendEmailNotification` |

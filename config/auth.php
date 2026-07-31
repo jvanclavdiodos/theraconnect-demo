@@ -118,4 +118,8 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    // Clinician and administrator browser sessions expire after ten minutes
+    // without user activity. The Flutter client enforces the same duration.
+    'staff_inactivity_timeout' => (int) env('STAFF_INACTIVITY_TIMEOUT', 600),
+
 ];

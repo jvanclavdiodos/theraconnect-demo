@@ -9,6 +9,12 @@
             <div class="card-body p-4">
                 <h4 class="card-title text-center mb-4">Sign In</h4>
 
+                @if(request()->boolean('inactivity'))
+                    <div class="alert alert-info" role="status">
+                        You have been logged out after 10 minutes of inactivity.
+                    </div>
+                @endif
+
                 <form method="POST" action="{{ route('login') }}">
                     @csrf
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnforceStaffInactivityTimeout;
 use App\Http\Middleware\PreventAuthPageCaching;
 use App\Http\Middleware\RoleMiddleware;
 use App\Http\Middleware\SecurityHeaders;
@@ -48,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'auth.no-store' => PreventAuthPageCaching::class,
+            'staff.inactivity' => EnforceStaffInactivityTimeout::class,
             'role' => RoleMiddleware::class,
         ]);
     })

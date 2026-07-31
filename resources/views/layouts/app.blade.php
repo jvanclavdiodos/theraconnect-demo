@@ -68,7 +68,13 @@
 </head>
 <body x-data="{ sidebarOpen: false }" @keydown.escape.window="sidebarOpen = false"
       data-realtime-resources="@yield('realtime-resources')"
-      data-realtime-conversation="@yield('realtime-conversation')">
+      data-realtime-conversation="@yield('realtime-conversation')"
+      @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'clinician']))
+          data-staff-inactivity-timeout="{{ config('auth.staff_inactivity_timeout', 600) }}"
+          data-staff-activity-url="{{ route('session.activity') }}"
+          data-staff-logout-url="{{ route('logout') }}"
+          data-staff-login-url="{{ route('login', ['inactivity' => 1]) }}"
+      @endif>
     <div class="d-flex" id="wrapper">
         @auth
             {{-- Sidebar overlay (mobile) --}}
@@ -100,6 +106,9 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'clinician']))
+        <script src="{{ asset('js/staff-inactivity.js') }}"></script>
+    @endif
     @include('partials.bootstrap-overlays')
     {{-- Alpine Focus plugin (must load BEFORE Alpine core so it registers
          itself in time). Enables `x-trap` for accessible modal/focus

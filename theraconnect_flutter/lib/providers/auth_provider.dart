@@ -6,6 +6,7 @@ import '../models/patient.dart';
 import '../models/api_response.dart';
 import '../services/auth_service.dart';
 import '../services/cache_service.dart';
+import '../services/inactivity_service.dart';
 import '../services/api_client.dart';
 import '../services/api/auth_api.dart';
 
@@ -17,6 +18,10 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
 final cacheServiceProvider = Provider<CacheService>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
   return CacheService(prefs);
+});
+
+final inactivityServiceProvider = Provider<InactivityService>((ref) {
+  return InactivityService(ref.watch(sharedPreferencesProvider));
 });
 
 final apiClientProvider = Provider<ApiClient>((ref) {
@@ -36,8 +41,10 @@ class AuthNotifier extends StateNotifier<
   final AuthService _authService;
   final CacheService _cacheService;
   final AuthApi _authApi;
+  final InactivityService _inactivityService;
 
-  AuthNotifier(this._authService, this._cacheService, this._authApi)
+  AuthNotifier(this._authService, this._cacheService, this._authApi,
+      this._inactivityService)
       : super((
           status: AuthState.unauthenticated,
           user: null,
@@ -70,6 +77,18 @@ class AuthNotifier extends StateNotifier<
       );
       return;
     }
+    if (_inactivityService.hasTimedOut()) {
+      await _authService.clearToken();
+      await _cacheService.clear();
+      await _inactivityService.clear();
+      state = (
+        status: AuthState.unauthenticated,
+        user: null,
+        patient: null,
+        error: 'You have been logged out after 10 minutes of inactivity.'
+      );
+      return;
+    }
     try {
       final profile = await _authApi.me();
       _cacheService.put('user', profile.user.toJson());
@@ -82,6 +101,7 @@ class AuthNotifier extends StateNotifier<
         patient: profile.patientProfile,
         error: null,
       );
+      await _inactivityService.recordActivity(force: true);
     } on ApiError catch (e) {
       if (e.statusCode == 401) {
         await _authService.clearToken();
@@ -103,6 +123,7 @@ class AuthNotifier extends StateNotifier<
     try {
       final result = await _authApi.login(email: email, password: password);
       await _authService.saveToken(result.token);
+      await _inactivityService.recordActivity(force: true);
 
       final profile = await _authApi.me();
       if (profile.patientProfile != null) {
@@ -165,6 +186,7 @@ class AuthNotifier extends StateNotifier<
         personalIssues: personalIssues,
       );
       await _authService.saveToken(result.token);
+      await _inactivityService.recordActivity(force: true);
 
       final profile = await _authApi.me();
       if (profile.patientProfile != null) {
@@ -221,16 +243,27 @@ class AuthNotifier extends StateNotifier<
   }
 
   Future<void> logout() async {
+    await _logout();
+  }
+
+  Future<void> logoutForInactivity() async {
+    await _logout(
+      message: 'You have been logged out after 10 minutes of inactivity.',
+    );
+  }
+
+  Future<void> _logout({String? message}) async {
     try {
       await _authApi.logout();
     } catch (_) {}
     await _authService.clearToken();
     await _cacheService.clear();
+    await _inactivityService.clear();
     state = (
       status: AuthState.unauthenticated,
       user: null,
       patient: null,
-      error: null
+      error: message
     );
   }
 
@@ -250,5 +283,6 @@ final authProvider = StateNotifierProvider<AuthNotifier,
     ref.watch(authServiceProvider),
     ref.watch(cacheServiceProvider),
     ref.watch(authApiProvider),
+    ref.watch(inactivityServiceProvider),
   );
 });

@@ -187,6 +187,7 @@ The mobile app uses Riverpod, primarily `StateNotifierProvider` and `FutureProvi
 - Patient self-registration always creates `role=patient`; staff accounts are admin-provisioned.
 - Login normalizes email lower-case and performs a dummy hash check when no user exists to reduce enumeration timing signals.
 - Session regeneration follows login. Logout invalidates session and regenerates CSRF token.
+- Clinician and administrator sessions enforce a ten-minute inactivity timeout on both the server and browser. Real user interaction sends a throttled heartbeat; passive realtime traffic does not extend the session. Timeout returns to login with an explicit message.
 
 ### Mobile API
 
@@ -194,6 +195,7 @@ The mobile app uses Riverpod, primarily `StateNotifierProvider` and `FutureProvi
 - All mobile domain routes require `auth:sanctum` and `role:patient`.
 - `POST /api/v1/logout` deletes the current user's tokens (not merely the current token).
 - The API deliberately rejects clinician/admin mobile login with 403.
+- Flutter tracks interaction globally and persists the last activity timestamp. Ten minutes of inactivity, including time backgrounded or closed, revokes/clears authentication and returns to login with an explicit message.
 
 ### Authorization rules with broad impact
 

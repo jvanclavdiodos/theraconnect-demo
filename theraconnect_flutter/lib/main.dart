@@ -19,6 +19,7 @@ import 'services/fcm_service.dart';
 import 'services/realtime_service.dart';
 import 'theme/app_theme.dart';
 import 'router.dart';
+import 'widgets/inactivity_guard.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -163,6 +164,8 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
     });
 
     final router = ref.watch(routerProvider);
+    final isAuthenticated =
+        ref.watch(authProvider).status == AuthState.authenticated;
 
     return MaterialApp.router(
       title: 'TheraConnect',
@@ -185,6 +188,14 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
       ],
       supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
+      builder: (context, child) => InactivityGuard(
+        enabled: isAuthenticated,
+        onTimeout: ref.read(authProvider.notifier).logoutForInactivity,
+        onActivity: () => unawaited(
+          ref.read(inactivityServiceProvider).recordActivity(),
+        ),
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
   }
 }
