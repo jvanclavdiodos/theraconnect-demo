@@ -48,12 +48,18 @@ class AuthenticatedSessionController extends Controller
         Auth::login($user);
         $request->session()->regenerate();
 
+        // A guest may have reached login through a protected URL belonging to
+        // another role or account. Following that stale intended destination
+        // after authentication produces a misleading 403 even though login
+        // succeeded. Start every new session at its role-safe dashboard.
+        $request->session()->forget('url.intended');
+
         // Patients use the browser portal; clinicians/admins use the dashboard.
         if (Auth::user()->role === 'patient') {
-            return redirect()->intended(route('portal.dashboard'));
+            return redirect()->route('portal.dashboard');
         }
 
-        return redirect()->intended('/dashboard');
+        return redirect()->route('dashboard');
     }
 
     public function destroy(Request $request): RedirectResponse

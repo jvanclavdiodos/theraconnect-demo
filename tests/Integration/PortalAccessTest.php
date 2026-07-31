@@ -27,6 +27,36 @@ class PortalAccessTest extends TestCase
             ->assertRedirect('/dashboard');
     }
 
+    public function test_patient_login_ignores_stale_staff_intended_url(): void
+    {
+        $this->createPatient('stale-patient-login@test.com');
+
+        $this->withSession(['url.intended' => route('dashboard')])
+            ->post('/login', [
+                'email' => 'stale-patient-login@test.com',
+                'password' => 'password',
+            ])
+            ->assertRedirect(route('portal.dashboard'))
+            ->assertSessionMissing('url.intended');
+
+        $this->assertAuthenticated();
+    }
+
+    public function test_staff_login_ignores_stale_patient_intended_url(): void
+    {
+        $clinician = $this->createClinician();
+
+        $this->withSession(['url.intended' => route('portal.dashboard')])
+            ->post('/login', [
+                'email' => $clinician['user']->email,
+                'password' => 'password',
+            ])
+            ->assertRedirect(route('dashboard'))
+            ->assertSessionMissing('url.intended');
+
+        $this->assertAuthenticatedAs($clinician['user']);
+    }
+
     public function test_patient_can_view_portal_dashboard(): void
     {
         $patient = $this->createPatient();
