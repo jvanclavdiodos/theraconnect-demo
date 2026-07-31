@@ -2,9 +2,12 @@
     $isActive = fn(string $route) => request()->routeIs($route) ? 'active' : '';
     $patient = auth()->user()->patient ?? null;
     $unreadMessages = 0;
+    $assignmentActivity = 0;
     if ($patient) {
         $unreadMessages = app(\App\Services\MessageService::class)
             ->patientUnreadCount($patient->id, auth()->id());
+        $assignmentActivity = app(\App\Services\AssignmentBadgeService::class)
+            ->patientAwaitingReviewCount($patient->id);
     }
 @endphp
 
@@ -39,7 +42,12 @@
             </a>
             <a href="{{ route('portal.assignments.index') }}" class="tc-nav-item {{ $isActive('portal.assignments.*') }}">
                 <i class="bi bi-clipboard-check"></i> <span>Assignments</span>
-                <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                <span data-assignment-activity-count data-count="{{ $assignmentActivity }}"
+                      class="badge bg-primary rounded-pill ms-auto {{ $assignmentActivity > 0 ? '' : 'd-none' }}"
+                      aria-label="{{ $assignmentActivity }} submissions awaiting review">
+                    {{ $assignmentActivity > 9 ? '9+' : $assignmentActivity }}
+                </span>
+                <i class="bi bi-chevron-right tc-nav-chevron {{ $assignmentActivity > 0 ? 'd-none' : '' }}"></i>
             </a>
             <a href="{{ route('portal.messages.index') }}" class="tc-nav-item {{ $isActive('portal.messages.*') }}">
                 <i class="bi bi-chat-dots"></i> <span>Messages</span>

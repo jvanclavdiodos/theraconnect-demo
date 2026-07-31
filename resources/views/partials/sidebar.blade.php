@@ -3,9 +3,12 @@
     $role = auth()->check() ? auth()->user()->role : null;
 
     $msgUnread = 0;
+    $assignmentActivity = 0;
     if ($role === 'clinician' && auth()->user()->clinician) {
         $msgUnread = app(\App\Services\MessageService::class)
             ->clinicianUnreadCount(auth()->user()->clinician->id, auth()->id());
+        $assignmentActivity = app(\App\Services\AssignmentBadgeService::class)
+            ->clinicianPendingReviewCount(auth()->user()->clinician->id);
     }
 @endphp
 
@@ -56,7 +59,12 @@
                     </a>
                     <a href="{{ route('assignments.index') }}" class="tc-nav-item {{ $isActive('assignments.*') }}">
                         <i class="bi bi-clipboard-check"></i> <span>Assignments</span>
-                        <i class="bi bi-chevron-right tc-nav-chevron"></i>
+                        <span data-assignment-activity-count data-count="{{ $assignmentActivity }}"
+                              class="badge bg-primary rounded-pill ms-auto {{ $assignmentActivity > 0 ? '' : 'd-none' }}"
+                              aria-label="{{ $assignmentActivity }} submissions awaiting review">
+                            {{ $assignmentActivity > 9 ? '9+' : $assignmentActivity }}
+                        </span>
+                        <i class="bi bi-chevron-right tc-nav-chevron {{ $assignmentActivity > 0 ? 'd-none' : '' }}"></i>
                     </a>
                     <a href="{{ route('patients.index') }}" class="tc-nav-item {{ $isActive('patients.*') }}">
                         <i class="bi bi-people"></i> <span>Patients</span>
