@@ -95,6 +95,32 @@
             text-decoration: none;
         }
         .lp-nav-link:hover { color: var(--lp-teal); }
+        .lp-nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        .lp-download {
+            min-height: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.45rem;
+            padding: 0.55rem 1rem;
+            border: 1px solid var(--lp-teal);
+            border-radius: 7px;
+            background: var(--lp-teal);
+            color: var(--lp-white);
+            font-size: 0.86rem;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        .lp-download:hover,
+        .lp-download:focus-visible {
+            border-color: var(--lp-teal-dark);
+            background: var(--lp-teal-dark);
+            color: var(--lp-white);
+        }
         .lp-sign-in {
             min-height: 42px;
             display: inline-flex;
@@ -195,6 +221,7 @@
         .lp-secondary-action:hover { background: rgba(255, 255, 255, 0.15); color: var(--lp-white); }
         .lp-primary-action:focus-visible,
         .lp-secondary-action:focus-visible,
+        .lp-download:focus-visible,
         .lp-sign-in:focus-visible,
         .lp-footer a:focus-visible {
             outline: 3px solid #f2b96b;
@@ -485,7 +512,10 @@
             .lp-nav .container-fluid { width: calc(100% - 16px); }
             .lp-brand { font-size: 0.95rem; }
             .lp-mark { width: 34px; height: 34px; }
+            .lp-nav-actions { gap: 0.5rem; }
+            .lp-download,
             .lp-sign-in { min-height: 40px; padding-inline: 0.8rem; }
+            .lp-download span,
             .lp-sign-in span { display: none; }
 
             .lp-hero {
@@ -581,9 +611,15 @@
                 <span>{{ config('app.name', 'TheraConnect') }}</span>
             </a>
 
-            <div class="d-flex align-items-center gap-4">
+            <div class="lp-nav-actions">
                 <a href="#care-journey" class="lp-nav-link lp-nav-anchor">For patients</a>
                 <a href="#connected-platform" class="lp-nav-link lp-nav-anchor">Platform</a>
+                @if(config('app.download_url'))
+                    <a href="{{ config('app.download_url') }}" class="lp-download" download="TheraConnect.apk" aria-label="Download the TheraConnect Android app">
+                        <i class="bi bi-download" aria-hidden="true"></i>
+                        <span>Download app</span>
+                    </a>
+                @endif
                 <a href="{{ route('login') }}" class="lp-sign-in">
                     <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
                     <span>Sign in</span>
