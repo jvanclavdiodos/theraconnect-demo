@@ -11,7 +11,7 @@ Use `.env.example` and `.env.railway.example` as key inventories only. Do not co
 | Database | `DB_CONNECTION`, `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` | `config/database.php`, migrations |
 | Browser session | `SESSION_DRIVER`, `SESSION_CONNECTION`, `SESSION_TABLE`, `SESSION_SECURE_COOKIE`, `SESSION_ENCRYPT`, `SESSION_LIFETIME` | `config/session.php` |
 | Queue/cache/logging | `QUEUE_CONNECTION`, `DB_QUEUE_*`, `CACHE_STORE`, `LOG_CHANNEL`, `LOG_STACK`, `LOG_LEVEL` | `config/queue.php`, `config/cache.php`, `config/logging.php` |
-| Storage | `FILESYSTEM_DISK`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_ENDPOINT` | `config/filesystems.php` |
+| Storage | `FILESYSTEM_DISK`, `FILESYSTEM_THROW`, `VERIFY_PRIVATE_STORAGE`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`, `AWS_BUCKET`, `AWS_ENDPOINT` | `config/filesystems.php`, `storage:check`, entrypoint |
 | Mail | `MAIL_*` values | `config/mail.php`, `SendEmailNotification` |
 | Realtime | `BROADCAST_CONNECTION`, `REVERB_APP_*`, `REVERB_HOST`, `REVERB_PORT`, `REVERB_SCHEME`, `REVERB_SERVER_*`, `REVERB_ALLOWED_ORIGINS`, `REVERB_SCALING_ENABLED` | `config/broadcasting.php`, `config/reverb.php` |
 | CORS/Sanctum | `CORS_ALLOWED_ORIGINS`, `SANCTUM_STATEFUL_DOMAINS`, `SANCTUM_TOKEN_PREFIX` | `config/cors.php`, `config/sanctum.php` |
@@ -34,6 +34,27 @@ Use `.env.example` and `.env.railway.example` as key inventories only. Do not co
 - `railway.json`: web app, Dockerfile build, `/api/v1/health` health check, one replica.
 - `railway.worker.json`: separate `queue:work` process with retry/backoff. Required for queued push/email/reminders under `QUEUE_CONNECTION=database`.
 - `railway.scheduler.json`: Railway cron invokes `php artisan schedule:run` every minute.
+
+### Persistent private uploads
+
+Profile photos, assignment worksheets, and assignment submissions use Laravel's
+default private filesystem disk. Local development stores them under
+`storage/app/private`; Railway production must set `FILESYSTEM_DISK=s3` and use
+a private S3-compatible bucket such as Cloudflare R2. Keep bucket public access
+disabled because downloads are streamed through existing authenticated and
+authorized application routes.
+
+For R2, set `AWS_DEFAULT_REGION=auto`,
+`AWS_ENDPOINT=https://ACCOUNT_ID.r2.cloudflarestorage.com`, and use a
+bucket-scoped Object Read & Write token for the AWS access key and secret.
+Setting `VERIFY_PRIVATE_STORAGE=true` makes the web deployment run
+`php artisan storage:check` after migrations and fail startup if a write, read,
+or delete operation does not work. The command can also be run manually from
+the Railway console. It creates and removes only a random health-check object.
+
+Changing disks preserves new uploads; it does not copy or recover files from a
+previous ephemeral container. Do not add an automatic object lifecycle rule
+without an approved clinical-record retention policy.
 - `railway.reverb.json`: separate long-running Reverb WebSocket service. Give it a public Railway domain and do not attach the web app HTTP health check to it.
 - The web service migration process is in the entrypoint. Confirm the deployed service is the Laravel app service, then run `php artisan migrate --force` in its Railway console only when required by deployment procedure.
 

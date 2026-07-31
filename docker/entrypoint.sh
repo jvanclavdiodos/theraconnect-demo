@@ -29,6 +29,11 @@ sh /var/www/docker/wait-for-db.sh
 
 php artisan migrate --force
 
+# Stop production startup when persistent private storage is misconfigured.
+if [ "${VERIFY_PRIVATE_STORAGE:-false}" = "true" ]; then
+    php artisan storage:check
+fi
+
 # Seed demo data ONLY in local dev or when SEED_DEMO=true is set explicitly.
 # Production deploys (APP_ENV=production, SEED_DEMO unset/false) skip seeding
 # entirely — no demo admin/clinician/patient accounts with known passwords get
