@@ -7,6 +7,8 @@ use App\Models\Notification;
 use App\Services\FcmService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
+use Illuminate\Support\Facades\Log;
+use RuntimeException;
 
 class SendPushNotification implements ShouldQueue
 {
@@ -46,6 +48,17 @@ class SendPushNotification implements ShouldQueue
         }
 
         $tokens = DeviceToken::where('user_id', $notification->user_id)->pluck('token');
+
+        if ($tokens->isEmpty()) {
+            Log::warning('Push notification skipped: recipient has no registered device token', [
+                'notification_id' => $notification->id,
+                'user_id' => $notification->user_id,
+                'type' => $notification->type,
+            ]);
+
+            return;
+        }
+
         $sent = false;
 
         // Carry the notification type + id in the data payload so the app can
@@ -66,6 +79,13 @@ class SendPushNotification implements ShouldQueue
 
         if ($sent) {
             $notification->update(['sent_at' => now()]);
+
+            return;
         }
+
+        // Make a complete FCM delivery failure visible to queue monitoring and
+        // eligible for the job's configured retries. Tokens and message bodies
+        // are intentionally excluded from the exception and logs.
+        throw new RuntimeException('FCM rejected or could not authenticate all push delivery attempts.');
     }
 }

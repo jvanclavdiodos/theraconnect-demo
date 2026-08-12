@@ -45,7 +45,7 @@ class JobIdempotencyTest extends TestCase
      * BUG: SendPushNotification.handle has no `if ($notification->sent_at)
      * return;` guard at the top. Also no $tries limit.
      */
-    public function test_send_push_notification_is_not_idempotent_on_retry(): void
+    public function test_send_push_notification_is_idempotent_on_retry(): void
     {
         // Set up a patient with a device token + a notification row.
         $clinician = $this->createClinician();

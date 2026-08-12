@@ -4,6 +4,8 @@ use App\Jobs\ExpirePendingAppointments;
 use App\Jobs\GenerateAppointmentReminders;
 use App\Jobs\GenerateAssignmentReminders;
 use App\Jobs\MarkOverdueNoShows;
+use App\Models\DeviceToken;
+use App\Models\User;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -14,6 +16,45 @@ use Symfony\Component\Console\Command\Command;
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
+
+Artisan::command('push:check {email?}', function (?string $email = null) {
+    $projectId = config('services.fcm.project_id');
+    $credentialsPath = config('services.fcm.credentials_path');
+    $credentials = null;
+
+    if ($credentialsPath && is_file($credentialsPath) && is_readable($credentialsPath)) {
+        $credentials = json_decode((string) file_get_contents($credentialsPath), true);
+    }
+
+    $checks = [
+        'FCM project ID configured' => filled($projectId),
+        'FCM credentials path configured' => filled($credentialsPath),
+        'FCM credentials file readable' => is_array($credentials),
+        'Credentials contain client email' => filled($credentials['client_email'] ?? null),
+        'Credentials contain private key' => filled($credentials['private_key'] ?? null),
+        'Configured and credential project IDs match' => is_array($credentials)
+            && filled($projectId)
+            && hash_equals((string) $projectId, (string) ($credentials['project_id'] ?? '')),
+    ];
+
+    foreach ($checks as $label => $passed) {
+        $passed ? $this->info("PASS: {$label}") : $this->error("FAIL: {$label}");
+    }
+
+    if ($email) {
+        $user = User::where('email', strtolower($email))->first();
+        if (! $user) {
+            $this->error('FAIL: No user found for that email.');
+        } else {
+            $count = DeviceToken::where('user_id', $user->id)->count();
+            $count > 0
+                ? $this->info("PASS: User has {$count} registered device token(s).")
+                : $this->error('FAIL: User has no registered device token. Sign in again on the device.');
+        }
+    }
+
+    return in_array(false, $checks, true) ? Command::FAILURE : Command::SUCCESS;
+})->purpose('Verify push configuration without exposing credentials or device tokens');
 
 Artisan::command('storage:check', function () {
     $diskName = config('filesystems.default');

@@ -23,6 +23,12 @@ if [ -n "${FCM_CREDENTIALS_B64:-}" ]; then
     echo "$FCM_CREDENTIALS_B64" | base64 -d > "$FCM_CRED_PATH"
     chmod 600 "$FCM_CRED_PATH"
     echo "FCM credentials prepared for queued push delivery."
+else
+    echo "WARNING: FCM_CREDENTIALS_B64 is not set; queued push notifications cannot authenticate."
+fi
+
+if [ -z "${FCM_PROJECT_ID:-}" ]; then
+    echo "WARNING: FCM_PROJECT_ID is not set; queued push notifications will be skipped."
 fi
 
 echo "Queue driver: ${QUEUE_DRIVER}; starting long-running worker."
