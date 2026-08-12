@@ -15,6 +15,9 @@ final messageApiProvider = Provider<MessageApi>((ref) {
   return MessageApi(ref.watch(apiClientProvider));
 });
 
+/// Incremented when Reverb or FCM reports that message state may be stale.
+final messageRefreshProvider = StateProvider<int>((ref) => 0);
+
 /// One conversation for each clinician assigned after appointment approval.
 final conversationsProvider =
     FutureProvider.autoDispose<ConversationSnapshot>((ref) async {

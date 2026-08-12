@@ -100,6 +100,7 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
         await ref.read(notificationsProvider.notifier).loadNotifications();
         if (event.data['type'] == 'message_received') {
           ref.invalidate(conversationsProvider);
+          ref.read(messageRefreshProvider.notifier).state++;
         }
         break;
       case 'appointment.updated':
@@ -134,13 +135,16 @@ class _TheraConnectAppState extends ConsumerState<TheraConnectApp> {
         // Tapping a push deep-links to the relevant screen.
         onNavigate: (route) => router.go(route),
         // A push arriving in the foreground refreshes the in-app list.
-        onForegroundRefresh: () async {
+        onForegroundRefresh: (data) async {
           await Future.wait([
             ref.read(notificationsProvider.notifier).loadNotifications(),
             ref.read(appointmentsProvider.notifier).loadAppointments(),
             ref.read(appointmentListProvider.notifier).loadAppointments(),
           ]);
           ref.invalidate(conversationsProvider);
+          if (data['type'] == 'message_received') {
+            ref.read(messageRefreshProvider.notifier).state++;
+          }
         },
       );
     } catch (e) {

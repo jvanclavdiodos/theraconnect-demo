@@ -66,8 +66,13 @@ class ConversationController extends Controller
 
         $messages = $conversation->messages()
             ->with('sender')
-            ->orderBy('created_at')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate(50);
+
+        // Page one must contain the newest messages. Reverse only the selected
+        // page so Flutter can render each batch in normal chronological order.
+        $messages->setCollection($messages->getCollection()->reverse()->values());
 
         $this->messages->markRead($conversation, $request->user());
 

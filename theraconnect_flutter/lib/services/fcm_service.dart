@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -36,7 +37,7 @@ class FcmService {
   void Function(String route)? onNavigate;
 
   /// Refresh the in-app notifications list when a push arrives in foreground.
-  Future<void> Function()? onForegroundRefresh;
+  Future<void> Function(Map<String, dynamic> data)? onForegroundRefresh;
 
   FcmService(
       {required NotificationApi notificationApi,
@@ -46,7 +47,7 @@ class FcmService {
 
   Future<void> initialize({
     void Function(String route)? onNavigate,
-    Future<void> Function()? onForegroundRefresh,
+    Future<void> Function(Map<String, dynamic> data)? onForegroundRefresh,
   }) async {
     this.onNavigate = onNavigate;
     this.onForegroundRefresh = onForegroundRefresh;
@@ -136,10 +137,13 @@ class FcmService {
         payload: _routeFor(message.data),
       );
     }
-    await onForegroundRefresh?.call();
+    await onForegroundRefresh?.call(message.data);
   }
 
   void _handleTap(RemoteMessage message) {
+    if (message.data['type'] == 'message_received') {
+      unawaited(onForegroundRefresh?.call(message.data));
+    }
     onNavigate?.call(_routeFor(message.data));
   }
 

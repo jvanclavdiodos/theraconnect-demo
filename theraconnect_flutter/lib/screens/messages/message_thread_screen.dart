@@ -168,6 +168,8 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<int>(messageRefreshProvider, (_, __) => unawaited(_load()));
+
     return Scaffold(
       appBar: AppBar(title: Text(widget.title ?? 'Messages')),
       body: Column(

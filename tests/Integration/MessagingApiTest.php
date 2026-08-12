@@ -109,6 +109,33 @@ class MessagingApiTest extends TestCase
             ->assertJsonPath('data.0.unread_count', 0);
     }
 
+    public function test_first_message_page_contains_the_newest_fifty_in_chronological_order(): void
+    {
+        $ctx = $this->assignedPatient('message-pagination@test.com');
+        $conversation = app(MessageService::class)
+            ->conversationFor($ctx['patient']['patient'], $ctx['clinician']['clinician']);
+
+        foreach (range(1, 55) as $number) {
+            $conversation->messages()->create([
+                'sender_id' => $ctx['clinician']['user']->id,
+                'body' => "Message {$number}",
+                'created_at' => now()->addSeconds($number),
+                'updated_at' => now()->addSeconds($number),
+            ]);
+        }
+
+        $response = $this->withHeaders($ctx['headers'])
+            ->getJson("/api/v1/conversations/{$conversation->public_id}/messages")
+            ->assertOk()
+            ->assertJsonPath('meta.current_page', 1)
+            ->assertJsonPath('meta.last_page', 2)
+            ->assertJsonPath('meta.total', 55);
+
+        $this->assertCount(50, $response->json('data'));
+        $this->assertSame('Message 6', $response->json('data.0.body'));
+        $this->assertSame('Message 55', $response->json('data.49.body'));
+    }
+
     public function test_patient_cannot_access_another_pairs_conversation(): void
     {
         $a = $this->assignedPatient('a@test.com');

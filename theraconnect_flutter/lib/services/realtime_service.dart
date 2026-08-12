@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dart_pusher_channels/dart_pusher_channels.dart';
+import 'package:flutter/foundation.dart';
 
 import 'api_client.dart';
 import 'auth_service.dart';
@@ -19,8 +20,10 @@ class RealtimeService {
       StreamController<RealtimeEvent>.broadcast();
   final Set<String> _desiredConversationIds = {};
   final Map<String, PrivateChannel> _conversationChannels = {};
-  final Map<String, StreamSubscription<ChannelReadEvent>>
-      _conversationEvents = {};
+  final Map<String, StreamSubscription<ChannelReadEvent>> _conversationEvents =
+      {};
+  final Map<String, StreamSubscription<ChannelReadEvent>> _conversationErrors =
+      {};
 
   PusherChannelsClient? _client;
   StreamSubscription<void>? _connectionSubscription;
@@ -58,7 +61,10 @@ class RealtimeService {
       final client = PusherChannelsClient.websocket(
         options: options,
         minimumReconnectDelayDuration: const Duration(seconds: 2),
-        connectionErrorHandler: (_, __, refresh) => refresh(),
+        connectionErrorHandler: (error, _, refresh) {
+          debugPrint('Realtime connection interrupted: ${error.runtimeType}');
+          refresh();
+        },
       );
       final userChannel = client.privateChannel(
         'private-users.$userId',
@@ -118,6 +124,11 @@ class RealtimeService {
       _conversationChannels[conversationId] = channel;
       _conversationEvents[conversationId] =
           channel.bind('message.created').listen(_emit);
+      _conversationErrors[conversationId] =
+          channel.bind('pusher:subscription_error').listen((_) {
+        debugPrint('Realtime conversation subscription failed; retrying.');
+        unawaited(_retryConversation(conversationId));
+      });
       channel.subscribeIfNotUnsubscribed();
     } catch (_) {
       return;
@@ -126,8 +137,25 @@ class RealtimeService {
 
   Future<void> unsubscribeConversation(String conversationId) async {
     _desiredConversationIds.remove(conversationId);
-    _conversationChannels.remove(conversationId)?.unsubscribe();
+    await _removeConversation(conversationId, unsubscribe: true);
+  }
+
+  Future<void> _retryConversation(String conversationId) async {
+    await _removeConversation(conversationId, unsubscribe: false);
+    await Future<void>.delayed(const Duration(seconds: 2));
+    if (_desiredConversationIds.contains(conversationId)) {
+      await _subscribeConversationNow(conversationId);
+    }
+  }
+
+  Future<void> _removeConversation(
+    String conversationId, {
+    required bool unsubscribe,
+  }) async {
+    final channel = _conversationChannels.remove(conversationId);
+    if (unsubscribe) channel?.unsubscribe();
     await _conversationEvents.remove(conversationId)?.cancel();
+    await _conversationErrors.remove(conversationId)?.cancel();
   }
 
   Future<void> disconnect() async {
@@ -137,7 +165,11 @@ class RealtimeService {
     for (final subscription in _conversationEvents.values) {
       await subscription.cancel();
     }
+    for (final subscription in _conversationErrors.values) {
+      await subscription.cancel();
+    }
     _conversationEvents.clear();
+    _conversationErrors.clear();
     _conversationChannels.clear();
     _desiredConversationIds.clear();
 
