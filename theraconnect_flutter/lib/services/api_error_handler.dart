@@ -9,7 +9,7 @@ ApiError handleDioError(DioException e) {
     );
   }
   return ApiError(
-    message: e.message ?? 'Network error',
+    message: 'You appear to be offline. Check your connection and try again.',
     statusCode: e.response?.statusCode ?? 0,
   );
 }

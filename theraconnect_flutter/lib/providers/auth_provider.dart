@@ -7,6 +7,7 @@ import '../models/api_response.dart';
 import '../services/auth_service.dart';
 import '../services/cache_service.dart';
 import '../services/inactivity_service.dart';
+import '../services/message_cache_service.dart';
 import '../services/api_client.dart';
 import '../services/api/auth_api.dart';
 
@@ -18,6 +19,10 @@ final sharedPreferencesProvider = Provider<SharedPreferences>(
 final cacheServiceProvider = Provider<CacheService>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
   return CacheService(prefs);
+});
+
+final messageCacheServiceProvider = Provider<MessageCacheService>((ref) {
+  return MessageCacheService();
 });
 
 final inactivityServiceProvider = Provider<InactivityService>((ref) {
@@ -42,9 +47,10 @@ class AuthNotifier extends StateNotifier<
   final CacheService _cacheService;
   final AuthApi _authApi;
   final InactivityService _inactivityService;
+  final MessageCacheService _messageCacheService;
 
   AuthNotifier(this._authService, this._cacheService, this._authApi,
-      this._inactivityService)
+      this._inactivityService, this._messageCacheService)
       : super((
           status: AuthState.unauthenticated,
           user: null,
@@ -64,6 +70,7 @@ class AuthNotifier extends StateNotifier<
       error: null
     );
     _cacheService.clear();
+    _messageCacheService.clear();
   }
 
   Future<void> checkAuth() async {
@@ -80,6 +87,7 @@ class AuthNotifier extends StateNotifier<
     if (_inactivityService.hasTimedOut()) {
       await _authService.clearToken();
       await _cacheService.clear();
+      await _messageCacheService.clear();
       await _inactivityService.clear();
       state = (
         status: AuthState.unauthenticated,
@@ -106,15 +114,34 @@ class AuthNotifier extends StateNotifier<
       if (e.statusCode == 401) {
         await _authService.clearToken();
         await _cacheService.clear();
+        await _messageCacheService.clear();
         state = (
           status: AuthState.unauthenticated,
           user: null,
           patient: null,
           error: null
         );
+      } else if (e.isNetworkError) {
+        _restoreCachedSession();
       }
     } on DioException catch (_) {
-      // Network errors during checkAuth should not log out
+      // A valid saved token may continue in read-only offline mode. The
+      // inactivity check above still runs first, and all cached data is cleared
+      // on logout or a later 401 response.
+      _restoreCachedSession();
+    }
+  }
+
+  void _restoreCachedSession() {
+    final cachedUser = _cacheService.get('user', User.fromJson);
+    final cachedPatient = _cacheService.get('patient', Patient.fromJson);
+    if (cachedUser != null) {
+      state = (
+        status: AuthState.authenticated,
+        user: cachedUser,
+        patient: cachedPatient,
+        error: null,
+      );
     }
   }
 
@@ -258,6 +285,7 @@ class AuthNotifier extends StateNotifier<
     } catch (_) {}
     await _authService.clearToken();
     await _cacheService.clear();
+    await _messageCacheService.clear();
     await _inactivityService.clear();
     state = (
       status: AuthState.unauthenticated,
@@ -284,5 +312,6 @@ final authProvider = StateNotifierProvider<AuthNotifier,
     ref.watch(cacheServiceProvider),
     ref.watch(authApiProvider),
     ref.watch(inactivityServiceProvider),
+    ref.watch(messageCacheServiceProvider),
   );
 });

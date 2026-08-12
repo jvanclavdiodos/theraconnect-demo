@@ -28,4 +28,14 @@ class Message {
       createdAt: json['created_at'] as String?,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'public_id': id,
+        'conversation_public_id': conversationId,
+        'sender_public_id': senderId,
+        'sender_name': senderName,
+        'is_mine': isMine,
+        'body': body,
+        'created_at': createdAt,
+      };
 }

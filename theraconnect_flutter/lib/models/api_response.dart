@@ -51,5 +51,6 @@ class ApiError implements Exception {
     }
     return message;
   }
-}
 
+  bool get isNetworkError => statusCode == 0;
+}

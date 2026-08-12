@@ -36,16 +36,29 @@ class FcmService
             return false;
         }
 
+        $isMessage = ($data['type'] ?? null) === 'message_received';
+        $message = [
+            'token' => $token,
+            'notification' => [
+                'title' => $title,
+                'body' => $body,
+            ],
+            'android' => [
+                'priority' => 'HIGH',
+                'notification' => [
+                    'channel_id' => $isMessage ? 'theraconnect_messages' : 'theraconnect_default',
+                    'sound' => 'default',
+                ],
+            ],
+        ];
+
+        if ($data) {
+            $message['data'] = array_map(fn ($value) => (string) $value, $data);
+        }
+
         $response = Http::withToken($accessToken)
             ->post("https://fcm.googleapis.com/v1/projects/{$this->projectId}/messages:send", [
-                'message' => [
-                    'token' => $token,
-                    'notification' => [
-                        'title' => $title,
-                        'body' => $body,
-                    ],
-                    'data' => $data ? array_map(fn ($v) => (string) $v, $data) : null,
-                ],
+                'message' => $message,
             ]);
 
         if ($response->failed()) {

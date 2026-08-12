@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/api_response.dart';
 import '../../models/message.dart';
+import '../../providers/auth_provider.dart';
 import '../../providers/message_provider.dart';
 import '../../providers/realtime_provider.dart';
 import '../../services/realtime_service.dart';
+import '../../widgets/offline_banner.dart';
 
 class MessageThreadScreen extends ConsumerStatefulWidget {
   final String conversationId;
@@ -26,6 +28,9 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   bool _refreshing = false;
   bool _refreshQueued = false;
   bool _sending = false;
+  bool _offline = false;
+  String? _loadError;
+  DateTime? _cachedAt;
   final _controller = TextEditingController();
   final _scrollController = ScrollController();
   late final RealtimeService _realtime;
@@ -65,17 +70,40 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       final messages =
           await ref.read(messageApiProvider).getMessages(widget.conversationId);
       if (!mounted) return;
+      final userId = ref.read(authProvider).user?.id;
+      if (userId != null) {
+        await ref
+            .read(messageCacheServiceProvider)
+            .saveMessages(userId, widget.conversationId, messages);
+      }
+      if (!mounted) return;
       setState(() {
         _messages = messages;
         _loading = false;
+        _offline = false;
+        _loadError = null;
+        _cachedAt = null;
       });
       if (shouldScrollToBottom) _scrollToBottom();
     } catch (e) {
       if (!mounted) return;
-      setState(() => _loading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ApiError.fromException(e).userMessage)),
-      );
+      final error = ApiError.fromException(e);
+      final userId = ref.read(authProvider).user?.id;
+      final cached = error.isNetworkError && userId != null
+          ? await ref
+              .read(messageCacheServiceProvider)
+              .readMessages(userId, widget.conversationId)
+          : null;
+      if (!mounted) return;
+      setState(() {
+        _loading = false;
+        _offline = error.isNetworkError;
+        _loadError = cached == null ? error.userMessage : null;
+        if (cached != null) {
+          _messages = cached.messages;
+          _cachedAt = cached.savedAt;
+        }
+      });
     } finally {
       _refreshing = false;
       if (_refreshQueued) {
@@ -87,7 +115,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
 
   Future<void> _send() async {
     final body = _controller.text.trim();
-    if (body.isEmpty || _sending) return;
+    if (body.isEmpty || _sending || _offline) return;
     final shouldScrollToBottom = _isAtBottom;
     setState(() => _sending = true);
     try {
@@ -102,13 +130,23 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
         _controller.clear();
         _sending = false;
       });
+      final userId = ref.read(authProvider).user?.id;
+      if (userId != null) {
+        await ref
+            .read(messageCacheServiceProvider)
+            .saveMessages(userId, widget.conversationId, _messages);
+      }
       if (shouldScrollToBottom) _scrollToBottom();
       ref.invalidate(conversationsProvider);
     } catch (e) {
       if (!mounted) return;
-      setState(() => _sending = false);
+      final error = ApiError.fromException(e);
+      setState(() {
+        _sending = false;
+        _offline = error.isNetworkError;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ApiError.fromException(e).userMessage)),
+        SnackBar(content: Text(error.userMessage)),
       );
     }
   }
@@ -134,21 +172,31 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
       appBar: AppBar(title: Text(widget.title ?? 'Messages')),
       body: Column(
         children: [
+          if (_offline)
+            OfflineBanner(
+              message: _cachedAt == null
+                  ? 'You are offline. Connect to the internet to load messages.'
+                  : 'You are offline. Showing messages saved on this device.',
+              onRetry: _load,
+            ),
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : _messages.isEmpty
-                    ? const Center(child: Text('No messages yet. Say hello.'))
-                    : RefreshIndicator(
-                        onRefresh: _load,
-                        child: ListView.builder(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.all(12),
-                          itemCount: _messages.length,
-                          itemBuilder: (context, i) =>
-                              _bubble(context, _messages[i]),
-                        ),
-                      ),
+                : _loadError != null
+                    ? _loadErrorView(context)
+                    : _messages.isEmpty
+                        ? const Center(
+                            child: Text('No messages yet. Say hello.'))
+                        : RefreshIndicator(
+                            onRefresh: _load,
+                            child: ListView.builder(
+                              controller: _scrollController,
+                              padding: const EdgeInsets.all(12),
+                              itemCount: _messages.length,
+                              itemBuilder: (context, i) =>
+                                  _bubble(context, _messages[i]),
+                            ),
+                          ),
           ),
           SafeArea(
             top: false,
@@ -159,12 +207,15 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                   Expanded(
                     child: TextField(
                       controller: _controller,
+                      enabled: !_offline,
                       minLines: 1,
                       maxLines: 4,
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _send(),
-                      decoration: const InputDecoration(
-                        hintText: 'Type a message…',
+                      decoration: InputDecoration(
+                        hintText: _offline
+                            ? 'Connect to the internet to send messages'
+                            : 'Type a message...',
                         border: OutlineInputBorder(),
                         isDense: true,
                       ),
@@ -172,7 +223,7 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                   ),
                   const SizedBox(width: 8),
                   IconButton.filled(
-                    onPressed: _sending ? null : _send,
+                    onPressed: _sending || _offline ? null : _send,
                     icon: _sending
                         ? const SizedBox(
                             width: 18,
@@ -185,6 +236,32 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _loadErrorView(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.cloud_off_outlined,
+              size: 48,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(height: 16),
+            Text(_loadError!, textAlign: TextAlign.center),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: _load,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Try again'),
+            ),
+          ],
+        ),
       ),
     );
   }

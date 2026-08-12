@@ -25,4 +25,13 @@ class Conversation {
       unreadCount: (json['unread_count'] as int?) ?? 0,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'public_id': id,
+        'clinician_public_id': clinicianId,
+        'clinician_name': clinicianName,
+        'last_message': lastMessage,
+        'last_message_at': lastMessageAt,
+        'unread_count': unreadCount,
+      };
 }

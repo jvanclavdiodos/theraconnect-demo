@@ -23,9 +23,12 @@ import '../services/auth_service.dart';
 class FcmService {
   static const _channelId = 'theraconnect_default';
   static const _channelName = 'General';
+  static const _messageChannelId = 'theraconnect_messages';
+  static const _messageChannelName = 'Messages';
 
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _local = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _local =
+      FlutterLocalNotificationsPlugin();
   final NotificationApi _notificationApi;
   final AuthService _authService;
 
@@ -35,7 +38,9 @@ class FcmService {
   /// Refresh the in-app notifications list when a push arrives in foreground.
   Future<void> Function()? onForegroundRefresh;
 
-  FcmService({required NotificationApi notificationApi, required AuthService authService})
+  FcmService(
+      {required NotificationApi notificationApi,
+      required AuthService authService})
       : _notificationApi = notificationApi,
         _authService = authService;
 
@@ -91,23 +96,40 @@ class FcmService {
       importance: Importance.high,
     );
     await _local
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
+
+    // A separate channel ensures message alerts remain visible even when an
+    // older installation has persisted muted settings for the general channel.
+    const messageChannel = AndroidNotificationChannel(
+      _messageChannelId,
+      _messageChannelName,
+      description: 'New secure message alerts',
+      importance: Importance.high,
+      playSound: true,
+    );
+    await _local
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(messageChannel);
   }
 
   Future<void> _handleForegroundMessage(RemoteMessage message) async {
     final notification = message.notification;
     if (notification != null) {
+      final isMessage = message.data['type'] == 'message_received';
       await _local.show(
         notification.hashCode,
         notification.title,
         notification.body,
         NotificationDetails(
-          android: const AndroidNotificationDetails(
-            _channelId,
-            _channelName,
+          android: AndroidNotificationDetails(
+            isMessage ? _messageChannelId : _channelId,
+            isMessage ? _messageChannelName : _channelName,
             importance: Importance.high,
             priority: Priority.high,
+            playSound: true,
           ),
           iOS: const DarwinNotificationDetails(),
         ),
@@ -128,7 +150,9 @@ class FcmService {
     final assignmentId = data['assignment_public_id']?.toString();
 
     if (type.startsWith('appointment')) {
-      return appointmentId != null ? '/appointments/$appointmentId' : '/appointments';
+      return appointmentId != null
+          ? '/appointments/$appointmentId'
+          : '/appointments';
     }
     if (type == 'message_received') {
       return '/messages';
@@ -137,7 +161,9 @@ class FcmService {
       return '/assessments';
     }
     if (type.startsWith('assignment')) {
-      return assignmentId != null ? '/assignments/$assignmentId' : '/assignments';
+      return assignmentId != null
+          ? '/assignments/$assignmentId'
+          : '/assignments';
     }
     return '/notifications';
   }
@@ -166,7 +192,8 @@ class FcmService {
     // Token registration failures are non-fatal (push is optional) but must
     // not be silently swallowed, or the user is quietly unsubscribed.
     try {
-      await _notificationApi.registerDeviceToken(token: token, platform: platform);
+      await _notificationApi.registerDeviceToken(
+          token: token, platform: platform);
     } catch (e) {
       // ignore: avoid_print
       print('FCM: token registration failed: $e');
