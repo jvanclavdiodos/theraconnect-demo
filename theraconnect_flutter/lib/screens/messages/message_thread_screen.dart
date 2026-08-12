@@ -22,7 +22,10 @@ class MessageThreadScreen extends ConsumerStatefulWidget {
       _MessageThreadScreenState();
 }
 
-class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
+class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen>
+    with WidgetsBindingObserver {
+  static const _reconciliationInterval = Duration(seconds: 5);
+
   List<Message> _messages = [];
   bool _loading = true;
   bool _refreshing = false;
@@ -35,10 +38,12 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
   final _scrollController = ScrollController();
   late final RealtimeService _realtime;
   StreamSubscription<RealtimeEvent>? _realtimeSubscription;
+  Timer? _reconciliationTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _realtime = ref.read(realtimeServiceProvider);
     unawaited(_realtime.subscribeConversation(widget.conversationId));
     _realtimeSubscription = _realtime.events
@@ -48,15 +53,42 @@ class _MessageThreadScreenState extends ConsumerState<MessageThreadScreen> {
                 event.data['conversation_public_id'] == widget.conversationId))
         .listen((_) => _load());
     _load();
+    _startReconciliation();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_load());
+      _startReconciliation();
+      return;
+    }
+
+    _stopReconciliation();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _stopReconciliation();
     _realtimeSubscription?.cancel();
     unawaited(_realtime.unsubscribeConversation(widget.conversationId));
     _controller.dispose();
     _scrollController.dispose();
     super.dispose();
+  }
+
+  void _startReconciliation() {
+    _reconciliationTimer?.cancel();
+    _reconciliationTimer = Timer.periodic(
+      _reconciliationInterval,
+      (_) => unawaited(_load()),
+    );
+  }
+
+  void _stopReconciliation() {
+    _reconciliationTimer?.cancel();
+    _reconciliationTimer = null;
   }
 
   Future<void> _load() async {
