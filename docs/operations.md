@@ -32,7 +32,7 @@ Use `.env.example` and `.env.railway.example` as key inventories only. Do not co
 ### Railway
 
 - `railway.json`: web app, Dockerfile build, `/api/v1/health` health check, one replica.
-- `railway.worker.json`: separate `queue:work` process with retry/backoff. Required for queued push/email/reminders under `QUEUE_CONNECTION=database`.
+- `railway.worker.json`: separate long-running `queue:work` process initialized by `docker/worker-entrypoint.sh`. It validates the queue driver, waits for MySQL, prepares FCM credentials, and emits startup diagnostics. Required for queued broadcasts, push/email delivery, and reminders under `QUEUE_CONNECTION=database`. Migrations remain owned by the web service; the worker must not run them concurrently.
 - `railway.scheduler.json`: Railway cron invokes `php artisan schedule:run` every minute.
 
 ### Persistent private uploads
