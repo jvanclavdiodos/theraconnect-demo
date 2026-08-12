@@ -164,12 +164,23 @@ if (config?.enabled && config.userPublicId && window.Echo) {
     }
 
     const conversationPublicId = document.body.dataset.realtimeConversation ?? '';
+    let conversationChannel;
     if (conversationPublicId) {
-        window.Echo.private(`conversations.${conversationPublicId}`)
+        conversationChannel = window.Echo.private(`conversations.${conversationPublicId}`)
             .listen('.message.created', (event) => {
                 if (document.querySelector(`[data-message-id="${event.message_public_id}"]`)) return;
                 syncPage({ messages: true });
             });
+
+        // Echo can retain a socket while a private-channel subscription has
+        // failed. Surface that state and let the periodic authoritative sync
+        // below keep the thread usable until Echo reconnects successfully.
+        conversationChannel.error((error) => {
+            console.warn('Realtime conversation subscription failed; using message sync fallback.', {
+                status: error?.status,
+                type: error?.type,
+            });
+        });
     }
 
     const connection = window.Echo.connector?.pusher?.connection;
@@ -184,4 +195,27 @@ if (config?.enabled && config.userPublicId && window.Echo) {
         }
         connectedOnce = true;
     });
+
+    connection?.bind('error', (error) => {
+        console.warn('Realtime connection interrupted; message sync fallback remains active.', {
+            type: error?.type,
+            code: error?.error?.data?.code,
+        });
+    });
+
+    // Reverb remains the instant delivery path. This small visible-page
+    // fallback reconciles missed events without disturbing the composer and
+    // stops automatically when the tab is hidden.
+    if (resources.has('messages')) {
+        const syncVisibleMessages = () => {
+            if (document.visibilityState === 'visible') {
+                syncPage({ messages: true });
+            }
+        };
+        const messageSyncTimer = window.setInterval(syncVisibleMessages, 5000);
+        document.addEventListener('visibilitychange', syncVisibleMessages);
+        window.addEventListener('pagehide', () => {
+            window.clearInterval(messageSyncTimer);
+        }, { once: true });
+    }
 }
