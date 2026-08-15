@@ -1,6 +1,6 @@
-<nav class="navbar navbar-expand-lg navbar-light">
+<nav @class(['navbar navbar-expand-lg navbar-light', 'tc-auth-navbar' => auth()->check()])>
     @auth
-        <button class="btn btn-outline-secondary d-md-none me-2" type="button"
+        <button class="btn btn-outline-secondary d-md-none me-2 tc-navbar-menu" type="button"
                 aria-label="Toggle navigation sidebar" aria-expanded="false" aria-controls="sidebar-wrapper"
                 @click="sidebarOpen = !sidebarOpen" :aria-expanded="sidebarOpen ? 'true' : 'false'">
             <i class="bi bi-list" aria-hidden="true"></i>
@@ -9,7 +9,7 @@
 
     <span class="navbar-brand mb-0 h1 d-md-none">{{ config('app.name', 'TheraConnect') }}</span>
 
-    <div class="ms-auto d-flex align-items-center gap-3">
+    <div class="ms-auto d-flex align-items-center gap-3 tc-navbar-actions">
         @auth
             @php
                 $navUnread = \App\Models\Notification::where('user_id', auth()->id())
@@ -46,7 +46,7 @@
             </a>
             <form method="POST" action="{{ route('logout') }}" class="mb-0">
                 @csrf
-                <button type="submit" class="btn btn-outline-danger btn-sm">
+                <button type="submit" class="btn btn-outline-danger btn-sm tc-signout-button">
                     <i class="bi bi-box-arrow-right me-1"></i> Sign Out
                 </button>
             </form>

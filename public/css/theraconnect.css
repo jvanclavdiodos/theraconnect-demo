@@ -981,6 +981,240 @@ textarea.form-control {
 .tc-message-readonly { flex:0 0 auto;padding:.85rem 1rem;border-top:1px solid var(--tc-neutral-200);background:var(--tc-neutral-100);color:var(--tc-slate-light);font-size:.8rem;text-align:center; }
 @media(max-width:767.98px){.tc-messaging-shell{grid-template-columns:1fr;height:auto;min-height:0;overflow:visible}.tc-conversation-sidebar{height:auto;max-height:14rem;border-right:0;border-bottom:1px solid var(--tc-neutral-200)}.tc-conversation-sidebar-header{min-height:48px;padding:.7rem 1rem}.tc-conversation-list{display:flex;flex:0 0 auto;gap:.5rem;overflow-x:auto;overflow-y:hidden;padding:.5rem}.tc-conversation-item{min-width:220px}.tc-active-chat{height:auto;min-height:34rem;overflow:visible}.tc-chat-status{font-size:0}.tc-chat-status .bi{font-size:1rem}.tc-message-thread{height:28rem;flex:0 0 28rem;padding:.75rem}.tc-message-bubble{max-width:86%}}
 
+/* Mobile web refinement. Desktop remains the visual baseline; these rules
+   only reorganize shared surfaces when the viewport cannot support it. */
+@media (max-width: 767.98px) {
+  body {
+    font-size: 0.9rem;
+  }
+
+  .navbar {
+    flex-wrap: nowrap;
+    gap: 0.35rem;
+    padding-inline: 0.75rem !important;
+  }
+
+  .navbar .navbar-brand {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .tc-navbar-menu {
+    margin-right: 0 !important;
+  }
+
+  .tc-navbar-actions {
+    min-width: 0;
+    gap: 0.35rem !important;
+  }
+
+  .tc-navbar-actions > .btn,
+  .tc-navbar-actions > form > .btn,
+  .tc-navbar-menu {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+  }
+
+  .tc-navbar-account {
+    max-width: 145px;
+    min-height: 40px;
+    padding: 0.3rem 0.45rem;
+  }
+
+  .tc-page-shell,
+  .tc-breadcrumb-shell {
+    padding-inline: 0.875rem;
+  }
+
+  .tc-page-shell {
+    padding-top: 1rem;
+  }
+
+  .tc-page-shell > .d-flex.justify-content-between,
+  .tc-page-shell > form + .d-flex.justify-content-between {
+    flex-wrap: wrap;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .tc-page-shell > .row,
+  .tc-page-shell .card-body > .row {
+    --bs-gutter-x: 0.875rem;
+    --bs-gutter-y: 0.875rem;
+  }
+
+  .card-header {
+    min-height: 48px;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.8rem 1rem;
+  }
+
+  .tc-kpi {
+    min-height: 132px;
+    padding: 0.95rem;
+  }
+
+  .tc-kpi-head {
+    margin-bottom: 0.7rem;
+  }
+
+  .tc-kpi-value {
+    font-size: 1.5rem;
+  }
+
+  .tc-kpi-label {
+    line-height: 1.35;
+  }
+
+  .tc-list-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 0.8rem 1rem;
+  }
+
+  .table-responsive {
+    position: relative;
+    max-width: 100%;
+    -webkit-overflow-scrolling: touch;
+    border-radius: inherit;
+  }
+
+  .table-responsive .table:has(thead th:nth-child(4)) {
+    min-width: 680px;
+  }
+
+  .table > thead th,
+  .table > tbody td {
+    padding-inline: 0.75rem;
+  }
+
+  .pagination {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  nav[role="navigation"] > div:last-child {
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .modal-dialog {
+    width: auto;
+    max-width: none;
+    margin: 0.75rem;
+  }
+
+  .modal-header,
+  .modal-footer,
+  .modal-body {
+    padding: 1rem;
+  }
+
+  .modal-footer {
+    flex-wrap: wrap;
+  }
+
+  .modal-footer .btn {
+    flex: 1 1 auto;
+  }
+
+  .tc-conversation-sidebar {
+    max-height: 12rem;
+  }
+
+  .tc-active-chat {
+    min-height: 30rem;
+  }
+
+  .tc-message-thread {
+    height: clamp(22rem, 55dvh, 28rem);
+    flex-basis: clamp(22rem, 55dvh, 28rem);
+  }
+
+  .tc-message-composer {
+    padding: 0.65rem 0.75rem;
+  }
+
+  .tc-joy {
+    right: 0.75rem;
+    bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 575.98px) {
+  .tc-auth-navbar .navbar-brand {
+    display: none;
+  }
+
+  .tc-navbar-account {
+    width: 40px;
+    flex: 0 0 40px;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .tc-navbar-account-name {
+    display: none;
+  }
+
+  .tc-signout-button {
+    font-size: 0;
+  }
+
+  .tc-signout-button .bi {
+    margin-right: 0 !important;
+    font-size: 1rem;
+  }
+
+  .tc-page-title {
+    overflow-wrap: anywhere;
+  }
+
+  .tc-page-shell > .d-flex.justify-content-between > .btn,
+  .tc-page-shell > .d-flex.justify-content-between > a.btn {
+    width: 100%;
+  }
+
+  .tc-page-shell form.row .col-12.d-flex > .btn {
+    flex: 1 1 0;
+  }
+
+  .tc-kpi {
+    min-height: 126px;
+  }
+
+  .tc-kpi-icon {
+    width: 36px;
+    height: 36px;
+  }
+
+  .tc-row-sub {
+    overflow-wrap: anywhere;
+  }
+
+  .tc-joy-callout {
+    max-width: min(170px, calc(100vw - 5.5rem));
+    font-size: 0.8rem;
+  }
+
+  .tc-joy-panel {
+    bottom: 64px;
+    max-height: calc(100dvh - 6rem);
+  }
+}
+
+@media (max-width: 359.98px) {
+  .tc-navbar-actions > button:first-child {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
