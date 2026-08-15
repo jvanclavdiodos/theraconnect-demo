@@ -73,6 +73,11 @@ class Appointment extends Model
         return $this->scheduled_at ?? $this->requested_at;
     }
 
+    public function requestHasExpired(): bool
+    {
+        return $this->status === 'pending' && ! $this->requested_at->isFuture();
+    }
+
     /** When the online meeting link stops being offered (scheduled_at + TTL). */
     public function meetingLinkExpiresAt(): ?Carbon
     {

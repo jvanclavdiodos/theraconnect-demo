@@ -19,7 +19,6 @@ void main() {
 
   test('feed retains the API completion state and today entry', () {
     const mood = MoodLog(
-      id: 2,
       score: 7,
       loggedOn: '2026-08-12',
     );

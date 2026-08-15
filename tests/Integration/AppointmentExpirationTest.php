@@ -98,6 +98,27 @@ class AppointmentExpirationTest extends TestCase
             });
     }
 
+    public function test_elapsed_request_is_shown_as_expired_without_approval_actions(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('expiry-display@test.com');
+
+        $this->appointment(
+            $patient['patient']->id,
+            $clinician['clinician']->id,
+            'pending',
+            now()->subMinute()
+        );
+
+        $this->actingAs($clinician['user'])
+            ->get(route('appointments.index'))
+            ->assertOk()
+            ->assertSee('Request expired')
+            ->assertSee('Expired')
+            ->assertDontSee('aria-label="Approve appointment"', false)
+            ->assertDontSee('aria-label="Reject appointment"', false);
+    }
+
     private function appointment(
         int $patientId,
         int $clinicianId,

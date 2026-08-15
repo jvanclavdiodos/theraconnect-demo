@@ -30,7 +30,8 @@ class NotificationListScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Notifications')),
       body: RefreshIndicator(
-        onRefresh: () => ref.read(notificationsProvider.notifier).loadNotifications(),
+        onRefresh: () =>
+            ref.read(notificationsProvider.notifier).loadNotifications(),
         child: notifications.when(
           data: (data) {
             if (data.isEmpty) {
@@ -40,9 +41,13 @@ class NotificationListScreen extends ConsumerWidget {
                   Center(
                     child: Column(
                       children: [
-                        Icon(Icons.notifications_off, size: 64, color: Theme.of(context).colorScheme.onSurfaceVariant),
+                        Icon(Icons.notifications_off,
+                            size: 64,
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant),
                         const SizedBox(height: 16),
-                        const Text('No notifications', style: TextStyle(fontSize: 16)),
+                        const Text('No notifications',
+                            style: TextStyle(fontSize: 16)),
                       ],
                     ),
                   ),
@@ -57,22 +62,34 @@ class NotificationListScreen extends ConsumerWidget {
                 final n = data[index];
                 return Card(
                   margin: EdgeInsets.zero,
-                  color: n.isRead ? null : Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
+                  color: n.isRead
+                      ? null
+                      : Theme.of(context)
+                          .colorScheme
+                          .primaryContainer
+                          .withValues(alpha: 0.3),
                   child: ListTile(
                     leading: CircleAvatar(
                       backgroundColor: n.isRead
-                          ? Theme.of(context).colorScheme.surfaceContainerHighest
+                          ? Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest
                           : Theme.of(context).colorScheme.primaryContainer,
                       child: Icon(
                         _iconForType(n.type),
-                        color: n.isRead ? Theme.of(context).colorScheme.onSurfaceVariant : Theme.of(context).colorScheme.primary,
+                        color: n.isRead
+                            ? Theme.of(context).colorScheme.onSurfaceVariant
+                            : Theme.of(context).colorScheme.primary,
                       ),
                     ),
                     title: Text(
                       n.title,
-                      style: TextStyle(fontWeight: n.isRead ? FontWeight.normal : FontWeight.bold),
+                      style: TextStyle(
+                          fontWeight:
+                              n.isRead ? FontWeight.normal : FontWeight.bold),
                     ),
-                    subtitle: Text(n.body, maxLines: 2, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(n.body,
+                        maxLines: 2, overflow: TextOverflow.ellipsis),
                     trailing: !n.isRead
                         ? IconButton(
                             icon: const Icon(Icons.done),

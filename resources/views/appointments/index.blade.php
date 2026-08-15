@@ -85,6 +85,7 @@
             </thead>
             <tbody>
                 @forelse ($appointments as $appt)
+                    @php($requestExpired = $appt->status === 'expired' || $appt->requestHasExpired())
                     <tr>
                         <td>
                             <div class="d-flex align-items-center gap-2">
@@ -108,13 +109,13 @@
                             </span>
                         </td>
                         <td>
-                            <span class="badge bg-{{ match($appt->status) {
+                            <span class="badge bg-{{ match($requestExpired ? 'expired' : $appt->status) {
                                 'approved' => 'success',
                                 'pending', 'rescheduled' => 'warning',
                                 'rejected', 'cancelled', 'no_show', 'expired' => 'danger',
                                 'completed' => 'info',
                                 default => 'secondary'
-                            } }}">{{ $appt->status === 'no_show' ? 'No-show' : ucfirst($appt->status) }}</span>
+                            } }}">{{ $requestExpired ? 'Expired' : ($appt->status === 'no_show' ? 'No-show' : ucfirst($appt->status)) }}</span>
                         </td>
                         @if ($showReasons)
                             <td class="text-center">
@@ -146,7 +147,11 @@
                                 </span>
                             @endif
 
-                            @if ($appt->status === 'pending')
+                            @if ($requestExpired)
+                                <span class="text-danger small fw-semibold">
+                                    <i class="bi bi-clock-history me-1" aria-hidden="true"></i>Request expired
+                                </span>
+                            @elseif ($appt->status === 'pending')
                                 <form action="{{ route('appointments.approve', $appt) }}" method="POST" class="d-inline">
                                     @csrf @method('PATCH')
                                     <button class="btn btn-sm btn-success" type="submit" aria-label="Approve appointment"

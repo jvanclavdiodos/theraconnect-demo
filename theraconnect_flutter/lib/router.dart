@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -44,7 +43,9 @@ final _rootNavigatorKey = GlobalKey<NavigatorState>();
 /// its own adapter + its own Riverpod subscription. Disposal of the provider
 /// also tears down the subscription (via Riverpod's ref.listen auto-unlisten),
 /// leaving no dangling listeners between HMR refreshes.
-class _GoRouterRefreshAuth extends ChangeNotifier {}
+class _GoRouterRefreshAuth extends ChangeNotifier {
+  void refresh() => notifyListeners();
+}
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = _GoRouterRefreshAuth();
@@ -52,7 +53,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   // Whenever auth state changes (login, logout, token expiry via
   // _handleUnauthorized, etc.), tell GoRouter to re-run redirect.
   ref.listen(authProvider, (_, __) {
-    refresh.notifyListeners();
+    refresh.refresh();
   });
 
   return GoRouter(

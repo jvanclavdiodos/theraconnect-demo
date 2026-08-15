@@ -8,7 +8,7 @@
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5,
     "startCommand": "php artisan schedule:run",
-    "cronSchedule": "* * * * *",
+    "cronSchedule": "*/5 * * * *",
     "sleepApplication": true
   }
 }
