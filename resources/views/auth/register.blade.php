@@ -72,10 +72,11 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="personal_issues" class="form-label">What brings you here? <span class="text-muted">(optional)</span></label>
+                        <label for="personal_issues" class="form-label">What would you like support with? <span class="text-muted">(optional)</span></label>
                         <textarea id="personal_issues" name="personal_issues" rows="3" maxlength="2000"
                                   class="form-control @error('personal_issues') is-invalid @enderror">{{ old('personal_issues') }}</textarea>
                         @error('personal_issues') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        <div class="form-text">Share only what you're comfortable providing. You can discuss this further with your clinician later.</div>
                     </div>
 
                     <hr>
