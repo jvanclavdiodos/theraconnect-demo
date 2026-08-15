@@ -18,11 +18,14 @@ const showError = (form, input, message) => {
 
 const appendMessage = (message) => {
     const thread = document.getElementById('thread');
-    if (!thread || document.querySelector(`[data-message-id="${message.id}"]`)) return;
+    const messageId = message.public_id;
+    if (!thread || !messageId) return;
+    if ([...thread.querySelectorAll('[data-message-id]')]
+        .some((row) => row.dataset.messageId === String(messageId))) return;
 
     const row = document.createElement('div');
     row.className = 'tc-message-row outgoing';
-    row.dataset.messageId = String(message.id);
+    row.dataset.messageId = String(messageId);
 
     const bubble = document.createElement('div');
     bubble.className = 'tc-message-bubble';
