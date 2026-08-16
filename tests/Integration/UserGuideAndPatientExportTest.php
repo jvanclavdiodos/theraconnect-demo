@@ -23,7 +23,7 @@ class UserGuideAndPatientExportTest extends TestCase
         $this->withHeaders($this->apiHeaders($this->getApiToken($patient['user'])))
             ->getJson('/api/v1/guide')
             ->assertOk()
-            ->assertJsonPath('data.version', '2.0')
+            ->assertJsonPath('data.version', '2.1')
             ->assertJsonPath('data.sections.0.title', 'Book an appointment')
             ->assertJsonPath('data.sections.0.steps.1', 'Select Book Appointment.')
             ->assertJsonStructure(['data' => ['sections' => [[
