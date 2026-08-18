@@ -74,14 +74,6 @@
 
             @include('partials.flash')
 
-            @hasSection('breadcrumbs')
-                <nav aria-label="breadcrumb" class="tc-breadcrumb-shell">
-                    <ol class="breadcrumb mb-0">
-                        @yield('breadcrumbs')
-                    </ol>
-                </nav>
-            @endif
-
             <main class="tc-page-shell">
                 @yield('content')
             </main>
