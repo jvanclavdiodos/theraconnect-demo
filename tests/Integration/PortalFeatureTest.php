@@ -7,6 +7,8 @@ use App\Models\Assessment;
 use App\Models\Assignment;
 use App\Models\Conversation;
 use App\Models\Notification;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PortalFeatureTest extends TestCase
@@ -91,6 +93,54 @@ class PortalFeatureTest extends TestCase
             'assignment_id' => $assignment->id,
             'patient_id' => $patient['patient']->id,
             'status' => 'submitted',
+        ]);
+    }
+
+    public function test_empty_assignment_submission_returns_to_form_with_a_friendly_error(): void
+    {
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $assignment = Assignment::create([
+            'clinician_id' => $clinician['clinician']->id,
+            'patient_id' => $patient['patient']->id,
+            'title' => 'Mindfulness journal',
+        ]);
+
+        $this->actingAs($patient['user'], 'web')
+            ->from(route('portal.assignments.show', $assignment))
+            ->post(route('portal.assignments.submit', $assignment), [])
+            ->assertRedirect(route('portal.assignments.show', $assignment))
+            ->assertSessionHasErrors([
+                'content' => 'Write a response or attach a file before submitting.',
+                'file' => 'Write a response or attach a file before submitting.',
+            ]);
+
+        $this->assertDatabaseMissing('assignment_submissions', [
+            'assignment_id' => $assignment->id,
+        ]);
+    }
+
+    public function test_patient_can_submit_an_assignment_with_only_a_file(): void
+    {
+        Storage::fake(config('filesystems.default'));
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $assignment = Assignment::create([
+            'clinician_id' => $clinician['clinician']->id,
+            'patient_id' => $patient['patient']->id,
+            'title' => 'Mindfulness journal',
+        ]);
+
+        $this->actingAs($patient['user'], 'web')
+            ->post(route('portal.assignments.submit', $assignment), [
+                'file' => UploadedFile::fake()->create('response.pdf', 20, 'application/pdf'),
+            ])
+            ->assertRedirect(route('portal.assignments.show', $assignment));
+
+        $this->assertDatabaseHas('assignment_submissions', [
+            'assignment_id' => $assignment->id,
+            'patient_id' => $patient['patient']->id,
+            'original_name' => 'response.pdf',
         ]);
     }
 

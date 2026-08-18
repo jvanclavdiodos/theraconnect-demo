@@ -61,8 +61,13 @@
                 @else
                     <hr class="@if(!$submission) d-none @endif">
                     <p class="small text-muted">{{ $submission ? 'Update your submission' : 'Submit your work' }} — add a note, attach a file, or both.</p>
-                    <form method="POST" action="{{ route('portal.assignments.submit', $assignment) }}" enctype="multipart/form-data">
+                    <form method="POST" action="{{ route('portal.assignments.submit', $assignment) }}" enctype="multipart/form-data"
+                          data-require-content-or-file>
                         @csrf
+                        <div class="alert alert-danger d-none" role="alert" aria-live="polite"
+                             data-content-or-file-error>
+                            Write a response or attach a file before submitting.
+                        </div>
                         <div class="mb-2">
                             <textarea name="content" rows="4" class="form-control @error('content') is-invalid @enderror"
                                       placeholder="Write your response…">{{ old('content', $submission->content ?? '') }}</textarea>

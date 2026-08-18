@@ -2,7 +2,9 @@
 
 namespace App\Http\Requests\Api;
 
+use App\Rules\AssignmentSubmissionFile;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Validator;
 
 class SubmissionRequest extends FormRequest
 {
@@ -15,7 +17,7 @@ class SubmissionRequest extends FormRequest
     {
         return [
             'content' => ['nullable', 'string'],
-            'file' => ['nullable', 'file', 'max:10240', 'mimes:pdf,doc,docx,txt,rtf,jpg,jpeg,png'],
+            'file' => ['nullable', 'file', 'max:10240', new AssignmentSubmissionFile],
         ];
     }
 
@@ -23,20 +25,19 @@ class SubmissionRequest extends FormRequest
     {
         return [
             'file.max' => 'The file must not be greater than 10 MB.',
-            'file.mimes' => 'The file must be a PDF, DOC, DOCX, TXT, RTF, JPG, or PNG.',
         ];
     }
 
-    protected function passedValidation(): void
+    public function withValidator(Validator $validator): void
     {
-        if (! $this->hasFile('file') && ! $this->filled('content')) {
-            abort(response()->json([
-                'message' => 'At least one of content or file must be provided.',
-                'errors' => [
-                    'content' => ['Either content or a file is required.'],
-                    'file' => ['Either content or a file is required.'],
-                ],
-            ], 422));
-        }
+        $validator->after(function (Validator $validator): void {
+            if ($this->hasFile('file') || $this->filled('content')) {
+                return;
+            }
+
+            $message = 'Write a response or attach a file before submitting.';
+            $validator->errors()->add('content', $message);
+            $validator->errors()->add('file', $message);
+        });
     }
 }

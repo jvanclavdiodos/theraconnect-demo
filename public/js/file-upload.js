@@ -53,9 +53,34 @@
         // hidden state. Only short-circuit errors we just set above.
     }
 
+    function validateContentOrFile(form) {
+        if (!form.hasAttribute('data-require-content-or-file')) return true;
+
+        var content = form.querySelector('textarea[name="content"]');
+        var file = form.querySelector('input[type="file"][name="file"]');
+        var feedback = form.querySelector('[data-content-or-file-error]');
+        var hasContent = content && content.value.trim().length > 0;
+        var hasFile = file && file.files && file.files.length > 0;
+        var valid = hasContent || hasFile;
+
+        if (feedback) feedback.classList.toggle('d-none', valid);
+        if (content) content.classList.toggle('is-invalid', !valid);
+        if (file) file.classList.toggle('is-invalid', !valid);
+
+        if (!valid && content) content.focus();
+        return valid;
+    }
+
+    document.addEventListener('input', function (e) {
+        var form = e.target && e.target.closest('form[data-require-content-or-file]');
+        if (form) validateContentOrFile(form);
+    });
+
     document.addEventListener('change', function (e) {
         if (e.target && e.target.matches('input[type="file"][data-validate-file]')) {
             validateInput(e.target);
+            var form = e.target.closest('form[data-require-content-or-file]');
+            if (form) validateContentOrFile(form);
         }
     });
 
@@ -67,6 +92,7 @@
         for (var i = 0; i < inputs.length; i++) {
             if (!validateInput(inputs[i])) allValid = false;
         }
+        if (!validateContentOrFile(form)) allValid = false;
         if (!allValid) {
             e.preventDefault();
             e.stopPropagation();

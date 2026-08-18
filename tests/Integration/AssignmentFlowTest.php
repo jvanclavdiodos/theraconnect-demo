@@ -8,6 +8,7 @@ use App\Services\AssignmentService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
+use ZipArchive;
 
 class AssignmentFlowTest extends TestCase
 {
@@ -174,7 +175,9 @@ class AssignmentFlowTest extends TestCase
             ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", [
                 'content' => '',
             ])
-            ->assertStatus(422);
+            ->assertStatus(422)
+            ->assertJsonValidationErrors(['content', 'file'])
+            ->assertJsonPath('errors.content.0', 'Write a response or attach a file before submitting.');
     }
 
     /**
@@ -205,6 +208,61 @@ class AssignmentFlowTest extends TestCase
 
         // Confirm nothing was persisted to the private disk.
         $this->assertEquals(0, Submission::where('assignment_id', $assignment->id)->count());
+    }
+
+    public function test_patient_can_upload_a_docx_detected_as_a_zip_archive(): void
+    {
+        Storage::fake('local');
+
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $token = $this->getApiToken($patient['user']);
+        $assignment = Assignment::create([
+            'clinician_id' => $clinician['clinician']->id,
+            'patient_id' => $patient['patient']->id,
+            'title' => 'Word document upload',
+        ]);
+
+        $path = tempnam(sys_get_temp_dir(), 'docx-test-');
+        $archive = new ZipArchive;
+        $archive->open($path, ZipArchive::OVERWRITE);
+        $archive->addFromString('[Content_Types].xml', '<?xml version="1.0"?><Types></Types>');
+        $archive->addFromString('word/document.xml', '<?xml version="1.0"?><document></document>');
+        $archive->close();
+
+        $file = new UploadedFile($path, 'response.docx', 'application/zip', null, true);
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", ['file' => $file])
+            ->assertCreated()
+            ->assertJsonPath('data.file_name', 'response.docx');
+    }
+
+    public function test_renamed_zip_archive_is_not_accepted_as_a_docx(): void
+    {
+        Storage::fake('local');
+
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient();
+        $token = $this->getApiToken($patient['user']);
+        $assignment = Assignment::create([
+            'clinician_id' => $clinician['clinician']->id,
+            'patient_id' => $patient['patient']->id,
+            'title' => 'Invalid Word document upload',
+        ]);
+
+        $path = tempnam(sys_get_temp_dir(), 'zip-test-');
+        $archive = new ZipArchive;
+        $archive->open($path, ZipArchive::OVERWRITE);
+        $archive->addFromString('unrelated.txt', 'This is not a Word document.');
+        $archive->close();
+
+        $file = new UploadedFile($path, 'renamed.docx', 'application/zip', null, true);
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->postJson("/api/v1/assignments/{$assignment->public_id}/submit", ['file' => $file])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('file');
     }
 
     public function test_clinician_worksheet_stored_privately_and_exposed_to_owner(): void
