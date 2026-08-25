@@ -16,12 +16,20 @@ class ChatbotNotifier extends StateNotifier<AsyncValue<List<ChatMessage>>> {
 
   Future<void> sendMessage(String text) async {
     final currentMessages = List<ChatMessage>.from(state.valueOrNull ?? []);
+    final history = currentMessages
+        .skip(currentMessages.length > 10 ? currentMessages.length - 10 : 0)
+        .map((message) => {
+              'role': message.isUser ? 'user' : 'assistant',
+              'content': message.text,
+            })
+        .toList();
     final updated = [...currentMessages, ChatMessage(text: text, isUser: true)];
 
-    state = AsyncValue.data([...updated, ChatMessage(text: '...', isUser: false)]);
+    state =
+        AsyncValue.data([...updated, ChatMessage(text: '...', isUser: false)]);
 
     try {
-      final reply = await _api.sendMessage(text);
+      final reply = await _api.sendMessage(text, history: history);
       final finalMessages = [
         ...updated,
         ChatMessage(text: reply.reply, isUser: false),
@@ -31,7 +39,9 @@ class ChatbotNotifier extends StateNotifier<AsyncValue<List<ChatMessage>>> {
       final errorMessages = [
         ...updated,
         ChatMessage(
-          text: e is ApiError ? e.userMessage : 'Sorry, something went wrong. Please try again.',
+          text: e is ApiError
+              ? e.userMessage
+              : 'Sorry, something went wrong. Please try again.',
           isUser: false,
         ),
       ];
@@ -45,6 +55,7 @@ class ChatbotNotifier extends StateNotifier<AsyncValue<List<ChatMessage>>> {
 }
 
 final chatbotProvider =
-    StateNotifierProvider<ChatbotNotifier, AsyncValue<List<ChatMessage>>>((ref) {
+    StateNotifierProvider<ChatbotNotifier, AsyncValue<List<ChatMessage>>>(
+        (ref) {
   return ChatbotNotifier(ref.watch(chatbotApiProvider));
 });

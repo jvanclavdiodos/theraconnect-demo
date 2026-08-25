@@ -91,6 +91,13 @@ document.addEventListener('alpine:init', () => Alpine.data('chatSession', (opts)
         this.$nextTick(() => this.scrollToLatest());
     },
 
+    recentHistory() {
+        return this.messages.slice(-5).flatMap((message) => [
+            { role: 'user', content: message.question || '' },
+            { role: 'assistant', content: this.replyText(message) },
+        ]).filter((item) => item.content.trim());
+    },
+
     scrollToLatest() {
         const scroller = this.$refs.scroll;
         if (scroller) scroller.scrollTop = scroller.scrollHeight;
@@ -116,7 +123,10 @@ document.addEventListener('alpine:init', () => Alpine.data('chatSession', (opts)
                     'X-Requested-With': 'XMLHttpRequest',
                     'Accept': 'application/json',
                 },
-                body: JSON.stringify({ message: question }),
+                body: JSON.stringify({
+                    message: question,
+                    history: this.recentHistory(),
+                }),
             });
 
             const body = await res.json().catch(() => ({}));

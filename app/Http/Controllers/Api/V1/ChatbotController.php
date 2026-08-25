@@ -17,9 +17,15 @@ class ChatbotController extends Controller
     {
         $validated = $request->validate([
             'message' => ['required', 'string', 'max:1000'],
+            'history' => ['sometimes', 'array', 'max:10'],
+            'history.*.role' => ['required', 'in:user,assistant'],
+            'history.*.content' => ['required', 'string', 'max:1200'],
         ]);
 
-        $result = $this->chatbotService->resolve($validated['message']);
+        $result = $this->chatbotService->resolve(
+            $validated['message'],
+            $validated['history'] ?? []
+        );
 
         return response()->json([
             'data' => $result,

@@ -25,11 +25,11 @@ class ChatbotService
 
     private const DIRECT_ANSWER_THRESHOLD = 0.88;
 
-    private const RETRIEVAL_THRESHOLD = 0.24;
-
     private const MIN_CONFIDENCE_MARGIN = 0.08;
 
-    private const MAX_RETRIEVED_INTENTS = 3;
+    private const MAX_CONTEXT_INTENTS = 20;
+
+    private const MAX_HISTORY_MESSAGES = 10;
 
     private const MAX_AI_REPLY_LENGTH = 1200;
 
@@ -42,7 +42,7 @@ class ChatbotService
         'mental_health',
         'general_information',
         'smalltalk',
-        'fallback',
+        'clarification',
     ];
 
     private const CRISIS_PATTERNS = [
@@ -63,7 +63,7 @@ class ChatbotService
         'what', 'when', 'where', 'will', 'would', 'you', 'your',
     ];
 
-    public function resolve(string $message): array
+    public function resolve(string $message, array $history = []): array
     {
         $message = trim($message);
 
@@ -82,11 +82,16 @@ class ChatbotService
             return $this->intentResponse($bestMatch['intent']);
         }
 
+        $aiFailed = false;
+        $aiRejected = false;
         if (config('services.gemini.key')) {
             try {
-                return $this->aiResolve($message, $matches);
+                return $this->aiResolve($message, $matches, $history);
             } catch (Throwable $e) {
-                Log::warning('Chatbot AI path failed, using approved local response', [
+                $aiRejected = $e instanceof RuntimeException
+                    && ! $e instanceof RequestException;
+                $aiFailed = ! $aiRejected;
+                Log::warning('Chatbot AI path failed; applying local recovery policy', [
                     'exception' => $e::class,
                     'provider_status' => $e instanceof RequestException
                         ? $e->response->status()
@@ -99,10 +104,18 @@ class ChatbotService
             return $this->intentResponse($bestMatch['intent']);
         }
 
+        if ($aiFailed) {
+            return $this->providerUnavailableResponse();
+        }
+
+        if ($aiRejected) {
+            return $this->safetyBoundaryResponse();
+        }
+
         return $this->fallbackResponse();
     }
 
-    private function aiResolve(string $message, array $matches): array
+    private function aiResolve(string $message, array $matches, array $history): array
     {
         $model = config('services.gemini.model', 'gemini-3.5-flash-lite');
         $url = self::GEMINI_BASE_URL."/{$model}:generateContent";
@@ -118,9 +131,7 @@ class ChatbotService
                 'systemInstruction' => [
                     'parts' => [['text' => $this->buildSystemPrompt($evidence)]],
                 ],
-                'contents' => [
-                    ['role' => 'user', 'parts' => [['text' => $message]]],
-                ],
+                'contents' => $this->buildConversation($message, $history),
                 'generationConfig' => [
                     'maxOutputTokens' => 400,
                     'responseMimeType' => 'application/json',
@@ -163,10 +174,6 @@ class ChatbotService
             || ! in_array($category, self::AI_CATEGORIES, true)
         ) {
             throw new RuntimeException('Chatbot API response failed validation');
-        }
-
-        if ($category === 'fallback') {
-            return $this->fallbackResponse();
         }
 
         if (in_array($category, ['mental_health', 'general_information'], true)) {
@@ -222,10 +229,11 @@ class ChatbotService
             - For clinic facts, appointments, assignments, or app instructions, use only APPROVED KNOWLEDGE.
             - When using approved knowledge, copy its evidence ID exactly into evidence_id.
             - You may answer low-risk, general questions about what therapy is commonly like, common appointment expectations, types of mental health professionals, and general healthcare concepts using well-established public knowledge. Use category "general_information" and an empty evidence_id.
+            - Be a capable general conversational assistant within a patient-support setting. Answer ordinary safe questions directly even when no intent or approved knowledge matches. Do not force the user to rephrase merely because the response bank has no matching intent.
             - Clearly distinguish general information from TheraConnect-specific facts. Use words such as "typically", "often", or "may", and say that the clinic or clinician must confirm the exact details.
             - Never invent TheraConnect's exact session duration, price, insurance coverage, cancellation policy, prescription service, medication cost, clinician qualification, availability, or any other clinic policy. If the user asks for an exact clinic-specific fact that is not in APPROVED KNOWLEDGE, explain that you cannot confirm it and direct them to the clinic or clinician.
             - Explain that prescribing authority depends on the professional's qualifications. Never imply that every therapist or TheraConnect clinician can prescribe medication. Do not claim medication is included in a therapy fee unless APPROVED KNOWLEDGE explicitly says so.
-            - If neither approved knowledge nor safe general information supports an answer, use category "fallback", set evidence_id to an empty string, and say you do not have enough information.
+            - If the request is genuinely ambiguous, ask one concise clarifying question using category "clarification" and an empty evidence_id. Do not use a generic "I did not understand" response when a useful answer or clarification is possible.
             - For general emotional concerns, validate briefly and choose one to three relevant ideas from the LOW-RISK SELF-HELP TOOLBOX. Do not present a technique as guaranteed to work. Encourage contacting their clinician. Use category "mental_health" and an empty evidence_id.
             - For greetings or thanks, respond briefly using category "smalltalk" and an empty evidence_id.
             - Never diagnose, prescribe, recommend changing medication, claim to be a clinician, or claim that an appointment or other action has been completed.
@@ -238,8 +246,7 @@ class ChatbotService
     private function buildEvidence(array $matches): string
     {
         $evidence = collect($matches)
-            ->filter(fn (array $match) => $match['score'] >= self::RETRIEVAL_THRESHOLD)
-            ->take(self::MAX_RETRIEVED_INTENTS)
+            ->take(self::MAX_CONTEXT_INTENTS)
             ->map(function (array $match): string {
                 $intent = $match['intent'];
                 $answer = $this->approvedResponse($intent);
@@ -256,7 +263,30 @@ class ChatbotService
             ->filter()
             ->implode("\n");
 
+        $evidence = mb_substr($evidence, 0, 12000);
+
         return $evidence !== '' ? $evidence : '(No relevant approved knowledge was found.)';
+    }
+
+    private function buildConversation(string $message, array $history): array
+    {
+        $contents = collect($history)
+            ->take(-self::MAX_HISTORY_MESSAGES)
+            ->map(function (array $item): array {
+                $role = ($item['role'] ?? '') === 'assistant' ? 'model' : 'user';
+
+                return [
+                    'role' => $role,
+                    'parts' => [['text' => mb_substr(trim((string) ($item['content'] ?? '')), 0, 1200)]],
+                ];
+            })
+            ->filter(fn (array $item) => $item['parts'][0]['text'] !== '')
+            ->values()
+            ->all();
+
+        $contents[] = ['role' => 'user', 'parts' => [['text' => $message]]];
+
+        return $contents;
     }
 
     private function retrieveMatches(string $message): array
@@ -413,6 +443,24 @@ class ChatbotService
             'reply' => $reply,
             'intent_key' => 'fallback',
             'is_fallback' => true,
+        ];
+    }
+
+    private function providerUnavailableResponse(): array
+    {
+        return [
+            'reply' => "I'm having trouble responding right now. Please try again in a moment. You can also contact your clinician or the clinic if your question is time-sensitive.",
+            'intent_key' => 'service_unavailable',
+            'is_fallback' => true,
+        ];
+    }
+
+    private function safetyBoundaryResponse(): array
+    {
+        return [
+            'reply' => "I can't safely confirm or advise on that. For medical decisions or details specific to TheraConnect, please check with your clinician or the clinic.",
+            'intent_key' => 'safety_boundary',
+            'is_fallback' => false,
         ];
     }
 

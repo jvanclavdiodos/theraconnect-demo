@@ -80,7 +80,7 @@ Base path: `/api/v1`. Routes are defined in `routes/api.php`. The API is a patie
 | POST | `/conversations` | opens/returns an assigned clinician conversation; `clinician_id` is the clinician public ULID and is required when multiple are assigned | legacy inbox/thread flow |
 | GET | `/conversations/{conversation}/messages` | public ULID; participant message list | thread |
 | POST | `/conversations/{conversation}/messages` | public ULID; message body | thread send |
-| POST | `/chatbot/message` | patient text | `{reply, intent_key, is_fallback}` | `ChatbotApi.sendMessage` |
+| POST | `/chatbot/message` | `message`; optional validated `history` (up to 10 user/assistant turns) | `{reply, intent_key, is_fallback}` | `ChatbotApi.sendMessage` |
 
 ## Backend Response Types
 

@@ -22,9 +22,15 @@ class PortalChatbotController extends Controller
     {
         $validated = $request->validate([
             'message' => ['required', 'string', 'max:1000'],
+            'history' => ['sometimes', 'array', 'max:10'],
+            'history.*.role' => ['required', 'in:user,assistant'],
+            'history.*.content' => ['required', 'string', 'max:1200'],
         ]);
 
-        $result = $this->chatbot->resolve($validated['message']);
+        $result = $this->chatbot->resolve(
+            $validated['message'],
+            $validated['history'] ?? []
+        );
 
         // AJAX clients (the embedded chat UI) get the exchange as JSON so they
         // can append it to an in-memory chat history rather than triggering a

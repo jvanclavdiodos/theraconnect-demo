@@ -9,11 +9,17 @@ class ChatbotApi {
 
   ChatbotApi(this._client);
 
-  Future<ChatbotReply> sendMessage(String message) async {
+  Future<ChatbotReply> sendMessage(
+    String message, {
+    List<Map<String, String>> history = const [],
+  }) async {
     try {
       final response = await _client.post(
         ApiConfig.chatbotMessageEndpoint,
-        data: {'message': message},
+        data: {
+          'message': message,
+          if (history.isNotEmpty) 'history': history,
+        },
       );
       return ChatbotReply.fromJson(response.data['data']);
     } on DioException catch (e) {
