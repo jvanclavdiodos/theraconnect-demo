@@ -6,6 +6,18 @@ use Tests\TestCase;
 
 class NavbarControlLayoutTest extends TestCase
 {
+    public function test_guest_authentication_navbar_uses_circular_theme_and_sign_in_controls(): void
+    {
+        $html = $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('aria-label="Sign in"', false)
+            ->assertSee('title="Toggle dark mode"', false)
+            ->getContent();
+
+        $this->assertSame(2, substr_count($html, 'tc-navbar-control'));
+        $this->assertStringContainsString('bi-box-arrow-in-right', $html);
+    }
+
     public function test_staff_navbar_uses_four_uniform_icon_controls(): void
     {
         $response = $this->actingAs($this->createAdmin())

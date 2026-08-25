@@ -1359,12 +1359,6 @@ textarea.form-control {
   }
 }
 
-@media (max-width: 359.98px) {
-  .tc-navbar-actions > button:first-child {
-    display: none;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

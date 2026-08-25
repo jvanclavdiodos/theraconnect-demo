@@ -51,7 +51,16 @@
                 </button>
             </form>
         @else
-            <a href="{{ route('login') }}" class="btn btn-outline-primary btn-sm">Sign In</a>
+            <button type="button" class="btn btn-outline-secondary btn-sm tc-navbar-control"
+                    @click="$store.theme.toggle()"
+                    :aria-label="$store.theme.current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
+                    title="Toggle dark mode">
+                <i class="bi" :class="$store.theme.current === 'dark' ? 'bi-sun' : 'bi-moon-stars'" aria-hidden="true"></i>
+            </button>
+            <a href="{{ route('login') }}" class="btn btn-outline-primary btn-sm tc-navbar-control"
+               title="Sign in" aria-label="Sign in">
+                <i class="bi bi-box-arrow-in-right" aria-hidden="true"></i>
+            </a>
         @endauth
     </div>
 </nav>
