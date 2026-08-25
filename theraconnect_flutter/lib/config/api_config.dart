@@ -13,6 +13,7 @@ class ApiConfig {
 
   static const String healthEndpoint = '/health';
   static const String registerEndpoint = '/register';
+  static const String termsEndpoint = '/legal/terms';
   static const String loginEndpoint = '/login';
   static const String logoutEndpoint = '/logout';
   static const String meEndpoint = '/me';

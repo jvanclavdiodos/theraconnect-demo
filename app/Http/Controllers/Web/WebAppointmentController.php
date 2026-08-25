@@ -36,6 +36,7 @@ class WebAppointmentController extends Controller
 
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
+            'requested_date' => ['nullable', 'date_format:Y-m-d'],
             'status' => ['nullable', 'in:pending,approved,rejected,completed,cancelled,rescheduled,no_show,expired'],
             'mode' => ['nullable', 'in:online,in_person'],
             'sort' => ['nullable', 'in:requested_at'],
@@ -45,17 +46,26 @@ class WebAppointmentController extends Controller
         $validStatus = $validated['status'] ?? null;
         $validMode = $validated['mode'] ?? null;
         $search = trim($validated['search'] ?? '');
+        $requestedDate = $validated['requested_date'] ?? null;
         $sortDirection = $validated['direction'] ?? 'desc';
 
         if ($search !== '') {
-            $query->where(function ($query) use ($search) {
+            $includeClinician = $user->role === 'admin';
+            $query->where(function ($query) use ($search, $includeClinician) {
                 $query->whereHas('patient.user', fn ($userQuery) => $userQuery
                     ->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%"))
-                    ->orWhereHas('clinician.user', fn ($userQuery) => $userQuery
+                    ->orWhere('email', 'like', "%{$search}%"));
+
+                if ($includeClinician) {
+                    $query->orWhereHas('clinician.user', fn ($userQuery) => $userQuery
                         ->where('name', 'like', "%{$search}%")
                         ->orWhere('email', 'like', "%{$search}%"));
+                }
             });
+        }
+
+        if ($requestedDate) {
+            $query->whereDate('requested_at', $requestedDate);
         }
 
         if ($validStatus) {
@@ -76,7 +86,7 @@ class WebAppointmentController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('appointments.index', compact('appointments', 'validStatus', 'validMode', 'search', 'sortDirection'));
+        return view('appointments.index', compact('appointments', 'validStatus', 'validMode', 'search', 'requestedDate', 'sortDirection'));
     }
 
     public function approve(Appointment $appointment): RedirectResponse

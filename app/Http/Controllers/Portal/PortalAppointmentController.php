@@ -29,6 +29,7 @@ class PortalAppointmentController extends Controller
 
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
+            'requested_date' => ['nullable', 'date_format:Y-m-d'],
             'status' => ['nullable', 'in:pending,approved,rejected,rescheduled,completed,cancelled,no_show,expired'],
             'mode' => ['nullable', 'in:online,in_person'],
             'sort' => ['nullable', 'in:appointment_date'],
@@ -38,6 +39,7 @@ class PortalAppointmentController extends Controller
         $status = $validated['status'] ?? null;
         $mode = $validated['mode'] ?? null;
         $search = trim($validated['search'] ?? '');
+        $requestedDate = $validated['requested_date'] ?? null;
         $direction = $validated['direction'] ?? 'desc';
 
         $query = Appointment::where('patient_id', $patient->id)
@@ -49,6 +51,10 @@ class PortalAppointmentController extends Controller
                     ->orWhereHas('user', fn ($userQuery) => $userQuery
                         ->where('name', 'like', "%{$search}%"));
             });
+        }
+
+        if ($requestedDate) {
+            $query->whereDate('requested_at', $requestedDate);
         }
 
         if ($status) {
@@ -65,7 +71,7 @@ class PortalAppointmentController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('portal.appointments.index', compact('appointments', 'status', 'mode', 'search', 'direction'));
+        return view('portal.appointments.index', compact('appointments', 'status', 'mode', 'search', 'requestedDate', 'direction'));
     }
 
     public function show(Appointment $appointment): View

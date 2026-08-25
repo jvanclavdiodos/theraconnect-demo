@@ -25,6 +25,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   String? _employment;
   bool _obscureConfirm = true;
   bool _acceptedTerms = false;
+  String? _publishedTerms;
 
   @override
   void dispose() {
@@ -44,14 +45,26 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       c.text.trim().isEmpty ? null : c.text.trim();
 
   Future<void> _showTerms() async {
+    try {
+      _publishedTerms ??= await ref.read(authApiProvider).getTerms();
+    } catch (_) {
+      // Keep the bundled agreement available if the public document endpoint
+      // is temporarily unreachable. Registration itself still validates the
+      // currently published server-side version when it succeeds.
+    }
+
+    if (!mounted) return;
+
     final accepted = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('User Agreement and Privacy Notice'),
-        content: const SizedBox(
+        content: SizedBox(
           width: 560,
           child: SingleChildScrollView(
-            child: _TermsContent(),
+            child: _publishedTerms == null
+                ? const _TermsContent()
+                : SelectableText(_publishedTerms!),
           ),
         ),
         actions: [

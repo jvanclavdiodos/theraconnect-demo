@@ -70,6 +70,9 @@ Route::middleware(['auth', 'role:admin,clinician', 'staff.inactivity'])->group(f
     Route::put('/account/password', [AccountController::class, 'updatePassword'])->middleware('throttle:password-change')->name('account.password.update');
     Route::post('/account/avatar', [AccountController::class, 'updateAvatar'])->middleware('throttle:10,1')->name('account.avatar.update');
     Route::delete('/account/avatar', [AccountController::class, 'destroyAvatar'])->name('account.avatar.destroy');
+    Route::put('/account/terms', [AccountController::class, 'updateTerms'])
+        ->middleware(['role:admin', 'throttle:10,1'])
+        ->name('account.terms.update');
     Route::get('/avatars/{user:public_id}', [AccountController::class, 'showAvatar'])->name('avatars.show');
 
     // ── Patients ─────────────────────────────────────────────────────────

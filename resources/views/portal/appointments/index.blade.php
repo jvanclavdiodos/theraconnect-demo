@@ -35,6 +35,10 @@
         </div>
     </div>
     <div class="col-12 col-sm-4 col-lg-2">
+        <label for="appointment-requested-date" class="form-label small fw-semibold">Requested date</label>
+        <input id="appointment-requested-date" type="date" name="requested_date" value="{{ $requestedDate }}" class="form-control">
+    </div>
+    <div class="col-12 col-sm-4 col-lg-2">
         <label for="appointment-status" class="form-label small fw-semibold">Status</label>
         <select id="appointment-status" name="status" class="form-select">
             <option value="">All statuses</option>
@@ -59,9 +63,9 @@
         </select>
         <input type="hidden" name="sort" value="appointment_date">
     </div>
-    <div class="col-12 col-lg-2 d-flex gap-2">
+    <div class="col-12 d-flex gap-2 justify-content-lg-end mt-3">
         <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i> Apply</button>
-        @if($search !== '' || $status || $mode || $direction !== 'desc')
+        @if($search !== '' || $requestedDate || $status || $mode || $direction !== 'desc')
             <a href="{{ route('portal.appointments.index') }}" class="btn btn-outline-secondary">Reset</a>
         @endif
     </div>
@@ -95,8 +99,8 @@
                     <tr><td colspan="5">
                         <div class="tc-empty">
                             <div class="tc-empty-icon"><i class="bi bi-calendar-x"></i></div>
-                            <div class="mb-3">{{ $search !== '' || $status || $mode ? 'No appointments match your search or filters.' : 'You have no appointments yet.' }}</div>
-                            @if($search === '' && ! $status && ! $mode)
+                            <div class="mb-3">{{ $search !== '' || $requestedDate || $status || $mode ? 'No appointments match your search or filters.' : 'You have no appointments yet.' }}</div>
+                            @if($search === '' && ! $requestedDate && ! $status && ! $mode)
                                 <a href="{{ route('portal.appointments.book') }}" class="btn btn-primary btn-sm">Book your first appointment</a>
                             @endif
                         </div>

@@ -110,6 +110,7 @@ class AppointmentController extends Controller
 
         $validated = $request->validate([
             'search' => ['nullable', 'string', 'max:100'],
+            'requested_date' => ['nullable', 'date_format:Y-m-d'],
             'status' => ['nullable', 'in:pending,approved,rejected,rescheduled,completed,cancelled,no_show,expired'],
             'mode' => ['nullable', 'in:online,in_person'],
             'sort' => ['nullable', 'in:appointment_date'],
@@ -126,6 +127,11 @@ class AppointmentController extends Controller
                     ->orWhereHas('user', fn ($userQuery) => $userQuery
                         ->where('name', 'like', "%{$search}%"));
             });
+        }
+
+
+        if ($requestedDate = ($validated['requested_date'] ?? null)) {
+            $query->whereDate('requested_at', $requestedDate);
         }
 
         if ($status = ($validated['status'] ?? null)) {

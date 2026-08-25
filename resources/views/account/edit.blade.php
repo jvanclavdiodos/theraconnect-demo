@@ -81,6 +81,55 @@
         </form>
     </div>
 </div>
+
+@if($user->role === 'admin')
+<div class="card tc-account-wide">
+    <div class="card-header bg-white d-flex flex-wrap justify-content-between align-items-center gap-2">
+        <strong>User agreement and privacy notice</strong>
+        <span class="badge bg-light text-dark border">
+            Version {{ $termsDocument?->version ?? \App\Support\TermsOfService::CURRENT_VERSION }}
+        </span>
+    </div>
+    <div class="card-body">
+        <form action="{{ route('account.terms.update') }}" method="POST">
+            @csrf @method('PUT')
+
+            <label for="terms-content" class="form-label fw-semibold">Agreement content</label>
+            <textarea id="terms-content" name="terms_content" rows="24"
+                      class="form-control font-monospace @error('terms_content') is-invalid @enderror"
+                      maxlength="50000" required>{{ old('terms_content', $termsContent) }}</textarea>
+            @error('terms_content') <div class="invalid-feedback">{{ $message }}</div> @enderror
+            <div class="form-text mb-3">
+                Markdown formatting is supported. HTML is removed for security. Keep
+                <code>@{{privacy_controller}}</code> and <code>@{{privacy_contact}}</code>
+                where the configured clinic details should appear.
+            </div>
+
+            <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-7 col-lg-5">
+                    <label for="terms-current-password" class="form-label">Current password</label>
+                    <input id="terms-current-password" type="password" name="current_password"
+                           class="form-control @error('current_password') is-invalid @enderror"
+                           autocomplete="current-password" required>
+                    @error('current_password') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                </div>
+                <div class="col-12 col-md-auto">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check2-circle me-1" aria-hidden="true"></i> Publish agreement
+                    </button>
+                </div>
+            </div>
+        </form>
+
+        <details class="mt-4">
+            <summary class="fw-semibold text-primary">Preview current published agreement</summary>
+            <div class="border rounded p-3 mt-3 tc-legal-preview">
+                {!! \App\Support\TermsOfService::renderHtml() !!}
+            </div>
+        </details>
+    </div>
+</div>
+@endif
 </div>
 
 @include('partials.avatar-cropper')

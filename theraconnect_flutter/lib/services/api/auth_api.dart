@@ -10,6 +10,15 @@ class AuthApi {
 
   AuthApi(this._client);
 
+  Future<String> getTerms() async {
+    try {
+      final response = await _client.get(ApiConfig.termsEndpoint);
+      return response.data['data']['content'] as String;
+    } on DioException catch (e) {
+      throw handleDioError(e);
+    }
+  }
+
   Future<({User user, String token})> register({
     required String name,
     required String email,

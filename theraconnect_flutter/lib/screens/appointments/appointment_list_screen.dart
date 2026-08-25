@@ -21,6 +21,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
   String? _status;
   String? _mode;
   String _direction = 'desc';
+  String? _requestedDate;
   bool _loadingMore = false;
   final _searchController = TextEditingController();
   Timer? _searchDebounce;
@@ -47,6 +48,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
           status: _status,
           mode: _mode,
           search: _searchController.text,
+          requestedDate: _requestedDate,
           direction: _direction,
           updateFilters: true,
         );
@@ -71,6 +73,26 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
       _status = null;
       _mode = null;
       _direction = 'desc';
+      _requestedDate = null;
+    });
+    _load();
+  }
+
+  Future<void> _pickRequestedDate() async {
+    final now = DateTime.now();
+    final selected = await showDatePicker(
+      context: context,
+      initialDate:
+          _requestedDate == null ? now : DateTime.parse(_requestedDate!),
+      firstDate: DateTime(2020),
+      lastDate: DateTime(now.year + 10),
+    );
+    if (selected == null || !mounted) return;
+
+    setState(() {
+      _requestedDate = '${selected.year.toString().padLeft(4, '0')}-'
+          '${selected.month.toString().padLeft(2, '0')}-'
+          '${selected.day.toString().padLeft(2, '0')}';
     });
     _load();
   }
@@ -104,6 +126,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
     final scheme = Theme.of(context).colorScheme;
     final notifier = ref.read(appointmentListProvider.notifier);
     final hasFilters = _searchController.text.trim().isNotEmpty ||
+        _requestedDate != null ||
         _status != null ||
         _mode != null ||
         _direction != 'desc';
@@ -114,6 +137,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
         children: [
           _Filters(
             searchController: _searchController,
+            requestedDate: _requestedDate,
             status: _status,
             mode: _mode,
             direction: _direction,
@@ -132,6 +156,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
               _load();
             },
             onSearchChanged: _onSearchChanged,
+            onRequestedDatePressed: _pickRequestedDate,
             onReset: _reset,
           ),
           Expanded(
@@ -259,6 +284,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
 class _Filters extends StatelessWidget {
   final String? status;
   final TextEditingController searchController;
+  final String? requestedDate;
   final String? mode;
   final String direction;
   final Map<String, String> statuses;
@@ -267,10 +293,12 @@ class _Filters extends StatelessWidget {
   final ValueChanged<String?> onModeChanged;
   final ValueChanged<String?> onDirectionChanged;
   final ValueChanged<String> onSearchChanged;
+  final VoidCallback onRequestedDatePressed;
   final VoidCallback onReset;
 
   const _Filters({
     required this.searchController,
+    required this.requestedDate,
     required this.status,
     required this.mode,
     required this.direction,
@@ -280,6 +308,7 @@ class _Filters extends StatelessWidget {
     required this.onModeChanged,
     required this.onDirectionChanged,
     required this.onSearchChanged,
+    required this.onRequestedDatePressed,
     required this.onReset,
   });
 
@@ -300,6 +329,17 @@ class _Filters extends StatelessWidget {
                 hintText: 'Clinician or specialization',
                 prefixIcon: Icon(Icons.search),
                 isDense: true,
+              ),
+            ),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: onRequestedDatePressed,
+                icon: const Icon(Icons.calendar_today_outlined),
+                label: Text(requestedDate == null
+                    ? 'Filter by requested date'
+                    : 'Requested: $requestedDate'),
               ),
             ),
             const SizedBox(height: 8),

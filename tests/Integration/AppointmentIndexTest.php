@@ -89,6 +89,17 @@ class AppointmentIndexTest extends TestCase
             ->assertDontSee('Different Patient')
             ->assertDontSee('Searchable Outsider');
 
+        $this->actingAs($owner['user'])
+            ->get('/appointments?search=Dr.+Test')
+            ->assertOk()
+            ->assertViewHas('appointments', fn ($appointments) => $appointments->total() === 0);
+
+        $this->actingAs($owner['user'])
+            ->get('/appointments?requested_date=2030-12-02')
+            ->assertOk()
+            ->assertSee('Different Patient')
+            ->assertDontSee('Searchable Patient');
+
         $this->actingAs($this->createAdmin())
             ->get('/appointments?search=Dr.+Other')
             ->assertOk()

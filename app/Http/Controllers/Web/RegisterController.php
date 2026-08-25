@@ -49,7 +49,7 @@ class RegisterController extends Controller
                 'password' => $validated['password'],
                 'role' => 'patient',
                 'terms_accepted_at' => now(),
-                'terms_version' => TermsOfService::CURRENT_VERSION,
+                'terms_version' => TermsOfService::currentVersion(),
             ]);
 
             Patient::create([

@@ -857,6 +857,21 @@ textarea.form-control {
   align-items: start;
 }
 
+.tc-account-wide {
+  grid-column: 1 / -1;
+}
+
+.tc-legal-preview {
+  max-height: 32rem;
+  overflow-y: auto;
+  background: var(--tc-neutral-50);
+}
+
+.tc-legal-content > :last-child,
+.tc-legal-preview > :last-child {
+  margin-bottom: 0;
+}
+
 .tc-profile-avatar {
   width: 88px;
   height: 88px;

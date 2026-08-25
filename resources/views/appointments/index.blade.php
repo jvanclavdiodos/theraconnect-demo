@@ -31,17 +31,26 @@
     <p class="tc-page-sub">Review, approve, and manage appointment requests.</p>
 </div>
 
-<form method="GET" action="{{ route('appointments.index') }}" class="mb-3" role="search">
+<form method="GET" action="{{ route('appointments.index') }}" class="row g-2 align-items-end mb-3" role="search">
     <input type="hidden" name="status" value="{{ $validStatus }}">
     <input type="hidden" name="mode" value="{{ $validMode }}">
     <input type="hidden" name="sort" value="{{ request('sort') }}">
     <input type="hidden" name="direction" value="{{ request('direction') }}">
-    <div class="input-group">
-        <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
-        <input type="search" name="search" value="{{ $search }}" class="form-control"
-               placeholder="Search by patient or clinician" aria-label="Search appointments">
+    <div class="col-12 col-md-7">
+        <label for="staff-appointment-search" class="form-label small fw-semibold">{{ auth()->user()->role === 'admin' ? 'Patient or clinician' : 'Patient' }}</label>
+        <div class="input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input id="staff-appointment-search" type="search" name="search" value="{{ $search }}" class="form-control"
+                   placeholder="Search by {{ auth()->user()->role === 'admin' ? 'patient or clinician' : 'patient' }}" aria-label="Search appointments">
+        </div>
+    </div>
+    <div class="col-12 col-sm-7 col-md-3">
+        <label for="staff-requested-date" class="form-label small fw-semibold">Requested date</label>
+        <input id="staff-requested-date" type="date" name="requested_date" value="{{ $requestedDate }}" class="form-control">
+    </div>
+    <div class="col-12 col-sm-5 col-md-2 d-flex gap-2">
         <button class="btn btn-primary" type="submit">Search</button>
-        @if($search !== '')
+        @if($search !== '' || $requestedDate)
             <a href="{{ route('appointments.index', array_filter([
                 'status' => $validStatus, 'mode' => $validMode,
                 'sort' => request('sort'), 'direction' => request('direction'),
@@ -59,6 +68,7 @@
                 'sort' => request('sort'),
                 'direction' => request('direction'),
                 'search' => $search ?: null,
+                'requested_date' => $requestedDate,
             ])) }}"
            class="tc-filter {{ (request('status') ?? '') === $key ? 'active' : '' }}">{{ $label }}</a>
     @endforeach
@@ -72,6 +82,7 @@
                 'sort' => request('sort'),
                 'direction' => request('direction'),
                 'search' => $search ?: null,
+                'requested_date' => $requestedDate,
             ])) }}"
            class="tc-filter {{ (request('mode') ?? '') === $key ? 'active' : '' }}">{{ $label }}</a>
     @endforeach
@@ -92,6 +103,7 @@
                                'sort' => 'requested_at',
                                'direction' => $nextDirection,
                                'search' => $search ?: null,
+                               'requested_date' => $requestedDate,
                            ])) }}">
                             Requested
                             <i class="bi {{ $sortIcon }}" aria-hidden="true"></i>

@@ -5,7 +5,10 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\UpdateAvatarRequest;
 use App\Models\User;
+use App\Models\LegalDocument;
 use App\Rules\StrongPassword;
+use App\Services\ActivityLogService;
+use App\Support\TermsOfService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +22,42 @@ class AccountController extends Controller
     /** The current staff user's account page (profile picture). */
     public function edit(Request $request): View
     {
-        return view('account.edit', ['user' => $request->user()]);
+        return view('account.edit', [
+            'user' => $request->user(),
+            'termsContent' => $request->user()->role === 'admin' ? TermsOfService::content() : null,
+            'termsDocument' => $request->user()->role === 'admin' ? TermsOfService::document() : null,
+        ]);
+    }
+
+    public function updateTerms(Request $request, ActivityLogService $activityLogs): RedirectResponse
+    {
+        abort_unless($request->user()->role === 'admin', 403);
+
+        $validated = $request->validate([
+            'terms_content' => ['required', 'string', 'min:200', 'max:50000'],
+            'current_password' => ['required', 'current_password'],
+        ], [
+            'current_password.current_password' => 'Your current password is incorrect.',
+        ]);
+
+        $document = DB::transaction(function () use ($request, $validated, $activityLogs) {
+            $document = LegalDocument::query()->updateOrCreate(
+                ['key' => TermsOfService::DOCUMENT_KEY],
+                [
+                    'version' => now()->format('Y-m-d-His'),
+                    'content' => trim($validated['terms_content']),
+                    'updated_by' => $request->user()->id,
+                ]
+            );
+
+            $activityLogs->log($request->user(), 'user_agreement.updated', $document, [
+                'version' => $document->version,
+            ]);
+
+            return $document;
+        });
+
+        return back()->with('status', "User agreement {$document->version} published.");
     }
 
     /** Change the current staff user's password (current-password verified). */

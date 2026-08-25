@@ -126,12 +126,25 @@ class PatientAppointmentIndexTest extends TestCase
             ->assertSee('Dr. Search Match')
             ->assertDontSee('Dr. Different');
 
+        $this->actingAs($owner['user'])
+            ->get('/portal/appointments?requested_date=2030-11-02')
+            ->assertOk()
+            ->assertViewHas('appointments', fn ($appointments) => $appointments->total() === 1)
+            ->assertSee('Dr. Different')
+            ->assertDontSee('Dr. Search Match');
+
         $token = $this->getApiToken($owner['user']);
         $this->withHeaders($this->apiHeaders($token))
             ->getJson('/api/v1/appointments?search=Search+Match')
             ->assertOk()
             ->assertJsonPath('meta.total', 1)
             ->assertJsonPath('data.0.public_id', $match->public_id);
+
+        $this->withHeaders($this->apiHeaders($token))
+            ->getJson('/api/v1/appointments?requested_date=2030-11-02')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.clinician_name', 'Dr. Different');
     }
 
     private function appointment(int $patientId, int $clinicianId, string $requestedAt, array $overrides = []): Appointment

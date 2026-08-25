@@ -16,7 +16,7 @@
     <div class="input-group">
         <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
         <input type="search" name="search" value="{{ $search }}" class="form-control"
-               placeholder="Search title, details, or clinician" aria-label="Search assignments">
+               placeholder="Search by title, details, or clinician" aria-label="Search assignments by title, details, or clinician">
         <button class="btn btn-primary" type="submit">Search</button>
         @if($search !== '')
             <a href="{{ route('portal.assignments.index') }}" class="btn btn-outline-secondary">Clear</a>

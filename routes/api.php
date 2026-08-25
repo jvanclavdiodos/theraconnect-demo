@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\ClinicianController;
 use App\Http\Controllers\Api\V1\ConversationController;
 use App\Http\Controllers\Api\V1\DeviceTokenController;
 use App\Http\Controllers\Api\V1\GoalController;
+use App\Http\Controllers\Api\V1\LegalDocumentController;
 use App\Http\Controllers\Api\V1\MoodLogController;
 use App\Http\Controllers\Api\V1\NotificationController;
 use App\Http\Controllers\Api\V1\PasswordController;
@@ -43,6 +44,7 @@ Route::prefix('v1')->group(function () {
 
         return response()->json(['status' => 'ok']);
     });
+    Route::get('/legal/terms', [LegalDocumentController::class, 'terms'])->middleware('throttle:api');
 
     Route::middleware(['throttle:login', 'throttle:account-login'])->group(function () {
         Route::post('/login', [AuthController::class, 'login']);
