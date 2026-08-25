@@ -16,31 +16,43 @@ class AssignmentNotifier extends StateNotifier<AsyncValue<List<Assignment>>> {
   final AssignmentApi _api;
   final CacheService _cache;
 
-  AssignmentNotifier(this._api, this._cache) : super(const AsyncValue.loading()) {
+  AssignmentNotifier(this._api, this._cache)
+      : super(const AsyncValue.loading()) {
     loadFromCache();
   }
 
   void loadFromCache() {
-    final cached = _cache.getList<Assignment>('assignments', Assignment.fromJson);
+    final cached =
+        _cache.getList<Assignment>('assignments', Assignment.fromJson);
     if (cached != null) {
       state = AsyncValue.data(cached);
     }
   }
 
-  Future<void> loadAssignments({int page = 1}) async {
+  Future<void> loadAssignments({int page = 1, String? search}) async {
     state = const AsyncValue.loading();
     try {
-      final result = await _api.getAssignments(page: page);
-      _cache.put('assignments', result.assignments.map((a) => a.toJson()).toList());
+      final normalizedSearch = search?.trim();
+      final result = await _api.getAssignments(
+        page: page,
+        search: normalizedSearch?.isEmpty == true ? null : normalizedSearch,
+      );
+      if (normalizedSearch == null || normalizedSearch.isEmpty) {
+        _cache.put(
+            'assignments', result.assignments.map((a) => a.toJson()).toList());
+      }
       state = AsyncValue.data(result.assignments);
     } catch (e) {
-      state = AsyncValue.error(ApiError.fromException(e).userMessage, StackTrace.current);
+      state = AsyncValue.error(
+          ApiError.fromException(e).userMessage, StackTrace.current);
     }
   }
 
-  Future<String?> submitAssignment(String assignmentId, {String? content, String? filePath}) async {
+  Future<String?> submitAssignment(String assignmentId,
+      {String? content, String? filePath}) async {
     try {
-      await _api.submitAssignment(assignmentId, content: content, filePath: filePath);
+      await _api.submitAssignment(assignmentId,
+          content: content, filePath: filePath);
       await loadAssignments();
       return null;
     } on ApiError catch (e) {
@@ -50,14 +62,16 @@ class AssignmentNotifier extends StateNotifier<AsyncValue<List<Assignment>>> {
 }
 
 final assignmentsProvider =
-    StateNotifierProvider<AssignmentNotifier, AsyncValue<List<Assignment>>>((ref) {
+    StateNotifierProvider<AssignmentNotifier, AsyncValue<List<Assignment>>>(
+        (ref) {
   return AssignmentNotifier(
     ref.watch(assignmentApiProvider),
     ref.watch(cacheServiceProvider),
   );
 });
 
-final assignmentDetailProvider = FutureProvider.family.autoDispose<Assignment, String>((ref, id) async {
+final assignmentDetailProvider =
+    FutureProvider.family.autoDispose<Assignment, String>((ref, id) async {
   final api = ref.watch(assignmentApiProvider);
   return await api.getAssignment(id);
 });

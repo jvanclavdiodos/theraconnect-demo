@@ -23,12 +23,29 @@ class PortalAssignmentController extends Controller
         $patient = $request->user()->patient;
         abort_unless($patient !== null, 404);
 
-        $assignments = Assignment::where('patient_id', $patient->id)
-            ->with(['clinician.user', 'submissions'])
-            ->latest()
-            ->paginate(10);
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+        $search = trim($validated['search'] ?? '');
 
-        return view('portal.assignments.index', compact('assignments'));
+        $query = Assignment::where('patient_id', $patient->id)
+            ->with(['clinician.user', 'submissions']);
+
+        if ($search !== '') {
+            $query->where(function ($query) use ($search) {
+                $query->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('clinician.user', fn ($userQuery) => $userQuery
+                        ->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        $assignments = $query
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('portal.assignments.index', compact('assignments', 'search'));
     }
 
     public function show(Assignment $assignment): View

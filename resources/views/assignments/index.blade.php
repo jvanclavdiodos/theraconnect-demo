@@ -22,6 +22,18 @@
     </a>
 </div>
 
+<form method="GET" action="{{ route('assignments.index') }}" class="mb-4" role="search">
+    <div class="input-group">
+        <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+        <input type="search" name="search" value="{{ $search }}" class="form-control"
+               placeholder="Search assignments, patients, or clinicians" aria-label="Search assignments">
+        <button class="btn btn-primary" type="submit">Search</button>
+        @if($search !== '')
+            <a href="{{ route('assignments.index') }}" class="btn btn-outline-secondary">Clear</a>
+        @endif
+    </div>
+</form>
+
 <div class="card">
     <div class="table-responsive">
         <table class="table table-hover mb-0">
@@ -72,10 +84,12 @@
                         <td colspan="6">
                             <div class="tc-empty">
                                 <div class="tc-empty-icon"><i class="bi bi-journal-check"></i></div>
-                                <div class="mb-3">No assignments yet.</div>
+                            <div class="mb-3">{{ $search !== '' ? 'No assignments match your search.' : 'No assignments yet.' }}</div>
+                            @if($search === '')
                                 <a href="{{ route('assignments.create') }}" class="btn btn-primary btn-sm">
                                     <i class="bi bi-plus-lg me-1"></i> Create Your First Assignment
                                 </a>
+                            @endif
                             </div>
                         </td>
                     </tr>

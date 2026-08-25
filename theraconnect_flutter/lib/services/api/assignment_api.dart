@@ -14,12 +14,20 @@ class AssignmentApi {
 
   AssignmentApi(this._client, this._downloads);
 
-  Future<({List<Assignment> assignments, int currentPage, int lastPage, int total})>
-      getAssignments({int page = 1}) async {
+  Future<
+      ({
+        List<Assignment> assignments,
+        int currentPage,
+        int lastPage,
+        int total
+      })> getAssignments({int page = 1, String? search}) async {
     try {
       final response = await _client.get(
         ApiConfig.assignmentsEndpoint,
-        queryParameters: {'page': page},
+        queryParameters: {
+          'page': page,
+          if (search != null && search.isNotEmpty) 'search': search,
+        },
       );
       final data = response.data['data'] as List<dynamic>;
       final meta = response.data['meta'] as Map<String, dynamic>;

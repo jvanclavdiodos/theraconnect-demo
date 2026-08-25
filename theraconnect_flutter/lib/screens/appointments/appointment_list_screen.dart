@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -20,6 +22,8 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
   String? _mode;
   String _direction = 'desc';
   bool _loadingMore = false;
+  final _searchController = TextEditingController();
+  Timer? _searchDebounce;
 
   static const _statuses = <String, String>{
     'pending': 'Pending',
@@ -42,6 +46,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
     return ref.read(appointmentListProvider.notifier).loadAppointments(
           status: _status,
           mode: _mode,
+          search: _searchController.text,
           direction: _direction,
           updateFilters: true,
         );
@@ -60,12 +65,27 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
   }
 
   void _reset() {
+    _searchDebounce?.cancel();
+    _searchController.clear();
     setState(() {
       _status = null;
       _mode = null;
       _direction = 'desc';
     });
     _load();
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), _load);
+    setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _searchDebounce?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   Color _statusColor(Appointment appointment, ColorScheme scheme) =>
@@ -83,13 +103,17 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
     final appointments = ref.watch(appointmentListProvider);
     final scheme = Theme.of(context).colorScheme;
     final notifier = ref.read(appointmentListProvider.notifier);
-    final hasFilters = _status != null || _mode != null || _direction != 'desc';
+    final hasFilters = _searchController.text.trim().isNotEmpty ||
+        _status != null ||
+        _mode != null ||
+        _direction != 'desc';
 
     return Scaffold(
       appBar: AppBar(title: const Text('My Appointments')),
       body: Column(
         children: [
           _Filters(
+            searchController: _searchController,
             status: _status,
             mode: _mode,
             direction: _direction,
@@ -107,6 +131,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
               setState(() => _direction = value ?? 'desc');
               _load();
             },
+            onSearchChanged: _onSearchChanged,
             onReset: _reset,
           ),
           Expanded(
@@ -233,6 +258,7 @@ class _AppointmentListScreenState extends ConsumerState<AppointmentListScreen> {
 
 class _Filters extends StatelessWidget {
   final String? status;
+  final TextEditingController searchController;
   final String? mode;
   final String direction;
   final Map<String, String> statuses;
@@ -240,9 +266,11 @@ class _Filters extends StatelessWidget {
   final ValueChanged<String?> onStatusChanged;
   final ValueChanged<String?> onModeChanged;
   final ValueChanged<String?> onDirectionChanged;
+  final ValueChanged<String> onSearchChanged;
   final VoidCallback onReset;
 
   const _Filters({
+    required this.searchController,
     required this.status,
     required this.mode,
     required this.direction,
@@ -251,6 +279,7 @@ class _Filters extends StatelessWidget {
     required this.onStatusChanged,
     required this.onModeChanged,
     required this.onDirectionChanged,
+    required this.onSearchChanged,
     required this.onReset,
   });
 
@@ -262,6 +291,18 @@ class _Filters extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
         child: Column(
           children: [
+            TextField(
+              controller: searchController,
+              onChanged: onSearchChanged,
+              textInputAction: TextInputAction.search,
+              decoration: const InputDecoration(
+                labelText: 'Search appointments',
+                hintText: 'Clinician or specialization',
+                prefixIcon: Icon(Icons.search),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(

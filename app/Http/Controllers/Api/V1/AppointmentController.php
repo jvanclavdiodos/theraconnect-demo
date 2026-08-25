@@ -109,6 +109,7 @@ class AppointmentController extends Controller
         $patient = $this->getPatient();
 
         $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
             'status' => ['nullable', 'in:pending,approved,rejected,rescheduled,completed,cancelled,no_show,expired'],
             'mode' => ['nullable', 'in:online,in_person'],
             'sort' => ['nullable', 'in:appointment_date'],
@@ -117,6 +118,15 @@ class AppointmentController extends Controller
 
         $query = Appointment::where('patient_id', $patient->id)
             ->with('clinician.user');
+
+        $search = trim($validated['search'] ?? '');
+        if ($search !== '') {
+            $query->whereHas('clinician', function ($clinicianQuery) use ($search) {
+                $clinicianQuery->where('specialization', 'like', "%{$search}%")
+                    ->orWhereHas('user', fn ($userQuery) => $userQuery
+                        ->where('name', 'like', "%{$search}%"));
+            });
+        }
 
         if ($status = ($validated['status'] ?? null)) {
             $query->where('status', $status);

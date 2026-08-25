@@ -73,6 +73,29 @@ class AppointmentIndexTest extends TestCase
             ->assertSeeInOrder(['Newer Patient', 'Older Patient']);
     }
 
+    public function test_staff_can_search_appointments_without_bypassing_clinician_scope(): void
+    {
+        $owner = $this->createClinician();
+        $other = $this->createClinicianWithIdentity('Dr. Other', 'other-search@test.com');
+
+        $this->appointmentFor($owner['clinician']->id, 'Searchable Patient', 'searchable@test.com', '2030-12-01 09:00:00');
+        $this->appointmentFor($owner['clinician']->id, 'Different Patient', 'different@test.com', '2030-12-02 09:00:00');
+        $this->appointmentFor($other['clinician']->id, 'Searchable Outsider', 'outsider@test.com', '2030-12-03 09:00:00');
+
+        $this->actingAs($owner['user'])
+            ->get('/appointments?search=Searchable')
+            ->assertOk()
+            ->assertSee('Searchable Patient')
+            ->assertDontSee('Different Patient')
+            ->assertDontSee('Searchable Outsider');
+
+        $this->actingAs($this->createAdmin())
+            ->get('/appointments?search=Dr.+Other')
+            ->assertOk()
+            ->assertSee('Searchable Outsider')
+            ->assertDontSee('Searchable Patient');
+    }
+
     public function test_only_the_assigned_clinician_sees_the_booking_reason(): void
     {
         $owner = $this->createClinician();

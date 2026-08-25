@@ -103,6 +103,37 @@ class PatientAppointmentIndexTest extends TestCase
             ->assertUnprocessable();
     }
 
+    public function test_patient_portal_and_api_search_by_clinician_and_preserve_isolation(): void
+    {
+        $matchingClinician = $this->createClinician();
+        $matchingClinician['user']->update([
+            'email' => 'matching-clinician@test.com',
+            'name' => 'Dr. Search Match',
+        ]);
+        $otherClinician = $this->createClinician();
+        $otherClinician['user']->update(['email' => 'second-clinician@test.com', 'name' => 'Dr. Different']);
+        $owner = $this->createPatient('appointment-search@test.com');
+        $otherPatient = $this->createPatient('appointment-search-other@test.com');
+
+        $match = $this->appointment($owner['patient']->id, $matchingClinician['clinician']->id, '2030-11-01 09:00:00');
+        $this->appointment($owner['patient']->id, $otherClinician['clinician']->id, '2030-11-02 09:00:00');
+        $this->appointment($otherPatient['patient']->id, $matchingClinician['clinician']->id, '2030-11-03 09:00:00');
+
+        $this->actingAs($owner['user'])
+            ->get('/portal/appointments?search=Search+Match')
+            ->assertOk()
+            ->assertViewHas('appointments', fn ($appointments) => $appointments->total() === 1)
+            ->assertSee('Dr. Search Match')
+            ->assertDontSee('Dr. Different');
+
+        $token = $this->getApiToken($owner['user']);
+        $this->withHeaders($this->apiHeaders($token))
+            ->getJson('/api/v1/appointments?search=Search+Match')
+            ->assertOk()
+            ->assertJsonPath('meta.total', 1)
+            ->assertJsonPath('data.0.public_id', $match->public_id);
+    }
+
     private function appointment(int $patientId, int $clinicianId, string $requestedAt, array $overrides = []): Appointment
     {
         return Appointment::create(array_merge([

@@ -28,6 +28,7 @@ class PortalAppointmentController extends Controller
         abort_unless($patient !== null, 404);
 
         $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
             'status' => ['nullable', 'in:pending,approved,rejected,rescheduled,completed,cancelled,no_show,expired'],
             'mode' => ['nullable', 'in:online,in_person'],
             'sort' => ['nullable', 'in:appointment_date'],
@@ -36,10 +37,19 @@ class PortalAppointmentController extends Controller
 
         $status = $validated['status'] ?? null;
         $mode = $validated['mode'] ?? null;
+        $search = trim($validated['search'] ?? '');
         $direction = $validated['direction'] ?? 'desc';
 
         $query = Appointment::where('patient_id', $patient->id)
             ->with('clinician.user');
+
+        if ($search !== '') {
+            $query->whereHas('clinician', function ($clinicianQuery) use ($search) {
+                $clinicianQuery->where('specialization', 'like', "%{$search}%")
+                    ->orWhereHas('user', fn ($userQuery) => $userQuery
+                        ->where('name', 'like', "%{$search}%"));
+            });
+        }
 
         if ($status) {
             $query->where('status', $status);
@@ -55,7 +65,7 @@ class PortalAppointmentController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('portal.appointments.index', compact('appointments', 'status', 'mode', 'direction'));
+        return view('portal.appointments.index', compact('appointments', 'status', 'mode', 'search', 'direction'));
     }
 
     public function show(Appointment $appointment): View

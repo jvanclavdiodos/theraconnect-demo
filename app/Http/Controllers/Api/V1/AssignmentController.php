@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\AssignmentResource;
 use App\Models\Assignment;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AssignmentController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $patient = auth()->user()->patient;
 
@@ -20,8 +21,24 @@ class AssignmentController extends Controller
             return response()->json(['message' => 'Patient profile not found.'], 404);
         }
 
-        $assignments = Assignment::where('patient_id', $patient->id)
-            ->with(['clinician.user', 'submissions'])
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+        $search = trim($validated['search'] ?? '');
+
+        $query = Assignment::where('patient_id', $patient->id)
+            ->with(['clinician.user', 'submissions']);
+
+        if ($search !== '') {
+            $query->where(function ($query) use ($search) {
+                $query->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('clinician.user', fn ($userQuery) => $userQuery
+                        ->where('name', 'like', "%{$search}%"));
+            });
+        }
+
+        $assignments = $query
             ->latest()
             ->paginate(20);
 

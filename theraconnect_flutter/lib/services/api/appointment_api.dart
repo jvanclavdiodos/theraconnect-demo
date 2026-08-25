@@ -74,6 +74,7 @@ class AppointmentApi {
     int page = 1,
     String? status,
     String? mode,
+    String? search,
     String direction = 'desc',
   }) async {
     try {
@@ -85,6 +86,7 @@ class AppointmentApi {
           'direction': direction,
           if (status != null) 'status': status,
           if (mode != null) 'mode': mode,
+          if (search != null && search.isNotEmpty) 'search': search,
         },
       );
       final data = response.data['data'] as List<dynamic>;

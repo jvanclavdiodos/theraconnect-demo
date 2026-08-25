@@ -26,6 +26,7 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<List<Appointment>>> {
   int _lastPage = 1;
   String? _status;
   String? _mode;
+  String? _search;
   String _direction = 'desc';
   bool _loadingMore = false;
 
@@ -53,12 +54,14 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<List<Appointment>>> {
     int page = 1,
     String? status,
     String? mode,
+    String? search,
     String? direction,
     bool updateFilters = false,
   }) async {
     if (updateFilters) {
       _status = status;
       _mode = mode;
+      _search = search?.trim().isEmpty == true ? null : search?.trim();
       _direction = direction ?? 'desc';
     }
 
@@ -68,6 +71,7 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<List<Appointment>>> {
         page: page,
         status: _status,
         mode: _mode,
+        search: _search,
         direction: _direction,
       );
       _currentPage = result.currentPage;
@@ -75,6 +79,7 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<List<Appointment>>> {
       if (_useCache &&
           _status == null &&
           _mode == null &&
+          _search == null &&
           _direction == 'desc') {
         _cache.put('appointments',
             result.appointments.map((a) => a.toJson()).toList());
@@ -99,6 +104,7 @@ class AppointmentNotifier extends StateNotifier<AsyncValue<List<Appointment>>> {
         page: _currentPage + 1,
         status: _status,
         mode: _mode,
+        search: _search,
         direction: _direction,
       );
       _currentPage = result.currentPage;

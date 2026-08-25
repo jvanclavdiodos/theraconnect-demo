@@ -31,6 +31,25 @@
     <p class="tc-page-sub">Review, approve, and manage appointment requests.</p>
 </div>
 
+<form method="GET" action="{{ route('appointments.index') }}" class="mb-3" role="search">
+    <input type="hidden" name="status" value="{{ $validStatus }}">
+    <input type="hidden" name="mode" value="{{ $validMode }}">
+    <input type="hidden" name="sort" value="{{ request('sort') }}">
+    <input type="hidden" name="direction" value="{{ request('direction') }}">
+    <div class="input-group">
+        <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+        <input type="search" name="search" value="{{ $search }}" class="form-control"
+               placeholder="Search by patient or clinician" aria-label="Search appointments">
+        <button class="btn btn-primary" type="submit">Search</button>
+        @if($search !== '')
+            <a href="{{ route('appointments.index', array_filter([
+                'status' => $validStatus, 'mode' => $validMode,
+                'sort' => request('sort'), 'direction' => request('direction'),
+            ])) }}" class="btn btn-outline-secondary">Clear</a>
+        @endif
+    </div>
+</form>
+
 {{-- Filter pills --}}
 <div class="tc-filters mb-4">
     @foreach ($filters as $key => $label)
@@ -39,6 +58,7 @@
                 'mode' => $validMode ?? null,
                 'sort' => request('sort'),
                 'direction' => request('direction'),
+                'search' => $search ?: null,
             ])) }}"
            class="tc-filter {{ (request('status') ?? '') === $key ? 'active' : '' }}">{{ $label }}</a>
     @endforeach
@@ -51,6 +71,7 @@
                 'mode' => $key ?: null,
                 'sort' => request('sort'),
                 'direction' => request('direction'),
+                'search' => $search ?: null,
             ])) }}"
            class="tc-filter {{ (request('mode') ?? '') === $key ? 'active' : '' }}">{{ $label }}</a>
     @endforeach
@@ -70,6 +91,7 @@
                                'mode' => $validMode ?? null,
                                'sort' => 'requested_at',
                                'direction' => $nextDirection,
+                               'search' => $search ?: null,
                            ])) }}">
                             Requested
                             <i class="bi {{ $sortIcon }}" aria-hidden="true"></i>
@@ -190,7 +212,7 @@
                         <td colspan="{{ $showReasons ? 7 : 6 }}">
                             <div class="tc-empty">
                                 <div class="tc-empty-icon"><i class="bi bi-calendar-check"></i></div>
-                                <div>No appointments match this filter.</div>
+                                <div>No appointments match your search or filters.</div>
                             </div>
                         </td>
                     </tr>

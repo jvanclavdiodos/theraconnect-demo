@@ -12,6 +12,18 @@
     <p class="tc-page-sub mb-0">Therapeutic work from your clinician.</p>
 </div>
 
+<form method="GET" action="{{ route('portal.assignments.index') }}" class="mb-4" role="search">
+    <div class="input-group">
+        <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+        <input type="search" name="search" value="{{ $search }}" class="form-control"
+               placeholder="Search title, details, or clinician" aria-label="Search assignments">
+        <button class="btn btn-primary" type="submit">Search</button>
+        @if($search !== '')
+            <a href="{{ route('portal.assignments.index') }}" class="btn btn-outline-secondary">Clear</a>
+        @endif
+    </div>
+</form>
+
 <div class="card">
     <div class="list-group list-group-flush">
         @forelse($assignments as $assignment)
@@ -37,7 +49,7 @@
             <div class="list-group-item">
                 <div class="tc-empty">
                     <div class="tc-empty-icon"><i class="bi bi-clipboard"></i></div>
-                    <div>No assignments yet.</div>
+                    <div>{{ $search !== '' ? 'No assignments match your search.' : 'No assignments yet.' }}</div>
                 </div>
             </div>
         @endforelse

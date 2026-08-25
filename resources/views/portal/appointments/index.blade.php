@@ -25,8 +25,16 @@
     </a>
 </div>
 
-<form method="GET" action="{{ route('portal.appointments.index') }}" class="row g-2 align-items-end mb-4">
-    <div class="col-12 col-sm-4 col-lg-3">
+<form method="GET" action="{{ route('portal.appointments.index') }}" class="row g-2 align-items-end mb-4" role="search">
+    <div class="col-12 col-lg-4">
+        <label for="appointment-search" class="form-label small fw-semibold">Search</label>
+        <div class="input-group">
+            <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
+            <input id="appointment-search" type="search" name="search" value="{{ $search }}" class="form-control"
+                   placeholder="Clinician or specialization">
+        </div>
+    </div>
+    <div class="col-12 col-sm-4 col-lg-2">
         <label for="appointment-status" class="form-label small fw-semibold">Status</label>
         <select id="appointment-status" name="status" class="form-select">
             <option value="">All statuses</option>
@@ -35,7 +43,7 @@
             @endforeach
         </select>
     </div>
-    <div class="col-12 col-sm-4 col-lg-3">
+    <div class="col-12 col-sm-4 col-lg-2">
         <label for="appointment-mode" class="form-label small fw-semibold">Meeting type</label>
         <select id="appointment-mode" name="mode" class="form-select">
             <option value="">All meeting types</option>
@@ -43,7 +51,7 @@
             <option value="in_person" @selected($mode === 'in_person')>In-person</option>
         </select>
     </div>
-    <div class="col-12 col-sm-4 col-lg-3">
+    <div class="col-12 col-sm-4 col-lg-2">
         <label for="appointment-order" class="form-label small fw-semibold">Date order</label>
         <select id="appointment-order" name="direction" class="form-select">
             <option value="desc" @selected($direction === 'desc')>Newest first</option>
@@ -51,9 +59,9 @@
         </select>
         <input type="hidden" name="sort" value="appointment_date">
     </div>
-    <div class="col-12 col-lg-3 d-flex gap-2">
+    <div class="col-12 col-lg-2 d-flex gap-2">
         <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i> Apply</button>
-        @if($status || $mode || $direction !== 'desc')
+        @if($search !== '' || $status || $mode || $direction !== 'desc')
             <a href="{{ route('portal.appointments.index') }}" class="btn btn-outline-secondary">Reset</a>
         @endif
     </div>
@@ -87,8 +95,10 @@
                     <tr><td colspan="5">
                         <div class="tc-empty">
                             <div class="tc-empty-icon"><i class="bi bi-calendar-x"></i></div>
-                            <div class="mb-3">You have no appointments yet.</div>
-                            <a href="{{ route('portal.appointments.book') }}" class="btn btn-primary btn-sm">Book your first appointment</a>
+                            <div class="mb-3">{{ $search !== '' || $status || $mode ? 'No appointments match your search or filters.' : 'You have no appointments yet.' }}</div>
+                            @if($search === '' && ! $status && ! $mode)
+                                <a href="{{ route('portal.appointments.book') }}" class="btn btn-primary btn-sm">Book your first appointment</a>
+                            @endif
                         </div>
                     </td></tr>
                 @endforelse

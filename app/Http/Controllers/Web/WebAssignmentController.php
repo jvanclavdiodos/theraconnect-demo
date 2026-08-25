@@ -27,6 +27,11 @@ class WebAssignmentController extends Controller
 
     public function index(Request $request): View
     {
+        $validated = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+        ]);
+        $search = trim($validated['search'] ?? '');
+
         $query = Assignment::with(['patient.user', 'clinician.user', 'submissions'])
             ->latest();
 
@@ -36,9 +41,22 @@ class WebAssignmentController extends Controller
             $query->where('clinician_id', $user->clinician->id);
         }
 
-        $assignments = $query->paginate(20);
+        if ($search !== '') {
+            $query->where(function ($query) use ($search) {
+                $query->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%")
+                    ->orWhereHas('patient.user', fn ($userQuery) => $userQuery
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%"))
+                    ->orWhereHas('clinician.user', fn ($userQuery) => $userQuery
+                        ->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%"));
+            });
+        }
 
-        return view('assignments.index', compact('assignments'));
+        $assignments = $query->paginate(20)->withQueryString();
+
+        return view('assignments.index', compact('assignments', 'search'));
     }
 
     public function create(Request $request): View
