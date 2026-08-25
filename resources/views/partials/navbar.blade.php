@@ -21,33 +21,33 @@
                     ->map(fn($part) => mb_strtoupper(mb_substr($part, 0, 1)))
                     ->implode('');
             @endphp
-            <button type="button" class="btn btn-outline-secondary btn-sm"
+            <button type="button" class="btn btn-outline-secondary btn-sm tc-navbar-control"
                     @click="$store.theme.toggle()"
                     :aria-label="$store.theme.current === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
                     title="Toggle dark mode">
                 <i class="bi" :class="$store.theme.current === 'dark' ? 'bi-sun' : 'bi-moon-stars'" aria-hidden="true"></i>
             </button>
-            <a href="{{ route('notifications.index') }}" class="btn btn-outline-secondary btn-sm position-relative" title="Notifications" aria-label="Notifications">
-                <i class="bi bi-bell"></i>
+            <a href="{{ route('notifications.index') }}" class="btn btn-outline-secondary btn-sm position-relative tc-navbar-control" title="Notifications" aria-label="Notifications">
+                <i class="bi bi-bell" aria-hidden="true"></i>
                 <span data-realtime-notification-count data-count="{{ $navUnread }}"
                       class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger {{ $navUnread > 0 ? '' : 'd-none' }}">
                     {{ $navUnread > 9 ? '9+' : $navUnread }}
                 </span>
             </a>
             <a href="{{ route('account.edit') }}"
-               class="tc-navbar-account"
+               class="tc-navbar-account tc-navbar-control"
                title="View profile" aria-label="View profile">
                 @if(auth()->user()->hasAvatar())
                     <img src="{{ route('avatars.show', auth()->user()) }}" alt="" class="tc-navbar-avatar">
                 @else
                     <span class="tc-navbar-avatar tc-navbar-avatar-fallback" aria-hidden="true">{{ $navInitials ?: 'U' }}</span>
                 @endif
-                <span class="tc-navbar-account-name">{{ $navName }}</span>
             </a>
             <form method="POST" action="{{ route('logout') }}" class="mb-0">
                 @csrf
-                <button type="submit" class="btn btn-outline-danger btn-sm tc-signout-button">
-                    <i class="bi bi-box-arrow-right me-1"></i> Sign Out
+                <button type="submit" class="btn btn-outline-danger btn-sm tc-signout-button tc-navbar-control"
+                        title="Sign out" aria-label="Sign out">
+                    <i class="bi bi-box-arrow-right" aria-hidden="true"></i>
                 </button>
             </form>
         @else

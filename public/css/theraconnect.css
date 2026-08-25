@@ -275,6 +275,29 @@ a:hover { color: var(--tc-teal-dark); }
   white-space: nowrap;
 }
 
+.tc-navbar-actions .tc-navbar-control {
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  min-height: 40px;
+  flex: 0 0 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.tc-navbar-actions .tc-navbar-account.tc-navbar-control {
+  border-color: var(--tc-neutral-200);
+}
+
+.tc-navbar-actions .tc-navbar-control .tc-navbar-avatar {
+  width: 30px;
+  height: 30px;
+  flex-basis: 30px;
+}
+
 /* ------------------------------------------------------------------- Cards */
 .card {
   border: 1px solid var(--tc-neutral-200);
@@ -870,6 +893,39 @@ textarea.form-control {
 .tc-legal-content > :last-child,
 .tc-legal-preview > :last-child {
   margin-bottom: 0;
+}
+
+.tc-joy-header {
+  justify-content: flex-end;
+}
+
+.tc-joy-message-row {
+  display: flex;
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.tc-joy-message-row.outgoing {
+  justify-content: flex-end;
+}
+
+.tc-joy-message-row.incoming {
+  justify-content: flex-start;
+}
+
+.tc-joy-messages .tc-joy-bubble {
+  display: block;
+  max-width: 82%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  text-align: left;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.tc-joy-form .form-control {
+  min-width: 0;
 }
 
 .tc-profile-avatar {
