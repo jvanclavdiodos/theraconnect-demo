@@ -33,7 +33,8 @@ class WebAssignmentController extends Controller
         $search = trim($validated['search'] ?? '');
 
         $query = Assignment::with(['patient.user', 'clinician.user', 'submissions'])
-            ->latest();
+            ->latest()
+            ->orderByDesc('id');
 
         // Clinicians see only assignments they authored; admins see all.
         $user = $request->user();
@@ -54,7 +55,7 @@ class WebAssignmentController extends Controller
             });
         }
 
-        $assignments = $query->paginate(20)->withQueryString();
+        $assignments = $query->paginate(10)->withQueryString();
 
         return view('assignments.index', compact('assignments', 'search'));
     }
