@@ -15,17 +15,19 @@
     };
 @endphp
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
+<div class="tc-page-header">
+    <div class="tc-page-header-copy">
         <h1 class="tc-page-title">My Appointments</h1>
         <p class="tc-page-sub mb-0">Request, review, and manage your visits.</p>
     </div>
-    <a href="{{ route('portal.appointments.book') }}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-1"></i> Book Appointment
-    </a>
+    <div class="tc-page-actions">
+        <a href="{{ route('portal.appointments.book') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> Book Appointment
+        </a>
+    </div>
 </div>
 
-<form method="GET" action="{{ route('portal.appointments.index') }}" class="row g-2 align-items-end mb-4" role="search">
+<form method="GET" action="{{ route('portal.appointments.index') }}" class="row g-2 align-items-end tc-filter-panel" role="search">
     <div class="col-12 col-lg-4">
         <label for="appointment-search" class="form-label small fw-semibold">Search</label>
         <div class="input-group">
@@ -63,8 +65,8 @@
         </select>
         <input type="hidden" name="sort" value="appointment_date">
     </div>
-    <div class="col-12 d-flex gap-2 justify-content-lg-end mt-3">
-        <button type="submit" class="btn btn-primary flex-grow-1"><i class="bi bi-funnel me-1"></i> Apply</button>
+    <div class="col-12 tc-filter-actions mt-3">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-funnel"></i> Apply filters</button>
         @if($search !== '' || $requestedDate || $status || $mode || $direction !== 'desc')
             <a href="{{ route('portal.appointments.index') }}" class="btn btn-outline-secondary">Reset</a>
         @endif
@@ -73,22 +75,22 @@
 
 <div class="card">
     <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 tc-responsive-table">
             <thead class="table-light">
                 <tr><th>When</th><th>Clinician</th><th>Mode</th><th>Status</th><th class="text-end">Actions</th></tr>
             </thead>
             <tbody>
                 @forelse($appointments as $appt)
                     <tr>
-                        <td>
+                        <td data-label="When">
                             <a href="{{ route('portal.appointments.show', $appt) }}" class="text-decoration-none fw-semibold">
                                 {{ ($appt->scheduled_at ?? $appt->requested_at)->format('D, M j, Y · g:i A') }}
                             </a>
                         </td>
-                        <td>{{ $appt->clinician?->user?->name ?? '—' }}</td>
-                        <td>{{ $appt->mode === 'online' ? 'Online' : 'In-person' }}</td>
-                        <td><span class="badge bg-{{ $statusColor($appt->status) }}">{{ ucfirst(str_replace('_',' ',$appt->status)) }}</span></td>
-                        <td class="text-end">
+                        <td data-label="Clinician">{{ $appt->clinician?->user?->name ?? '—' }}</td>
+                        <td data-label="Mode">{{ $appt->mode === 'online' ? 'Online' : 'In-person' }}</td>
+                        <td data-label="Status"><span class="badge bg-{{ $statusColor($appt->status) }}">{{ ucfirst(str_replace('_',' ',$appt->status)) }}</span></td>
+                        <td data-label="Actions" class="text-end">
                             <a href="{{ route('portal.appointments.show', $appt) }}" class="btn btn-sm btn-outline-secondary"
                                aria-label="View appointment details" data-bs-toggle="tooltip" data-bs-title="View details">
                                 <i class="bi bi-eye" aria-hidden="true"></i>
@@ -96,7 +98,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="5">
+                    <tr><td colspan="5" class="tc-table-empty">
                         <div class="tc-empty">
                             <div class="tc-empty-icon"><i class="bi bi-calendar-x"></i></div>
                             <div class="mb-3">{{ $search !== '' || $requestedDate || $status || $mode ? 'No appointments match your search or filters.' : 'You have no appointments yet.' }}</div>

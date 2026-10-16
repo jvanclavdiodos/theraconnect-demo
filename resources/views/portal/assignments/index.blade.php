@@ -7,12 +7,14 @@
 @endsection
 
 @section('content')
-<div class="mb-4">
+<div class="tc-page-header">
+    <div class="tc-page-header-copy">
     <h1 class="tc-page-title">My Assignments</h1>
     <p class="tc-page-sub mb-0">Therapeutic work from your clinician.</p>
+    </div>
 </div>
 
-<form method="GET" action="{{ route('portal.assignments.index') }}" class="mb-4" role="search">
+<form method="GET" action="{{ route('portal.assignments.index') }}" class="tc-filter-panel" role="search">
     <div class="input-group">
         <span class="input-group-text bg-white"><i class="bi bi-search" aria-hidden="true"></i></span>
         <input type="search" name="search" value="{{ $search }}" class="form-control"
@@ -29,21 +31,25 @@
         @forelse($assignments as $assignment)
             @php $submission = $assignment->submissions->first(); @endphp
             <a href="{{ route('portal.assignments.show', $assignment) }}"
-               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                <div class="min-w-0">
-                    <div class="fw-semibold">{{ $assignment->title }}</div>
-                    <div class="text-muted small">
+               class="list-group-item list-group-item-action d-flex justify-content-between align-items-center tc-assignment-item">
+                <span class="tc-assignment-icon" aria-hidden="true"><i class="bi bi-journal-check"></i></span>
+                <div class="min-w-0 flex-grow-1">
+                    <div class="tc-record-primary">{{ $assignment->title }}</div>
+                    <div class="tc-record-secondary">
                         {{ $assignment->clinician?->user?->name ?? 'Clinician' }}
                         @if($assignment->due_date) · Due {{ $assignment->due_date->format('M j, Y') }}@endif
                     </div>
                 </div>
-                @if(! $submission)
-                    <span class="badge bg-warning">To do</span>
-                @elseif($submission->status === 'reviewed')
-                    <span class="badge bg-info">Reviewed</span>
-                @else
-                    <span class="badge bg-success">Submitted</span>
-                @endif
+                <span class="tc-assignment-status">
+                    @if(! $submission)
+                        <span class="badge bg-warning">To do</span>
+                    @elseif($submission->status === 'reviewed')
+                        <span class="badge bg-info">Reviewed</span>
+                    @else
+                        <span class="badge bg-success">Submitted</span>
+                    @endif
+                    <i class="bi bi-chevron-right tc-assignment-chevron" aria-hidden="true"></i>
+                </span>
             </a>
         @empty
             <div class="list-group-item">

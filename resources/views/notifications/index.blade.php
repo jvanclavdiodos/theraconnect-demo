@@ -18,28 +18,30 @@
 @endphp
 
 <div data-realtime-fragment="notifications">
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
+<div class="tc-page-header">
+    <div class="tc-page-header-copy">
         <h1 class="tc-page-title">Notifications</h1>
         <p class="tc-page-sub mb-0">Appointments, assignments, assessments, and account updates.</p>
     </div>
-    @if($notifications->whereNull('read_at')->count())
-        <form method="POST" action="{{ route('notifications.readAll') }}">
-            @csrf
-            <button class="btn btn-outline-secondary btn-sm">Mark all read</button>
-        </form>
-    @endif
+    <div class="tc-page-actions">
+        @if($notifications->whereNull('read_at')->count())
+            <form method="POST" action="{{ route('notifications.readAll') }}">
+                @csrf
+                <button class="btn btn-outline-secondary btn-sm"><i class="bi bi-check2-all"></i> Mark all read</button>
+            </form>
+        @endif
+    </div>
 </div>
 
 <div class="card">
     <div class="list-group list-group-flush">
         @forelse($notifications as $n)
-            <div class="list-group-item d-flex align-items-start gap-3">
-                <i class="bi {{ $icon($n->type) }} {{ $n->read_at ? 'text-secondary' : 'text-primary' }} mt-1 fs-5"></i>
+            <div class="list-group-item d-flex align-items-start gap-3 tc-notification-item {{ $n->read_at ? '' : 'is-unread' }}">
+                <span class="tc-notification-icon" aria-hidden="true"><i class="bi {{ $icon($n->type) }}"></i></span>
                 <div class="flex-grow-1 min-w-0">
-                    <div class="fw-semibold">{{ $n->title }}</div>
-                    <div class="small">{{ $n->body }}</div>
-                    <div class="text-muted small mt-1">{{ $n->created_at->diffForHumans() }}</div>
+                    <div class="tc-notification-title">{{ $n->title }}</div>
+                    <div class="tc-notification-body">{{ $n->body }}</div>
+                    <div class="tc-notification-time"><i class="bi bi-clock"></i>{{ $n->created_at->diffForHumans() }}</div>
                 </div>
                 @unless($n->read_at)
                     <form method="POST" action="{{ route('notifications.read', $n) }}">

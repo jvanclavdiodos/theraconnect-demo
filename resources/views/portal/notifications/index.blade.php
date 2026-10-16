@@ -9,21 +9,23 @@
 
 @section('content')
 <div data-realtime-fragment="notifications">
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
+<div class="tc-page-header">
+    <div class="tc-page-header-copy">
         <h1 class="tc-page-title">Notifications</h1>
         <p class="tc-page-sub mb-0">Updates about your appointments, assignments, assessments, and account.</p>
     </div>
-    @if($notifications->where('read_at', null)->count())
-        <form method="POST" action="{{ route('portal.notifications.readAll') }}"
-              x-data="{ busy: false }" @submit.prevent="markAll($el)">
-            @csrf
-            <button class="btn btn-outline-secondary btn-sm" :disabled="busy">
-                <span x-show="!busy">Mark all read</span>
-                <span x-show="busy" x-cloak><span class="spinner-border spinner-border-sm" role="status" aria-label="Marking all read"></span> Working…</span>
-            </button>
-        </form>
-    @endif
+    <div class="tc-page-actions">
+        @if($notifications->where('read_at', null)->count())
+            <form method="POST" action="{{ route('portal.notifications.readAll') }}"
+                  x-data="{ busy: false }" @submit.prevent="markAll($el)">
+                @csrf
+                <button class="btn btn-outline-secondary btn-sm" :disabled="busy">
+                    <span x-show="!busy"><i class="bi bi-check2-all"></i> Mark all read</span>
+                    <span x-show="busy" x-cloak><span class="spinner-border spinner-border-sm" role="status" aria-label="Marking all read"></span> Working…</span>
+                </button>
+            </form>
+        @endif
+    </div>
 </div>
 
 {{-- Alpine-scoped toast for AJAX errors (replaces the previous blocking alert()). --}}
@@ -41,13 +43,14 @@
 <div class="card" x-data="{ unreadCount: {{ $notifications->where('read_at', null)->count() }} }">
     <div class="list-group list-group-flush">
         @forelse($notifications as $n)
-            <div class="list-group-item d-flex align-items-start gap-3"
+            <div class="list-group-item d-flex align-items-start gap-3 tc-notification-item"
+                 :class="read ? '' : 'is-unread'"
                  x-data="{ read: {{ $n->read_at ? 'true' : 'false' }} }">
-                <i class="bi mt-1" :class="read ? 'bi-bell' : 'bi-bell-fill text-primary'" aria-hidden="true"></i>
+                <span class="tc-notification-icon" aria-hidden="true"><i class="bi" :class="read ? 'bi-bell' : 'bi-bell-fill'"></i></span>
                 <div class="flex-grow-1 min-w-0">
-                    <div class="fw-semibold">{{ $n->title }}</div>
-                    <div class="small">{{ $n->body }}</div>
-                    <div class="text-muted small mt-1">{{ $n->created_at->diffForHumans() }}</div>
+                    <div class="tc-notification-title">{{ $n->title }}</div>
+                    <div class="tc-notification-body">{{ $n->body }}</div>
+                    <div class="tc-notification-time"><i class="bi bi-clock"></i>{{ $n->created_at->diffForHumans() }}</div>
                 </div>
                 @unless($n->read_at)
                     <form method="POST" action="{{ route('portal.notifications.read', $n) }}"

@@ -26,12 +26,14 @@
     $showReasons = auth()->user()->role === 'clinician';
 @endphp
 
-<div class="mb-4">
+<div class="tc-page-header">
+    <div class="tc-page-header-copy">
     <h1 class="tc-page-title">Appointments</h1>
-    <p class="tc-page-sub">Review, approve, and manage appointment requests.</p>
+    <p class="tc-page-sub mb-0">Review, approve, and manage appointment requests.</p>
+    </div>
 </div>
 
-<form method="GET" action="{{ route('appointments.index') }}" class="row g-2 align-items-end mb-3" role="search">
+<form method="GET" action="{{ route('appointments.index') }}" class="row g-2 align-items-end tc-filter-panel" role="search">
     <input type="hidden" name="status" value="{{ $validStatus }}">
     <input type="hidden" name="mode" value="{{ $validMode }}">
     <input type="hidden" name="sort" value="{{ request('sort') }}">
@@ -48,7 +50,7 @@
         <label for="staff-requested-date" class="form-label small fw-semibold">Requested date</label>
         <input id="staff-requested-date" type="date" name="requested_date" value="{{ $requestedDate }}" class="form-control">
     </div>
-    <div class="col-12 col-sm-5 col-md-2 d-flex gap-2">
+    <div class="col-12 col-sm-5 col-md-2 tc-filter-actions">
         <button class="btn btn-primary" type="submit">Search</button>
         @if($search !== '' || $requestedDate)
             <a href="{{ route('appointments.index', array_filter([
@@ -90,7 +92,7 @@
 
 <div class="card">
     <div class="table-responsive">
-        <table class="table table-hover mb-0">
+        <table class="table table-hover mb-0 tc-responsive-table">
             <thead>
                 <tr>
                     <th>Patient</th>
@@ -121,7 +123,7 @@
                 @forelse ($appointments as $appt)
                     @php($requestExpired = $appt->status === 'expired' || $appt->requestHasExpired())
                     <tr>
-                        <td>
+                        <td data-label="Patient">
                             <div class="d-flex align-items-center gap-2">
                                 @if($appt->patient->user->hasAvatar())
                                     <img src="{{ route('avatars.show', $appt->patient->user) }}?v={{ $appt->patient->user->updated_at?->timestamp }}"
@@ -135,14 +137,14 @@
                                 <span class="fw-semibold">{{ $appt->patient->user->name }}</span>
                             </div>
                         </td>
-                        <td>{{ $appt->clinician?->user?->name ?? '—' }}</td>
-                        <td>{{ $appt->requested_at->format('M d, Y h:i A') }}</td>
-                        <td>
+                        <td data-label="Clinician">{{ $appt->clinician?->user?->name ?? '—' }}</td>
+                        <td data-label="Requested">{{ $appt->requested_at->format('M d, Y h:i A') }}</td>
+                        <td data-label="Mode">
                             <span class="tc-mode {{ $appt->mode === 'online' ? 'online' : 'in-person' }}">
                                 {{ $appt->mode === 'online' ? 'Online' : 'In-Person' }}
                             </span>
                         </td>
-                        <td>
+                        <td data-label="Status">
                             <span class="badge bg-{{ match($requestExpired ? 'expired' : $appt->status) {
                                 'approved' => 'success',
                                 'pending', 'rescheduled' => 'warning',
@@ -152,7 +154,7 @@
                             } }}">{{ $requestExpired ? 'Expired' : ($appt->status === 'no_show' ? 'No-show' : ucfirst($appt->status)) }}</span>
                         </td>
                         @if ($showReasons)
-                            <td class="text-center">
+                            <td data-label="Reason" class="text-center">
                                 @can('viewReason', $appt)
                                     @if (filled(trim((string) $appt->reason)))
                                         <button type="button" class="btn btn-sm btn-outline-secondary"
@@ -167,7 +169,7 @@
                                 @endcan
                             </td>
                         @endif
-                        <td class="text-end">
+                        <td data-label="Actions" class="text-end">
                             @if ($appt->meetingLinkActive())
                                 <a href="{{ $appt->meeting_link }}" target="_blank" rel="noopener"
                                    class="btn btn-sm btn-primary" aria-label="Join video call"
@@ -221,7 +223,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="{{ $showReasons ? 7 : 6 }}">
+                        <td colspan="{{ $showReasons ? 7 : 6 }}" class="tc-table-empty">
                             <div class="tc-empty">
                                 <div class="tc-empty-icon"><i class="bi bi-calendar-check"></i></div>
                                 <div>No appointments match your search or filters.</div>
