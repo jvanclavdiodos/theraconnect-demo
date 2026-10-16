@@ -1674,30 +1674,21 @@ a:focus-visible > .tc-kpi,
 }
 
 @supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
-  .navbar,
-  .modal-content,
-  .dropdown-menu {
-    -webkit-backdrop-filter: saturate(145%) blur(16px);
-    backdrop-filter: saturate(145%) blur(16px);
-  }
-
-  [data-bs-theme="light"] .card,
-  [data-bs-theme="light"] .tc-kpi,
-  [data-bs-theme="light"] .tc-messaging-shell {
-    background-color: rgba(255, 255, 255, 0.9);
-    -webkit-backdrop-filter: saturate(120%) blur(10px);
-    backdrop-filter: saturate(120%) blur(10px);
+  .navbar {
+    -webkit-backdrop-filter: saturate(130%) blur(10px);
+    backdrop-filter: saturate(130%) blur(10px);
   }
 }
 
-.tc-page-shell > * {
-  animation: tc-content-enter 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+[data-bs-theme="light"] .card,
+[data-bs-theme="light"] .tc-kpi,
+[data-bs-theme="light"] .tc-messaging-shell {
+  background-color: rgba(255, 255, 255, 0.97);
 }
 
-.tc-page-shell > :nth-child(2) { animation-delay: 35ms; }
-.tc-page-shell > :nth-child(3) { animation-delay: 70ms; }
-.tc-page-shell > :nth-child(4) { animation-delay: 105ms; }
-.tc-page-shell > :nth-child(n + 5) { animation-delay: 135ms; }
+.tc-page-shell > :first-child {
+  animation: tc-content-enter 0.2s ease-out both;
+}
 
 .tc-logo,
 #sidebar-wrapper .tc-nav-item,
@@ -1765,13 +1756,8 @@ a:focus-visible > .tc-kpi,
   box-shadow: 0 7px 16px rgba(19, 36, 45, 0.08);
 }
 
-.card {
-  transition: border-color 0.22s ease, box-shadow 0.22s ease;
-}
-
 .card:hover {
   border-color: color-mix(in srgb, var(--tc-neutral-300) 78%, var(--tc-teal) 22%);
-  box-shadow: 0 2px 5px rgba(19, 36, 45, 0.045), 0 12px 28px rgba(19, 36, 45, 0.075);
 }
 
 .tc-kpi {
@@ -1849,15 +1835,11 @@ a:focus-visible > .tc-kpi .tc-kpi-icon,
 }
 
 .tc-list-row {
-  transition: background-color 0.18s ease, padding-left 0.18s ease;
+  transition: background-color 0.14s ease;
 }
 
 .tc-list-row:hover {
   background-color: color-mix(in srgb, var(--tc-neutral-50) 88%, var(--tc-teal) 12%);
-}
-
-.table-hover > tbody > tr > * {
-  transition: background-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 .table-hover > tbody > tr:hover > *:first-child {
@@ -1885,8 +1867,8 @@ a:focus-visible > .tc-kpi .tc-kpi-icon,
 }
 
 @media (max-width: 767.98px) {
-  .tc-page-shell > * {
-    animation-duration: 0.28s;
+  .tc-page-shell > :first-child {
+    animation-duration: 0.16s;
   }
 
   .card:hover,
