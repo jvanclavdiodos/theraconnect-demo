@@ -1369,3 +1369,272 @@ textarea.form-control {
         scroll-behavior: auto !important;
     }
 }
+
+/* ------------------------------------------------ Landing-aligned app UI
+   Carries the public site's calm navy/teal visual language into authenticated
+   workspaces without changing their structure or interaction patterns. */
+[data-bs-theme="light"] {
+  --tc-slate: #13242d;
+  --tc-slate-mid: #405864;
+  --tc-slate-light: #667b86;
+  --tc-neutral-50: #f7fafb;
+  --tc-neutral-100: #f3f8f9;
+  --tc-neutral-200: #dce5e9;
+  --tc-neutral-300: #bdcdd3;
+  --tc-sidebar-bg: #102630;
+  --tc-shadow: 0 1px 2px rgba(19, 36, 45, 0.04), 0 7px 20px rgba(19, 36, 45, 0.055);
+  --tc-shadow-hover: 0 3px 8px rgba(19, 36, 45, 0.06), 0 14px 30px rgba(19, 36, 45, 0.09);
+}
+
+#page-content-wrapper {
+  background-color: var(--tc-surface-muted);
+}
+
+#sidebar-wrapper {
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: 8px 0 30px rgba(5, 25, 33, 0.08);
+}
+
+.sidebar-heading {
+  min-height: 76px;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.tc-brand {
+  gap: 0.75rem;
+}
+
+.tc-logo {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  box-shadow: 0 6px 16px rgba(13, 110, 138, 0.28);
+}
+
+.tc-brand-name {
+  font-size: 0.98rem;
+}
+
+.tc-brand-sub {
+  margin-top: 0.08rem;
+  color: #91a6af !important;
+}
+
+.tc-nav-group {
+  padding-inline: 0.75rem;
+}
+
+.tc-nav-group-label {
+  padding-inline: 0.55rem;
+  color: #8197a1;
+}
+
+#sidebar-wrapper .tc-nav-item {
+  min-height: 44px;
+  padding-inline: 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 7px;
+}
+
+#sidebar-wrapper .tc-nav-item i:first-child {
+  color: #adc0c7;
+}
+
+#sidebar-wrapper .tc-nav-item:hover {
+  border-color: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.065) !important;
+}
+
+#sidebar-wrapper .tc-nav-item.active {
+  border-color: rgba(125, 211, 228, 0.18);
+  box-shadow: 0 5px 14px rgba(3, 30, 40, 0.2);
+}
+
+#sidebar-wrapper .tc-nav-item.active i:first-child {
+  color: #fff;
+}
+
+.navbar {
+  min-height: 72px;
+  padding-inline: clamp(1rem, 2.4vw, 2rem) !important;
+  border-bottom-color: rgba(19, 36, 45, 0.09) !important;
+}
+
+.tc-navbar-actions .tc-navbar-control {
+  border-color: var(--tc-neutral-200);
+  background-color: var(--tc-surface);
+  box-shadow: 0 1px 2px rgba(19, 36, 45, 0.04);
+}
+
+.tc-navbar-actions .tc-navbar-control:hover,
+.tc-navbar-actions .tc-navbar-control:focus-visible {
+  border-color: var(--tc-neutral-300);
+  background-color: var(--tc-neutral-100);
+}
+
+.tc-page-shell {
+  padding-top: clamp(1.35rem, 2.5vw, 2.25rem);
+  padding-bottom: clamp(2.5rem, 5vw, 4rem);
+}
+
+.tc-page-title {
+  font-size: clamp(1.55rem, 2.4vw, 1.9rem);
+  line-height: 1.18;
+}
+
+.tc-page-sub {
+  max-width: 72ch;
+  margin-top: 0.35rem;
+  line-height: 1.6;
+}
+
+.card,
+.tc-kpi,
+.tc-messaging-shell {
+  border-color: var(--tc-neutral-200);
+  box-shadow: var(--tc-shadow);
+}
+
+.card {
+  overflow: hidden;
+}
+
+.card-header {
+  min-height: 56px;
+  padding-inline: clamp(1rem, 1.8vw, 1.35rem);
+  background-color: var(--tc-surface);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.card-header > span:first-child > .bi,
+.card-header > .bi:first-child {
+  color: var(--tc-teal);
+}
+
+.tc-kpi {
+  min-height: 154px;
+  padding: 1.3rem;
+  border-top: 3px solid rgba(13, 110, 138, 0.62);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+a:hover > .tc-kpi,
+a:focus-visible > .tc-kpi,
+.tc-kpi:hover {
+  border-top-color: var(--tc-teal);
+}
+
+.tc-kpi-icon {
+  width: 42px;
+  height: 42px;
+}
+
+.tc-kpi-value {
+  font-size: 1.9rem;
+}
+
+.tc-kpi-label {
+  margin-top: 0.5rem;
+  color: var(--tc-slate-mid);
+}
+
+.table > thead th {
+  background: var(--tc-neutral-50);
+  color: var(--tc-slate-mid);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.table > tbody td {
+  vertical-align: middle;
+}
+
+.table-hover > tbody > tr:hover > * {
+  --bs-table-bg-state: var(--tc-neutral-50);
+}
+
+.form-label {
+  color: var(--tc-slate-mid);
+}
+
+.input-group-text {
+  background-color: var(--tc-neutral-50) !important;
+  color: var(--tc-slate-light);
+}
+
+.form-control:hover:not(:disabled),
+.form-select:hover:not(:disabled) {
+  border-color: var(--tc-neutral-300);
+}
+
+.tc-filters {
+  gap: 0.45rem;
+}
+
+.tc-filter {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  padding-inline: 0.85rem;
+  font-weight: 600;
+}
+
+.tc-list-row {
+  min-height: 68px;
+  padding-inline: clamp(1rem, 1.8vw, 1.35rem);
+}
+
+.tc-empty {
+  padding-block: clamp(2.25rem, 5vw, 3.5rem);
+}
+
+.badge {
+  padding: 0.42em 0.7em;
+  font-weight: 650;
+}
+
+@media (max-width: 767.98px) {
+  .navbar {
+    min-height: 60px;
+    padding-inline: 0.75rem !important;
+  }
+
+  .sidebar-heading {
+    min-height: 68px;
+  }
+
+  .tc-page-shell {
+    padding-top: 1.15rem;
+    padding-bottom: 3rem;
+  }
+
+  .tc-page-title {
+    font-size: 1.5rem;
+  }
+
+  .tc-page-sub {
+    font-size: 0.84rem;
+  }
+
+  .tc-kpi {
+    min-height: 136px;
+    padding: 1rem;
+  }
+
+  .card-header {
+    min-height: 50px;
+  }
+
+  .tc-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.25rem;
+    scrollbar-width: thin;
+  }
+
+  .tc-filter {
+    flex: 0 0 auto;
+  }
+}
