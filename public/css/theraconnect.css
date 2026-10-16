@@ -1638,3 +1638,268 @@ a:focus-visible > .tc-kpi,
     flex: 0 0 auto;
   }
 }
+
+/* ------------------------------------------------ Refined depth and motion
+   Motion stays brief and purposeful: it clarifies page changes and confirms
+   interactive states without competing with clinical content. */
+@keyframes tc-content-enter {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes tc-badge-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.84);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+[data-bs-theme="light"] .navbar {
+  background-color: rgba(255, 255, 255, 0.84) !important;
+  box-shadow: 0 1px 0 rgba(19, 36, 45, 0.04), 0 8px 26px rgba(19, 36, 45, 0.035);
+}
+
+[data-bs-theme="dark"] .navbar {
+  background-color: rgba(26, 35, 50, 0.86) !important;
+}
+
+@supports ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+  .navbar,
+  .modal-content,
+  .dropdown-menu {
+    -webkit-backdrop-filter: saturate(145%) blur(16px);
+    backdrop-filter: saturate(145%) blur(16px);
+  }
+
+  [data-bs-theme="light"] .card,
+  [data-bs-theme="light"] .tc-kpi,
+  [data-bs-theme="light"] .tc-messaging-shell {
+    background-color: rgba(255, 255, 255, 0.9);
+    -webkit-backdrop-filter: saturate(120%) blur(10px);
+    backdrop-filter: saturate(120%) blur(10px);
+  }
+}
+
+.tc-page-shell > * {
+  animation: tc-content-enter 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.tc-page-shell > :nth-child(2) { animation-delay: 35ms; }
+.tc-page-shell > :nth-child(3) { animation-delay: 70ms; }
+.tc-page-shell > :nth-child(4) { animation-delay: 105ms; }
+.tc-page-shell > :nth-child(n + 5) { animation-delay: 135ms; }
+
+.tc-logo,
+#sidebar-wrapper .tc-nav-item,
+#sidebar-wrapper .tc-nav-item i,
+.tc-navbar-control,
+.card,
+.tc-kpi,
+.tc-filter,
+.tc-list-row,
+.page-link {
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tc-logo {
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.tc-brand:hover .tc-logo {
+  transform: translateY(-1px);
+  box-shadow: 0 9px 20px rgba(13, 110, 138, 0.34);
+}
+
+#sidebar-wrapper .tc-nav-item {
+  position: relative;
+  overflow: hidden;
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+#sidebar-wrapper .tc-nav-item::before {
+  content: "";
+  position: absolute;
+  inset-block: 9px;
+  left: 0;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: #7dd3e4;
+  opacity: 0;
+  transform: scaleY(0.45);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+#sidebar-wrapper .tc-nav-item:hover {
+  transform: translateX(2px);
+}
+
+#sidebar-wrapper .tc-nav-item.active::before {
+  opacity: 1;
+  transform: scaleY(1);
+}
+
+#sidebar-wrapper .tc-nav-item:hover i:first-child,
+#sidebar-wrapper .tc-nav-item.active i:first-child {
+  transform: scale(1.06);
+}
+
+.tc-navbar-actions .tc-navbar-control {
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.tc-navbar-actions .tc-navbar-control:hover,
+.tc-navbar-actions .tc-navbar-control:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 7px 16px rgba(19, 36, 45, 0.08);
+}
+
+.card {
+  transition: border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.card:hover {
+  border-color: color-mix(in srgb, var(--tc-neutral-300) 78%, var(--tc-teal) 22%);
+  box-shadow: 0 2px 5px rgba(19, 36, 45, 0.045), 0 12px 28px rgba(19, 36, 45, 0.075);
+}
+
+.tc-kpi {
+  position: relative;
+  isolation: isolate;
+}
+
+.tc-kpi::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-color: rgba(13, 110, 138, 0.035);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+a:hover > .tc-kpi,
+a:focus-visible > .tc-kpi,
+.tc-kpi:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--tc-shadow-hover);
+}
+
+a:hover > .tc-kpi::after,
+a:focus-visible > .tc-kpi::after,
+.tc-kpi:hover::after {
+  opacity: 1;
+}
+
+.tc-kpi-icon {
+  transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+a:hover > .tc-kpi .tc-kpi-icon,
+a:focus-visible > .tc-kpi .tc-kpi-icon,
+.tc-kpi:hover .tc-kpi-icon {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 6px 14px rgba(19, 36, 45, 0.09);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-primary:focus-visible {
+  box-shadow: 0 7px 16px rgba(13, 110, 138, 0.2);
+}
+
+.form-control,
+.form-select,
+.input-group-text {
+  transition-duration: 0.2s;
+}
+
+.form-control:focus,
+.form-select:focus {
+  background-color: color-mix(in srgb, var(--tc-surface) 96%, var(--tc-teal) 4%);
+  box-shadow: 0 0 0 3px rgba(13, 110, 138, 0.13), 0 5px 14px rgba(19, 36, 45, 0.045);
+}
+
+.tc-filter {
+  transition: color 0.18s ease, background-color 0.18s ease,
+    border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tc-filter:hover {
+  transform: translateY(-1px);
+}
+
+.tc-filter.active {
+  box-shadow: 0 5px 13px rgba(13, 110, 138, 0.16);
+}
+
+.tc-list-row {
+  transition: background-color 0.18s ease, padding-left 0.18s ease;
+}
+
+.tc-list-row:hover {
+  background-color: color-mix(in srgb, var(--tc-neutral-50) 88%, var(--tc-teal) 12%);
+}
+
+.table-hover > tbody > tr > * {
+  transition: background-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+.table-hover > tbody > tr:hover > *:first-child {
+  box-shadow: inset 3px 0 0 rgba(13, 110, 138, 0.58);
+}
+
+.page-link:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 12px rgba(19, 36, 45, 0.07);
+}
+
+[data-realtime-notification-count]:not(.d-none),
+[data-realtime-message-count]:not(.d-none),
+[data-assignment-activity-count]:not(.d-none) {
+  animation: tc-badge-enter 0.24s ease-out both;
+}
+
+.modal.fade .modal-dialog {
+  transform: translateY(8px) scale(0.99);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.modal.show .modal-dialog {
+  transform: translateY(0) scale(1);
+}
+
+@media (max-width: 767.98px) {
+  .tc-page-shell > * {
+    animation-duration: 0.28s;
+  }
+
+  .card:hover,
+  a:hover > .tc-kpi,
+  a:focus-visible > .tc-kpi,
+  .tc-kpi:hover,
+  .btn:hover:not(:disabled),
+  .tc-filter:hover,
+  .page-link:hover {
+    transform: none;
+  }
+
+  #sidebar-wrapper .tc-nav-item:hover {
+    transform: none;
+  }
+}
