@@ -134,6 +134,9 @@
 
         if (!form || !checkbox || !acceptedTerms || !modalElement || !agreeButton) return;
 
+        // Keep the fixed dialog outside animated or clipped card ancestors so
+        // Bootstrap's body-level backdrop cannot cover its controls.
+        document.body.appendChild(modalElement);
         const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
 
         checkbox.addEventListener('change', function () {
