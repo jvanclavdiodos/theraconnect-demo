@@ -67,7 +67,11 @@
                     ->map(fn($part) => mb_strtoupper(mb_substr($part, 0, 1)))->implode('');
             @endphp
             <header class="tc-chat-header">
-                <span class="tc-chat-avatar tc-chat-avatar-lg" aria-hidden="true">{{ $clinicianInitials ?: 'C' }}</span>
+                @if($conversation->clinician?->user?->hasAvatar())
+                    <img class="tc-chat-avatar tc-chat-avatar-lg tc-chat-avatar-image" src="{{ route('portal.clinicians.avatar', $conversation->clinician) }}?v={{ $conversation->clinician->user->updated_at?->timestamp }}" alt="{{ $clinicianName }} profile photo">
+                @else
+                    <span class="tc-chat-avatar tc-chat-avatar-lg" aria-hidden="true">{{ $clinicianInitials ?: 'C' }}</span>
+                @endif
                 <span class="min-w-0">
                     <strong class="tc-chat-clinician-name">{{ $clinicianName }}</strong>
                     <span class="tc-chat-clinician-meta">{{ $conversation->clinician?->specialization ?? 'Clinician' }}</span>

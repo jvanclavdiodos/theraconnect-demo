@@ -11,6 +11,50 @@ use Tests\TestCase;
 
 class AvatarAuthorizationTest extends TestCase
 {
+    public function test_web_avatars_reuse_private_cached_images_and_refresh_after_upload(): void
+    {
+        Storage::fake('local');
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('cached-avatar@test.com');
+        $patient['patient']->assignClinician($clinician['clinician']);
+        $this->giveAvatar($patient['user']);
+        $this->giveAvatar($clinician['user']);
+
+        foreach ([
+            [$patient['user'], route('portal.profile.avatar'), $patient['user']],
+            [$patient['user'], route('portal.clinicians.avatar', $clinician['clinician']), $clinician['user']],
+            [$clinician['user'], route('avatars.show', $patient['user']), $patient['user']],
+        ] as [$viewer, $url, $subject]) {
+            $response = $this->actingAs($viewer)->get($url)->assertOk();
+            $etag = $response->headers->get('ETag');
+            $this->assertNotEmpty($etag);
+            $this->assertStringContainsString('private', $response->headers->get('Cache-Control'));
+            $this->assertStringContainsString('no-cache', $response->headers->get('Cache-Control'));
+            $this->get($url, ['If-None-Match' => $etag])->assertStatus(304);
+
+            $this->giveAvatar($subject);
+            $updated = $this->get($url, ['If-None-Match' => $etag])->assertOk();
+            $this->assertNotSame($etag, $updated->headers->get('ETag'));
+        }
+    }
+
+    public function test_cached_avatar_does_not_bypass_authorization(): void
+    {
+        Storage::fake('local');
+        $clinician = $this->createClinician();
+        $patient = $this->createPatient('cached-avatar-owner@test.com');
+        $clinician['user']->update(['email' => 'cached-avatar-clinician@test.com']);
+        $other = $this->createClinician();
+        $patient['patient']->assignClinician($clinician['clinician']);
+        $this->giveAvatar($patient['user']);
+        $url = route('avatars.show', $patient['user']);
+        $response = $this->actingAs($clinician['user'])->get($url)->assertOk();
+
+        $this->actingAs($other['user'])
+            ->get($url, ['If-None-Match' => $response->headers->get('ETag')])
+            ->assertForbidden();
+    }
+
     /** Give a user a real (faked) avatar file so the serve route returns 200. */
     private function giveAvatar(User $user): void
     {
@@ -182,7 +226,8 @@ class AvatarAuthorizationTest extends TestCase
             ->get(route('portal.messages.index'))
             ->assertOk()
             ->assertSee(route('portal.clinicians.avatar', $clinician['clinician']).'?v='.$user->updated_at->timestamp, false)
-            ->assertSee($user->name.' profile photo');
+            ->assertSee($user->name.' profile photo')
+            ->assertSee('class="tc-chat-avatar tc-chat-avatar-lg tc-chat-avatar-image"', false);
     }
 
     public function test_clinician_messaging_sidebar_displays_patient_avatar(): void
@@ -203,5 +248,11 @@ class AvatarAuthorizationTest extends TestCase
             ->assertOk()
             ->assertSee(route('avatars.show', $user).'?v='.$user->updated_at->timestamp, false)
             ->assertSee($user->name.' profile photo');
+
+        $conversation = Conversation::where('patient_id', $patient['patient']->id)->firstOrFail();
+        $this->get(route('messages.show', $conversation))
+            ->assertOk()
+            ->assertSee('class="tc-chat-avatar tc-chat-avatar-lg tc-chat-avatar-image"', false)
+            ->assertSee(route('avatars.show', $user).'?v='.$user->updated_at->timestamp, false);
     }
 }

@@ -51,7 +51,11 @@
                 $patientInitials = collect(explode(' ', trim($patientName)))->filter()->take(2)->map(fn($part) => mb_strtoupper(mb_substr($part, 0, 1)))->implode('');
             @endphp
             <header class="tc-chat-header">
-                <span class="tc-chat-avatar tc-chat-avatar-lg" aria-hidden="true">{{ $patientInitials ?: 'P' }}</span>
+                @if($activeConversation->patient->user->hasAvatar())
+                    <img class="tc-chat-avatar tc-chat-avatar-lg tc-chat-avatar-image" src="{{ route('avatars.show', $activeConversation->patient->user) }}?v={{ $activeConversation->patient->user->updated_at?->timestamp }}" alt="{{ $patientName }} profile photo">
+                @else
+                    <span class="tc-chat-avatar tc-chat-avatar-lg" aria-hidden="true">{{ $patientInitials ?: 'P' }}</span>
+                @endif
                 <span class="min-w-0"><strong class="tc-chat-clinician-name">{{ $patientName }}</strong><span class="tc-chat-clinician-meta">Patient</span></span>
             </header>
             <div class="tc-message-thread" id="thread">

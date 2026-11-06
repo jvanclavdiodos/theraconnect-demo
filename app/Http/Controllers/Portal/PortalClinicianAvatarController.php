@@ -19,6 +19,6 @@ class PortalClinicianAvatarController extends Controller
         $user = $clinician->user;
         abort_unless($user?->avatar_path && Storage::disk()->exists($user->avatar_path), 404);
 
-        return Storage::disk()->response($user->avatar_path);
+        return \App\Support\AvatarResponse::make($request, $user);
     }
 }

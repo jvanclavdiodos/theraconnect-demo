@@ -137,6 +137,6 @@ class PortalProfileController extends Controller
             404
         );
 
-        return Storage::disk()->response($user->avatar_path);
+        return \App\Support\AvatarResponse::make($request, $user);
     }
 }
