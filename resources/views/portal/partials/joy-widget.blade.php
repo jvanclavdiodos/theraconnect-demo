@@ -1,6 +1,7 @@
-<div class="tc-joy" x-data="joyWidget()" @keydown.escape.window="close()">
-<button class="tc-joy-callout" type="button" x-cloak x-show="!open" @click="toggle()" aria-label="Have questions? Talk to Joy.">Have questions? <strong>Talk to Joy.</strong></button>
-<button x-ref="launcher" class="tc-joy-launcher" @click="toggle()" :aria-expanded="open.toString()" aria-controls="joy-panel" aria-label="Open Joy assistant"><img src="{{ asset('img/joy-avatar.svg') }}" alt="" width="34" height="34"></button>
+<script src="{{ asset('js/joy-position.js') }}"></script>
+<div class="tc-joy tc-joy-floating" x-data="joyPosition(joyWidget())" :style="positionStyle" :class="{ 'is-dragging': dragging, 'is-left': side === 'left' }" @resize.window="fit()" @keydown.escape.window="close()">
+<button class="tc-joy-callout" type="button" x-cloak x-show="!open && invitation" @click="invitation = false; toggle()" aria-label="Have questions? Talk to Joy.">Have questions? <strong>Talk to Joy.</strong></button>
+<button type="button" x-ref="launcher" class="tc-joy-launcher" @pointerdown="startDrag($event)" @pointermove="moveDrag($event)" @pointerup="endDrag($event)" @pointercancel="endDrag($event)" @lostpointercapture="endDrag($event)" @keydown="reposition($event)" @click="activate($event)" :aria-expanded="open.toString()" aria-controls="joy-panel" aria-label="Open Joy assistant. Use arrow keys to reposition." title="Talk to Joy. Drag to move."><img src="{{ asset('img/joy-avatar.svg') }}" alt="" width="34" height="34" draggable="false"></button>
 <section id="joy-panel" class="tc-joy-panel" x-cloak x-show="open" aria-label="Joy assistant">
     <header class="tc-joy-header">
         <button type="button" class="btn btn-sm" @click="close()" aria-label="Close Joy assistant">

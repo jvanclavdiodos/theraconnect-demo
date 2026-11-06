@@ -1886,6 +1886,51 @@ a:focus-visible > .tc-kpi .tc-kpi-icon,
   }
 }
 
+/* The launcher moves independently; the conversation keeps a stable anchor. */
+.tc-joy-floating {
+  width: 56px;
+  height: 56px;
+  display: block;
+}
+.tc-joy-floating .tc-joy-launcher {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  touch-action: none;
+  user-select: none;
+  cursor: grab;
+}
+.tc-joy-floating.is-dragging .tc-joy-launcher { cursor: grabbing; }
+.tc-joy-floating .tc-joy-launcher img { pointer-events: none; }
+.tc-joy-floating .tc-joy-callout {
+  position: absolute;
+  right: 68px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: max-content;
+  max-width: min(260px, calc(100vw - 100px));
+}
+.tc-joy-floating.is-left .tc-joy-callout { right: auto; left: 68px; }
+.tc-joy-floating.is-left .tc-joy-callout::after {
+  right: auto;
+  left: -7px;
+  transform: translateY(-50%) rotate(225deg);
+}
+.tc-joy-floating .tc-joy-panel {
+  position: fixed;
+  right: 1rem;
+  bottom: max(5rem, env(safe-area-inset-bottom));
+  height: min(560px, calc(100dvh - 6rem));
+  max-width: calc(100vw - 2rem);
+}
+@media (max-width: 575.98px) {
+  .tc-joy-floating .tc-joy-panel {
+    right: 0.75rem;
+    width: calc(100vw - 1.5rem);
+    max-width: calc(100vw - 1.5rem);
+  }
+}
+
 /* ------------------------------------------------ Workflow presentation */
 .tc-page-header {
   display: flex;
